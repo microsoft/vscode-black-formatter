@@ -1,6 +1,6 @@
 {
-    "name": "black",
-    "displayName": "Black",
+    "name": "black-formatter",
+    "displayName": "Black Formatter",
     "description": "Formatting support for python files using `black`.",
     "version": "2022.1.0-dev",
     "formatter": {
@@ -9,13 +9,13 @@
     },
     "publisher": "ms-python",
     "license": "MIT",
-    "homepage": "https://github.com/Microsoft/vscode-black",
+    "homepage": "https://github.com/Microsoft/vscode-black-formatter",
     "repository": {
         "type": "git",
-        "url": "https://github.com/microsoft/vscode-black.git"
+        "url": "https://github.com/microsoft/vscode-black-formatter.git"
     },
     "bugs": {
-        "url": "https://github.com/Microsoft/vscode-black/issues"
+        "url": "https://github.com/Microsoft/vscode-black-formatter/issues"
     },
     "icon": "icon.png",
     "galleryBanner": {
@@ -42,7 +42,7 @@
         "workspaceContains:pyproject.toml",
         "workspaceContains:.black",
         "workspaceContains:*.py",
-        "onCommand:black.restart"
+        "onCommand:black-formatter.restart"
     ],
     "main": "./dist/extension.js",
     "scripts": {
@@ -70,7 +70,7 @@
         ],
         "configuration": {
             "properties": {
-                "black.trace": {
+                "black-formatter.trace": {
                     "default": "error",
                     "description": "The trace level the extension logs at, defaults to 'error'",
                     "enum": [
@@ -83,7 +83,7 @@
                     "scope": "window",
                     "type": "string"
                 },
-                "black.args": {
+                "black-formatter.args": {
                     "default": [],
                     "description": "Arguments passed in. Each argument is a separate item in the array.",
                     "items": {
@@ -92,7 +92,7 @@
                     "scope": "resource",
                     "type": "array"
                 },
-                "black.path": {
+                "black-formatter.path": {
                     "default": [],
                     "description": "When set to a path to black binary, extension will use that for formatting. NOTE: Using this option may slowdown formatting.",
                     "scope": "resource",
@@ -105,9 +105,9 @@
         },
         "commands": [
             {
-                "title": "Restart Formatter",
-                "category": "Black",
-                "command": "black.restart"
+                "title": "Restart Server",
+                "category": "Black Formatter",
+                "command": "black-formatter.restart"
             }
         ]
     },

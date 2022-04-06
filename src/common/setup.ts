@@ -5,15 +5,9 @@ import * as path from 'path';
 import * as fs from 'fs-extra';
 import { EXTENSION_ROOT_DIR } from './constants';
 
-export interface IFormatterPattern {
-    args: string[];
-}
-
 export interface IFormatter {
     name: string;
     module: string;
-    patterns: Record<string, IFormatterPattern>;
-    version: string;
 }
 
 export function loadFormatterDefaults(): IFormatter {

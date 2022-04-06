@@ -52,8 +52,8 @@ def get_initialization_options():
     properties = package_json["contributes"]["configuration"]["properties"]
     settings = {
         "trace": "error",
-        "args": properties[f"{formatter['module']}.args"]["default"],
-        "path": properties[f"{formatter['module']}.path"]["default"],
+        "args": properties[f"{formatter['module']}-formatter.args"]["default"],
+        "path": properties[f"{formatter['module']}-formatter.path"]["default"],
     }
 
     return {"settings": settings}

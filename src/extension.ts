@@ -35,8 +35,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     const settings = getFormatterExtensionSettings(formatter.module);
 
+    const formatterName = `${formatter.name} Formatter`;
+    const formatterId = `${formatter.module}-formatter`;
+
     // Setup logging
-    const outputChannel = createOutputChannel(formatter.name);
+    const outputChannel = createOutputChannel(formatterName);
     context.subscriptions.push(outputChannel);
     setupLogging(settings, outputChannel, context.subscriptions);
 
@@ -47,7 +50,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const runServer = async (interpreterPath: string) => {
         lsClient = await restartFormatServer(
             interpreterPath,
-            formatter.name,
+            formatterId,
+            formatterName,
             outputChannel,
             {
                 settings: getFormatterExtensionSettings(formatter.module),
@@ -63,7 +67,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
     context.subscriptions.push(
-        registerCommand(`${formatter.module}.restart`, async () => {
+        registerCommand(`${formatter.module}-formatter.restart`, async () => {
             const interpreterPath = await getInterpreterPath(context.subscriptions);
             await runServer(interpreterPath);
         }),
