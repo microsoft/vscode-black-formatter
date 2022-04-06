@@ -10,9 +10,25 @@ Note:
 
 ## Usage
 
-Once installed in Visual Studio Code, `black` will be automatically executed when you open a Python file.
+Once installed in Visual Studio Code, "Black Formatter" will be available as a formatter for python files. Please select "Black Formatter" (extension id:`ms-python.black-formatter`) as the default formatter. You can do this either by using the context menu (right click on a open python file in the editor) and select "Format Document With...", or you can add the following to your settings:
+```json
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  }
+```
 
-If you want to disable `black`, you can [disable this extension](https://code.visualstudio.com/docs/editor/extension-marketplace#_disable-an-extension) per workspace in Visual Studio Code.
+### Format on save
+
+You can enable format on save for python by having the following values in your settings:
+```json
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true
+  }
+```
+
+### Disabling formatting with `black`
+If you want to disable Black formatter, you can [disable this extension](https://code.visualstudio.com/docs/editor/extension-marketplace#_disable-an-extension) per workspace in Visual Studio Code.
 
 ## Settings
 
