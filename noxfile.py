@@ -23,7 +23,8 @@ def install_bundled_libs(session):
         "py",
         "--no-deps",
         "--upgrade",
-        "-r" "./requirements.txt",
+        "-r",
+        "./requirements.txt",
     )
 
 
