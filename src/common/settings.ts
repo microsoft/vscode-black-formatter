@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ConfigurationChangeEvent, ConfigurationTarget } from 'vscode';
+import { ConfigurationChangeEvent } from 'vscode';
 import { LoggingLevelSettingType } from './types';
 import { getConfiguration } from './vscodeapi';
 
@@ -12,7 +12,7 @@ export interface ISettings {
 }
 
 export function getFormatterExtensionSettings(moduleName: string): ISettings {
-    const config = getConfiguration(moduleName);
+    const config = getConfiguration(`${moduleName}-formatter`);
     return {
         trace: config.get<LoggingLevelSettingType>(`trace`) ?? 'error',
         args: config.get<string[]>(`args`) ?? [],
@@ -21,7 +21,7 @@ export function getFormatterExtensionSettings(moduleName: string): ISettings {
 }
 
 export function checkIfConfigurationChanged(e: ConfigurationChangeEvent, moduleName: string): boolean {
-    const settings = [`${moduleName}.trace`, `${moduleName}.args`, `${moduleName}.path`];
+    const settings = [`${moduleName}-formatter.trace`, `${moduleName}-formatter.args`, `${moduleName}-formatter.path`];
     const changed = settings.map((s) => e.affectsConfiguration(s));
     return changed.includes(true);
 }

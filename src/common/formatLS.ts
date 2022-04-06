@@ -19,6 +19,7 @@ export type IFormatterInitOptions = { settings: ISettings };
 
 export async function createFormatServer(
     interpreter: string,
+    serverId: string,
     serverName: string,
     outputChannel: OutputChannel,
     initializationOptions: IFormatterInitOptions,
@@ -46,12 +47,13 @@ export async function createFormatServer(
         initializationOptions,
     };
 
-    return new LanguageClient(serverName, serverName, serverOptions, clientOptions);
+    return new LanguageClient(serverId, serverName, serverOptions, clientOptions);
 }
 
 let _disposables: Disposable[] = [];
 export async function restartFormatServer(
     interpreter: string,
+    serverId: string,
     serverName: string,
     outputChannel: OutputChannel,
     initializationOptions: IFormatterInitOptions,
@@ -63,7 +65,13 @@ export async function restartFormatServer(
         _disposables.forEach((d) => d.dispose());
         _disposables = [];
     }
-    const newLSClient = await createFormatServer(interpreter, serverName, outputChannel, initializationOptions);
+    const newLSClient = await createFormatServer(
+        interpreter,
+        serverId,
+        serverName,
+        outputChannel,
+        initializationOptions,
+    );
     newLSClient.trace = traceLevelToLSTrace(initializationOptions.settings.trace);
     traceInfo(`Server: Start requested.`);
     _disposables.push(

@@ -4,6 +4,7 @@
 Implementation of formatting support over LSP.
 """
 import ast
+import json
 import pathlib
 import sys
 import traceback
@@ -171,12 +172,13 @@ def _format(
 @LSP_SERVER.feature(lsp.INITIALIZE)
 def initialize(params: types.InitializeParams):
     """LSP handler for initialize request."""
-    paths = "\r\n".join(sys.path)
-    LSP_SERVER.show_message_log(f"sys.path used to run Formatter:\r\n{paths}")
+    paths = "\r\n    ".join(sys.path)
+    LSP_SERVER.show_message_log(f"sys.path used to run Formatter:\r\n    {paths}\r\n")
     # First get workspace settings to know if we are using formatter
     # module or binary.
     global SETTINGS
     SETTINGS = params.initialization_options["settings"]
+    LSP_SERVER.show_message_log(f"Settings used to run Formatter:\r\n{json.dumps(SETTINGS, indent=4, ensure_ascii=False)}\r\n")
 
     global FORMATTER
     FORMATTER = utils.get_formatter_options_by_version(

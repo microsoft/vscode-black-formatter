@@ -1,4 +1,4 @@
-# Black extension for Visual Studio Code
+# Formatter extension for Visual Studio Code using `black`
 
 A Visual Studio Code extension with support for the `black` formatter. The extension ships with `black=22.3.0`.
 
@@ -16,14 +16,14 @@ If you want to disable `black`, you can [disable this extension](https://code.vi
 
 ## Settings
 
-| Settings    | Default | Description                                                                                                                                                                                                                                                              |
-| ----------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| black.args  | `[]`    | Custom arguments passed to `black`. E.g `"black.args" = ["--config", "<file>"]`                                                                                                                                                                                          |
-| black.trace | `error` | Sets the tracing level for the extension.                                                                                                                                                                                                                                |
-| black.path  | `[]`    | Setting to provide custom `black` executable. This will slow down formatting, since we will have to run `black` executable every time or file save or open. Example 1: `["~/global_env/black"]` Example 2: `["conda", "run", "-n", "lint_env", "python", "-m", "black"]` |
+| Settings              | Default | Description                                                                                                                                                                                                                                                              |
+| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| black-formatter.args  | `[]`    | Custom arguments passed to `black`. E.g `"black.args" = ["--config", "<file>"]`                                                                                                                                                                                          |
+| black-formatter.trace | `error` | Sets the tracing level for the extension.                                                                                                                                                                                                                                |
+| black-formatter.path  | `[]`    | Setting to provide custom `black` executable. This will slow down formatting, since we will have to run `black` executable every time or file save or open. Example 1: `["~/global_env/black"]` Example 2: `["conda", "run", "-n", "lint_env", "python", "-m", "black"]` |
 
 ## Commands
 
 | Command                  | Description                       |
 | ------------------------ | --------------------------------- |
-| Black: Restart Formatter | Force re-start the format server. |
+| Black Formatter: Restart | Force re-start the format server. |
