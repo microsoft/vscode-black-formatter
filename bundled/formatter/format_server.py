@@ -178,7 +178,9 @@ def initialize(params: types.InitializeParams):
     # module or binary.
     global SETTINGS
     SETTINGS = params.initialization_options["settings"]
-    LSP_SERVER.show_message_log(f"Settings used to run Formatter:\r\n{json.dumps(SETTINGS, indent=4, ensure_ascii=False)}\r\n")
+    LSP_SERVER.show_message_log(
+        f"Settings used to run Formatter:\r\n{json.dumps(SETTINGS, indent=4, ensure_ascii=False)}\r\n"
+    )
 
     global FORMATTER
     FORMATTER = utils.get_formatter_options_by_version(
