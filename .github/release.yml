@@ -1,0 +1,20 @@
+changelog:
+  exclude:
+    labels:
+      - 'skip news'
+
+  categories:
+    - title: Bug Fixes
+      labels:
+        - bug
+        - news
+
+    - title: Enhancements
+      labels:
+        - feature
+        - news
+
+    - title: Code Health
+      labels:
+        - 'code health'
+        - news

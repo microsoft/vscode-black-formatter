@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: 'github-actions'
+    directory: /
+    schedule:
+      interval: daily
+    labels:
+      - 'skip news'
+
+  - package-ecosystem: 'pip'
+    directory: /src/test/python_tests
+    schedule:
+      interval: daily
+    labels:
+      - 'skip news'
+
+  - package-ecosystem: 'pip'
+    directory: /
+    schedule:
+      interval: daily
+    labels:
+      - 'news'
+      - 'code health'
+    commit-message:
+      include: 'scope'
+
+  - package-ecosystem: 'npm'
+    directory: /
+    schedule:
+      interval: weekly
+    default_labels:
+      - 'skip news'

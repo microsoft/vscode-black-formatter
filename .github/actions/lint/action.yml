@@ -1,0 +1,58 @@
+name: 'Lint'
+description: 'Lint TypeScript and Python code'
+
+inputs:
+  node_version:
+    description: 'Version of Node to install'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Node
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ inputs.node_version }}
+        cache: 'npm'
+
+    - name: Install Node dependencies
+      run: npm ci
+      shell: bash
+
+    - name: Lint TypeScript code
+      run: npm run lint
+      shell: bash
+
+    - name: Check TypeScript format
+      run: npm run format-check
+      shell: bash
+
+    - name: Install Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Pip cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-lint-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-lint-
+
+    - name: Upgrade Pip
+      run: python -m pip install -U pip
+      shell: bash
+
+    # For faster/better builds of sdists.
+    - name: Install build pre-requisite
+      run: python -m pip install wheel
+      shell: bash
+
+    - name: Install nox
+      run: python -m pip install nox
+      shell: bash
+
+    - name: Check linting and formatting
+      run: python -m nox --session lint
+      shell: bash

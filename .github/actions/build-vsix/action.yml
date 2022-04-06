@@ -1,0 +1,71 @@
+name: 'Build VSIX'
+description: "Build the extension's VSIX"
+
+inputs:
+  node_version:
+    description: 'Version of Node to install'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Node
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ inputs.node_version }}
+        cache: 'npm'
+
+    # Minimum supported version is Python 3.7
+    - name: Use Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+
+    - name: Pip cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-build-vsix-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-build-vsix-
+
+    - name: Upgrade Pip
+      run: python -m pip install -U pip
+      shell: bash
+
+    # For faster/better builds of sdists.
+    - name: Install build pre-requisite
+      run: python -m pip install wheel
+      shell: bash
+
+    - name: Install nox
+      run: python -m pip install nox
+      shell: bash
+
+    - name: Run npm ci
+      run: npm ci --prefer-offline
+      shell: bash
+
+    - name: Install bundled python libraries
+      run: python -m nox --session install_bundled_libs
+      shell: bash
+
+    # Use the GITHUB_RUN_ID environment variable to update the build number.
+    # GITHUB_RUN_ID is a unique number for each run within a repository.
+    # This number does not change if you re-run the workflow run.
+    - name: Update extension build number
+      run: python -m nox --session update_build_number -- $GITHUB_RUN_ID
+      shell: bash
+
+    - name: Build VSIX
+      run: npm run vsce-package
+      shell: bash
+
+    - name: Upload VSIX
+      uses: actions/upload-artifact@v2
+      with:
+        name: formatter-package
+        path: |
+          **/*.vsix
+        if-no-files-found: error
+        retention-days: 7
