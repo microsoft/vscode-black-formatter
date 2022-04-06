@@ -1,0 +1,40 @@
+name: PR labels
+
+on:
+  pull_request:
+    types: ['opened', 'reopened', 'synchronize', 'labeled', 'unlabeled']
+
+permissions:
+  pull-requests: write
+
+jobs:
+  # From https://github.com/marketplace/actions/github-script#apply-a-label-to-an-issue.
+  add-classify-label:
+    name: 'Ensure Required Labels'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const result = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            })
+            const labels = result.data.labels.map((label) => label.name)
+            const hasNewsLabels = labels.some((label) => label === 'news' || label === 'skip news' )
+
+            if (hasNewsLabels) {
+              console.log('This PR has the required "news" or "skip news" labels.')
+            } else {
+              console.error('Please add "news" or "skip news" labels to the PR.')
+            }
+
+            const hasLabels = labels.some((label) => label === 'bug' || label === 'feature' || label === 'code health' )
+
+            if (hasLabels) {
+              console.log('This PR has the required "bug", "feature" or "code health" labels.')
+            } else {
+              console.error('Please add "bug", "feature" or "code health" labels to the PR.')
+            }
