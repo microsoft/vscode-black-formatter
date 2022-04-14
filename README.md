@@ -11,6 +11,7 @@ Note:
 ## Usage
 
 Once installed in Visual Studio Code, "Black Formatter" will be available as a formatter for python files. Please select "Black Formatter" (extension id:`ms-python.black-formatter`) as the default formatter. You can do this either by using the context menu (right click on a open python file in the editor) and select "Format Document With...", or you can add the following to your settings:
+
 ```json
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
@@ -20,6 +21,7 @@ Once installed in Visual Studio Code, "Black Formatter" will be available as a f
 ### Format on save
 
 You can enable format on save for python by having the following values in your settings:
+
 ```json
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
@@ -28,13 +30,14 @@ You can enable format on save for python by having the following values in your 
 ```
 
 ### Disabling formatting with `black`
+
 If you want to disable Black formatter, you can [disable this extension](https://code.visualstudio.com/docs/editor/extension-marketplace#_disable-an-extension) per workspace in Visual Studio Code.
 
 ## Settings
 
 | Settings              | Default | Description                                                                                                                                                                                                                                                              |
 | --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| black-formatter.args  | `[]`    | Custom arguments passed to `black`. E.g `"black.args" = ["--config", "<file>"]`                                                                                                                                                                                          |
+| black-formatter.args  | `[]`    | Custom arguments passed to `black`. E.g `"black-formatter.args" = ["--config", "<file>"]`                                                                                                                                                                                |
 | black-formatter.trace | `error` | Sets the tracing level for the extension.                                                                                                                                                                                                                                |
 | black-formatter.path  | `[]`    | Setting to provide custom `black` executable. This will slow down formatting, since we will have to run `black` executable every time or file save or open. Example 1: `["~/global_env/black"]` Example 2: `["conda", "run", "-n", "lint_env", "python", "-m", "black"]` |
 
