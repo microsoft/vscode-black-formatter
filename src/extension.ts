@@ -6,18 +6,20 @@ import { LanguageClient } from 'vscode-languageclient/node';
 import { restartFormatServer } from './common/formatLS';
 import { initializeFileLogging, registerLogger, setLoggingLevel, traceLog, traceVerbose } from './common/logging';
 import { OutputChannelLogger } from './common/outputChannelLogger';
-import { getInterpreterPath, initializePython, onDidChangePythonInterpreter } from './common/python';
+import { getInterpreterDetails, initializePython, onDidChangePythonInterpreter } from './common/python';
 import { checkIfConfigurationChanged, getFormatterExtensionSettings, ISettings } from './common/settings';
 import { loadFormatterDefaults } from './common/setup';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 
-function setupLogging(settings: ISettings, outputChannel: vscode.OutputChannel, disposables: vscode.Disposable[]) {
-    setLoggingLevel(settings.trace);
-
+function setupLogging(settings: ISettings[], outputChannel: vscode.OutputChannel, disposables: vscode.Disposable[]) {
     // let error: unknown;
-    // if (settings.logPath && settings.logPath.length > 0) {
-    //     error = initializeFileLogging(settings.logPath, disposables);
-    // }
+    if (settings.length > 0) {
+        setLoggingLevel(settings[0].trace);
+
+        // if (settings.logPath && settings.logPath.length > 0) {
+        //     error = initializeFileLogging(settings.logPath, disposables);
+        // }
+    }
 
     disposables.push(registerLogger(new OutputChannelLogger(outputChannel)));
 
@@ -33,7 +35,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // the first thing that we do in this extension.
     const formatter = loadFormatterDefaults();
 
-    const settings = getFormatterExtensionSettings(formatter.module);
+    const settings = await getFormatterExtensionSettings(formatter.module);
 
     const formatterName = `${formatter.name} Formatter`;
     const formatterId = `${formatter.module}-formatter`;
@@ -47,40 +49,40 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     traceLog(`Formatter Module: ${formatter.module}`);
     traceVerbose(`Formatter configuration: ${JSON.stringify(formatter)}`);
 
-    const runServer = async (interpreterPath: string) => {
-        lsClient = await restartFormatServer(
-            interpreterPath,
-            formatterId,
-            formatterName,
-            outputChannel,
-            {
-                settings: getFormatterExtensionSettings(formatter.module),
-            },
-            lsClient,
-        );
+    const runServer = async () => {
+        const interpreter = await getInterpreterDetails();
+        if (interpreter.path) {
+            lsClient = await restartFormatServer(
+                interpreter.path,
+                formatterId,
+                formatterName,
+                outputChannel,
+                {
+                    settings: await getFormatterExtensionSettings(formatter.module, true),
+                },
+                lsClient,
+            );
+        }
     };
 
     context.subscriptions.push(
-        onDidChangePythonInterpreter(async (interpreterPath: string) => {
-            await runServer(interpreterPath);
+        onDidChangePythonInterpreter(async () => {
+            await runServer();
         }),
     );
 
     context.subscriptions.push(
         registerCommand(`${formatter.module}-formatter.restart`, async () => {
-            const interpreterPath = await getInterpreterPath(context.subscriptions);
-            await runServer(interpreterPath);
+            await runServer();
         }),
     );
 
     context.subscriptions.push(
         onDidChangeConfiguration(async (e: vscode.ConfigurationChangeEvent) => {
             if (checkIfConfigurationChanged(e, formatter.module)) {
-                const newSettings = getFormatterExtensionSettings(formatter.module);
-                setLoggingLevel(newSettings.trace);
-
-                const interpreterPath = await getInterpreterPath(context.subscriptions);
-                await runServer(interpreterPath);
+                const newSettings = await getFormatterExtensionSettings(formatter.module);
+                setLoggingLevel(newSettings[0].trace);
+                await runServer();
             }
         }),
     );

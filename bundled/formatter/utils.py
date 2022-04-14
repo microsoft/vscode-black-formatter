@@ -1,30 +1,37 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """
-Utility functions and classes for use with LSP.
+Utility functions and classes for use with running tools over LSP.
 """
 
 
 import contextlib
 import importlib
 import io
+import os
 import os.path
 import runpy
 import site
 import subprocess
 import sys
-from typing import Any, List, Sequence
+import threading
+from typing import Any, List, Sequence, Tuple, Union
 
 from packaging.version import parse
 
+# Save the working directory used when loading this module
+SERVER_CWD = os.getcwd()
+CWD_LOCK = threading.Lock()
 
-def as_list(content):
+
+def as_list(content: Union[Any, List[Any], Tuple[Any]]) -> Union[List[Any], Tuple[Any]]:
     """Ensures we always get a list"""
     if isinstance(content, (list, tuple)):
         return content
     return [content]
 
 
+# pylint: disable-next=consider-using-generator
 _site_paths = tuple(
     [
         os.path.normcase(os.path.normpath(p))
@@ -33,13 +40,27 @@ _site_paths = tuple(
 )
 
 
-def is_stdlib_file(file_path):
+def is_same_path(file_path1, file_path2) -> bool:
+    """Returns true if two paths are the same."""
+    return os.path.normcase(os.path.normpath(file_path1)) == os.path.normcase(
+        os.path.normpath(file_path2)
+    )
+
+
+def is_current_interpreter(executable) -> bool:
+    """Returns true if the executable path is same as the current interpreter."""
+    return is_same_path(executable, sys.executable)
+
+
+def is_stdlib_file(file_path) -> bool:
     """Return True if the file belongs to standard library."""
     return os.path.normcase(os.path.normpath(file_path)).startswith(_site_paths)
 
 
-def _get_formatter_version_by_path(settings_path: List[str]) -> str:
-    """Extract version number when using path to run formatter."""
+def get_executable_version(
+    settings_path: List[str],
+):
+    """Extract version number when using path to run."""
     try:
         args = settings_path + ["--version"]
         result = subprocess.run(
@@ -53,57 +74,23 @@ def _get_formatter_version_by_path(settings_path: List[str]) -> str:
         pass
 
     # This is to just get the version number:
-    # > black --version
-    # black, 22.3.0 (compiled: yes)
-    #        ^----^ this is all we want
+    # > pylint --version
+    # pylint 2.12.2  <--- this is all we want
+    # astroid 2.9.3
+    # Python 3.10.2 (tags/v3.10.2:a58ebcc, Jan 17 2022, 14:12:15) [MSC v.1929 64 bit (AMD64)]
     first_line = result.stdout.splitlines(keepends=False)[0]
-    return first_line.split(" ")[1]
+    return parse(first_line.split(" ")[1])
 
 
-def _get_formatter_version_by_module(module):
-    """Extracts formatter version when using the module to format."""
+def get_module_version(module):
+    """Extracts version from a module."""
     imported = importlib.import_module(module)
-    return imported.__getattr__("__version__")
+    return parse(imported.__getattr__("__version__"))
 
 
-def get_formatter_options_by_version(raw_options, formatter_path):
-    """Gets the settings based on the version of the formatter."""
-    name = raw_options["name"]
-    module = raw_options["module"]
-
-    default = {
-        "name": name,
-        "module": module,
-        "args": raw_options["patterns"]["default"]["args"],
-    }
-
-    options = default
-
-    if len(raw_options["patterns"]) == 1:
-        return options
-
-    try:
-        version = parse(
-            _get_formatter_version_by_path(formatter_path)
-            if len(formatter_path) > 0
-            else _get_formatter_version_by_module(module)
-        )
-    except Exception:
-        return options
-
-    for ver in filter(lambda k: not k == "default", raw_options["patterns"].keys()):
-        if version >= parse(ver):
-            options = {
-                "name": name,
-                "module": module,
-                "args": raw_options["patterns"][ver]["args"],
-            }
-
-    return options
-
-
-class FormatterResult:
-    """Object to hold result from running formatter."""
+# pylint: disable-next=too-few-public-methods
+class RunResult:
+    """Object to hold result from running tool."""
 
     def __init__(self, stdout, stderr):
         self.stdout = stdout
@@ -121,7 +108,7 @@ class CustomIO(io.TextIOWrapper):
         super().__init__(self._buffer, encoding=encoding, newline=newline)
 
     def close(self):
-        """Provide this close method which is used by some formatters."""
+        """Provide this close method which is used by some tools."""
         # This is intentionally empty.
 
     def get_value(self) -> str:
@@ -148,10 +135,18 @@ def redirect_io(stream: str, new_stream):
     setattr(sys, stream, old_stream)
 
 
-def run_module(
+@contextlib.contextmanager
+def change_cwd(new_cwd):
+    """Change working directory before running code."""
+    os.chdir(new_cwd)
+    yield
+    os.chdir(SERVER_CWD)
+
+
+def _run_module(
     module: str, argv: Sequence[str], use_stdin: bool, source: str = None
-) -> FormatterResult:
-    """Runs formatter as a module."""
+) -> RunResult:
+    """Runs as a module."""
     str_output = CustomIO("<stdout>", encoding="utf-8")
     str_error = CustomIO("<stderr>", encoding="utf-8")
 
@@ -159,26 +154,35 @@ def run_module(
         with substitute_attr(sys, "argv", argv):
             with redirect_io("stdout", str_output):
                 with redirect_io("stderr", str_error):
-                    if use_stdin and source:
+                    if use_stdin and source is not None:
                         str_input = CustomIO("<stdin>", encoding="utf-8", newline="\n")
                         with redirect_io("stdin", str_input):
                             str_input.write(source)
                             str_input.seek(0)
-                            runpy.run_module(
-                                module, run_name="__main__", alter_sys=True
-                            )
+                            runpy.run_module(module, run_name="__main__")
                     else:
-                        runpy.run_module(module, run_name="__main__", alter_sys=True)
+                        runpy.run_module(module, run_name="__main__")
     except SystemExit:
         pass
 
-    return FormatterResult(str_output.get_value(), str_error.get_value())
+    return RunResult(str_output.get_value(), str_error.get_value())
+
+
+def run_module(
+    module: str, argv: Sequence[str], use_stdin: bool, cwd: str, source: str = None
+) -> RunResult:
+    """Runs as a module."""
+    with CWD_LOCK:
+        if is_same_path(os.getcwd(), cwd):
+            return _run_module(module, argv, use_stdin, source)
+        with change_cwd(cwd):
+            return _run_module(module, argv, use_stdin, source)
 
 
 def run_path(
-    argv: Sequence[str], use_stdin: bool, source: str = None
-) -> FormatterResult:
-    """Runs formatter as an executable."""
+    argv: Sequence[str], use_stdin: bool, cwd: str, source: str = None
+) -> RunResult:
+    """Runs as an executable."""
     if use_stdin:
         with subprocess.Popen(
             argv,
@@ -186,8 +190,9 @@ def run_path(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE,
+            cwd=cwd,
         ) as process:
-            return FormatterResult(*process.communicate(input=source))
+            return RunResult(*process.communicate(input=source))
     else:
         result = subprocess.run(
             argv,
@@ -195,5 +200,6 @@ def run_path(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
+            cwd=cwd,
         )
-        return FormatterResult(result.stdout, result.stderr)
+        return RunResult(result.stdout, result.stderr)

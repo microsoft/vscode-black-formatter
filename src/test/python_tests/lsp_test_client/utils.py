@@ -50,10 +50,14 @@ def get_initialization_options():
 
     formatter = package_json["formatter"]
     properties = package_json["contributes"]["configuration"]["properties"]
-    settings = {
-        "trace": "error",
-        "args": properties[f"{formatter['module']}-formatter.args"]["default"],
-        "path": properties[f"{formatter['module']}-formatter.path"]["default"],
-    }
+    settings = [
+        {
+            "trace": "error",
+            "args": properties[f"{formatter['module']}-formatter.args"]["default"],
+            "path": properties[f"{formatter['module']}-formatter.path"]["default"],
+            "workspace": as_uri(str(PROJECT_ROOT)),
+            "interpreter": [],
+        }
+    ]
 
     return {"settings": settings}

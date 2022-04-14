@@ -5,30 +5,26 @@ Implementation of formatting support over LSP.
 """
 import ast
 import json
+import os
 import pathlib
 import sys
 import traceback
 from typing import List, Union
 
-# Ensure that will can import LSP libraries, and other bundled formatter libraries
+# Ensure that we can import LSP libraries, and other bundled formatter libraries
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "libs"))
 
 import utils
-from pygls import lsp, protocol, server, workspace
+from pygls import lsp, protocol, server, uris, workspace
 from pygls.lsp import types
 
-all_configurations = {
+FORMATTER = {
     "name": "Black",
     "module": "black",
-    "patterns": {
-        "default": {
-            "args": [],
-        }
-    },
+    "args": [],
 }
-
-SETTINGS = {}
-FORMATTER = {}
+WORKSPACE_SETTINGS = {}
+RUNNER = pathlib.Path(__file__).parent / "runner.py"
 
 MAX_WORKERS = 5
 LSP_SERVER = server.LanguageServer(max_workers=MAX_WORKERS)
@@ -108,6 +104,30 @@ def _get_filename_for_black(document: workspace.Document) -> Union[str, None]:
     return document.path
 
 
+def _update_workspace_settings(settings):
+    for setting in settings:
+        key = uris.to_fs_path(setting["workspace"])
+        WORKSPACE_SETTINGS[key] = {
+            **setting,
+            "workspaceFS": key,
+        }
+
+
+def _get_settings_by_document(document: workspace.Document):
+    if len(WORKSPACE_SETTINGS) == 1 or document.path is None:
+        return list(WORKSPACE_SETTINGS.values())[0]
+
+    document_workspace = pathlib.Path(document.path)
+    workspaces = [s["workspaceFS"] for s in WORKSPACE_SETTINGS.values()]
+
+    while document_workspace != document_workspace.parent:
+        if str(document_workspace) in workspaces:
+            break
+        document_workspace = document_workspace.parent
+
+    return WORKSPACE_SETTINGS[str(document_workspace)]
+
+
 def _format(
     params: types.DocumentFormattingParams,
 ) -> Union[List[types.TextEdit], None]:
@@ -118,15 +138,33 @@ def _format(
         # Don't format standard library python files.
         return None
 
-    module = FORMATTER["module"]
-    use_path = len(SETTINGS["path"]) > 0
+    settings = _get_settings_by_document(document)
 
-    argv = SETTINGS["path"] if use_path else [module]
-    argv += _filter_args(FORMATTER["args"] + SETTINGS["args"])
+    module = FORMATTER["module"]
+    cwd = settings["workspaceFS"]
+
+    if len(settings["path"]) > 0:
+        # 'path' setting takes priority over everything.
+        use_path = True
+        argv = settings["path"]
+    elif len(settings["interpreter"]) > 0 and not utils.is_current_interpreter(
+        settings["interpreter"][0]
+    ):
+        # If there is a different interpreter set use that interpreter.
+        argv = settings["interpreter"] + [str(RUNNER), module]
+        use_path = True
+    else:
+        # if the interpreter is same as the interpreter running this
+        # process then run as module.
+        argv = [FORMATTER["module"]]
+        use_path = False
+
+    argv += _filter_args(FORMATTER["args"] + settings["args"])
     argv += _get_args_by_file_extension(document)
     argv += ["--stdin-filename", _get_filename_for_black(document), "-"]
 
     LSP_SERVER.show_message_log(" ".join(argv))
+    LSP_SERVER.show_message_log(f"CWD Formatter: {cwd}")
 
     # Force line endings to be `\n`, this makes the diff
     # easier to work with
@@ -134,9 +172,11 @@ def _format(
 
     try:
         if use_path:
-            result = utils.run_path(argv, True, source)
+            result = utils.run_path(argv=argv, use_stdin=True, cwd=cwd, source=source)
         else:
-            result = utils.run_module(module, argv, True, source)
+            result = utils.run_module(
+                module=module, argv=argv, use_stdin=True, cwd=cwd, source=source
+            )
     except Exception:
         LSP_SERVER.show_message_log(
             traceback.format_exc(), msg_type=types.MessageType.Error
@@ -172,29 +212,27 @@ def _format(
 @LSP_SERVER.feature(lsp.INITIALIZE)
 def initialize(params: types.InitializeParams):
     """LSP handler for initialize request."""
+    LSP_SERVER.show_message_log(f"CWD Format Server: {os.getcwd()}")
+
     paths = "\r\n    ".join(sys.path)
     LSP_SERVER.show_message_log(f"sys.path used to run Formatter:\r\n    {paths}\r\n")
-    # First get workspace settings to know if we are using formatter
-    # module or binary.
-    global SETTINGS
-    SETTINGS = params.initialization_options["settings"]
-    LSP_SERVER.show_message_log(
-        f"Settings used to run Formatter:\r\n{json.dumps(SETTINGS, indent=4, ensure_ascii=False)}\r\n"
-    )
 
-    global FORMATTER
-    FORMATTER = utils.get_formatter_options_by_version(
-        all_configurations,
-        SETTINGS["path"] if len(SETTINGS["path"]) > 0 else None,
+    settings = params.initialization_options["settings"]
+    _update_workspace_settings(settings)
+    LSP_SERVER.show_message_log(
+        f"Settings used to run Formatter:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
     )
 
     if isinstance(LSP_SERVER.lsp, protocol.LanguageServerProtocol):
-        if SETTINGS["trace"] == "debug":
-            LSP_SERVER.lsp.trace = lsp.Trace.Verbose
-        elif SETTINGS["trace"] == "off":
-            LSP_SERVER.lsp.trace = lsp.Trace.Off
-        else:
-            LSP_SERVER.lsp.trace = lsp.Trace.Messages
+        trace = lsp.Trace.Off
+        for setting in settings:
+            if setting["trace"] == "debug":
+                trace = lsp.Trace.Verbose
+                break
+            if setting["trace"] == "off":
+                continue
+            trace = lsp.Trace.Messages
+        LSP_SERVER.lsp.trace = trace
 
 
 @LSP_SERVER.feature(lsp.FORMATTING)
