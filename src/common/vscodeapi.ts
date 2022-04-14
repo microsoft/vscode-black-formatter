@@ -8,9 +8,11 @@ import {
     ConfigurationScope,
     Disposable,
     OutputChannel,
+    Uri,
     window,
     workspace,
     WorkspaceConfiguration,
+    WorkspaceFolder,
 } from 'vscode';
 
 export function createOutputChannel(name: string): OutputChannel {
@@ -30,4 +32,12 @@ export const { onDidChangeConfiguration } = workspace;
 export function isVirtualWorkspace(): boolean {
     const isVirtual = workspace.workspaceFolders && workspace.workspaceFolders.every((f) => f.uri.scheme !== 'file');
     return !!isVirtual;
+}
+
+export function getWorkspaceFolders(): readonly WorkspaceFolder[] {
+    return workspace.workspaceFolders ?? [];
+}
+
+export function getWorkspaceFolder(uri: Uri): WorkspaceFolder | undefined {
+    return workspace.getWorkspaceFolder(uri);
 }
