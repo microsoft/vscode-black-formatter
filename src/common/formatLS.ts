@@ -56,7 +56,6 @@ export async function createFormatServer(
                   { scheme: 'untitled', language: 'python' },
                   { scheme: 'vscode-notebook', language: 'python' },
                   { scheme: 'vscode-notebook-cell', language: 'python' },
-                  { scheme: 'vscode-interactive-input', language: 'python' },
               ],
         outputChannel: outputChannel,
         traceOutputChannel: outputChannel,
