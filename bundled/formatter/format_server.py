@@ -178,13 +178,22 @@ def _format(
                 module=module, argv=argv, use_stdin=True, cwd=cwd, source=source
             )
     except Exception:
-        LSP_SERVER.show_message_log(
-            traceback.format_exc(), msg_type=types.MessageType.Error
+        error_text = traceback.format_exc()
+        LSP_SERVER.show_message_log(error_text, msg_type=types.MessageType.Error)
+        LSP_SERVER.show_message(
+            f"Formatting error, please see Output > Black Formatter for more info:\r\n{error_text}",
+            msg_type=types.MessageType.Error,
         )
         return None
 
     if result.stderr:
         LSP_SERVER.show_message_log(result.stderr, msg_type=types.MessageType.Error)
+        if result.stderr.find("Error:") or result.stderr.find("error:"):
+            LSP_SERVER.show_message(
+                f"Formatting error, please see Output > Black Formatter for more info:\r\n{result.stderr}",
+                msg_type=types.MessageType.Error,
+            )
+            return None
 
     new_source = _match_line_endings(document, result.stdout)
 
@@ -195,7 +204,7 @@ def _format(
         elif new_source.endswith("\n"):
             new_source = new_source[:-1]
 
-    if new_source == document.source:
+    if new_source == document.source or not result.stdout:
         return None
 
     return [
