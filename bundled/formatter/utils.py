@@ -92,9 +92,9 @@ def get_module_version(module):
 class RunResult:
     """Object to hold result from running tool."""
 
-    def __init__(self, stdout, stderr):
-        self.stdout = stdout
-        self.stderr = stderr
+    def __init__(self, stdout: str, stderr: str):
+        self.stdout: str = stdout
+        self.stderr: str = stderr
 
 
 class CustomIO(io.TextIOWrapper):
