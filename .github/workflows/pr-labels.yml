@@ -28,7 +28,7 @@ jobs:
             if (hasNewsLabels) {
               console.log('This PR has the required "news" or "skip news" labels.')
             } else {
-              console.error('Please add "news" or "skip news" labels to the PR.')
+              core.setFailed('Please add "news" or "skip news" labels to the PR.')
             }
 
             const hasLabels = labels.some((label) => label === 'bug' || label === 'feature' || label === 'code health' )
@@ -36,5 +36,5 @@ jobs:
             if (hasLabels) {
               console.log('This PR has the required "bug", "feature" or "code health" labels.')
             } else {
-              console.error('Please add "bug", "feature" or "code health" labels to the PR.')
+              core.setFailed('Please add "bug", "feature" or "code health" labels to the PR.')
             }

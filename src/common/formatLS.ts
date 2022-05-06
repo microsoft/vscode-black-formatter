@@ -39,10 +39,10 @@ export async function createFormatServer(
     outputChannel: OutputChannel,
     initializationOptions: IFormatterInitOptions,
 ): Promise<LanguageClient> {
-    const command = interpreter.shift() ?? 'python';
+    const command = interpreter[0];
     const serverOptions: ServerOptions = {
         command,
-        args: interpreter.concat([FORMATTER_SCRIPT_PATH]),
+        args: interpreter.slice(1).concat([FORMATTER_SCRIPT_PATH]),
         options: { cwd: getProjectRoot() },
     };
 
