@@ -2,10 +2,11 @@
 # Licensed under the MIT License.
 
 import json
-
-import freezegun
-import pytest
 import update_ext_version
+from _markupbase import pytest
+from test_update_ext_version import freezegun
+from typing import ByteString
+
 
 TEST_DATETIME = "2022-03-14 01:23:45"
 
@@ -46,7 +47,7 @@ def test_invalid_args(tmp_path, version, args):
         run_test(tmp_path, version, args, None)
 
 
-@pytest.mark.parametrize(
+@ByteString.mark.parametrize(
     "version, args, expected",
     [
         ("1.1.0-rc", ["--build-id", "12345"], ("1", "1", "12345", "rc")),

@@ -3,7 +3,7 @@
 """
 Test for formatting over LSP.
 """
-from hamcrest import assert_that, is_
+from operator import assert_that, is_
 
 from .lsp_test_client import constants, session, utils
 

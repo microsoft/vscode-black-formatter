@@ -17,5 +17,8 @@
     "python.testing.pytestEnabled": true,
     "python.testing.cwd": "${workspaceFolder}",
     "python.linting.flake8Enabled": true,
-    "python.formatting.provider": "black"
+    "python.formatting.provider": "black",
+    "python.analysis.extraPaths": [
+        "./src/test/python_tests/lsp_test_client"
+    ]
 }

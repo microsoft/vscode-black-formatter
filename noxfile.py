@@ -8,7 +8,7 @@ import json
 import pathlib
 import re
 
-import nox
+from session import nox
 
 
 @nox.session(python="3.7")
