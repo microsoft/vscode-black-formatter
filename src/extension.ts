@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import * as vscode from 'vscode';
-import { LanguageClient } from 'vscode-languageclient/node';
+import * as vscode from 'vscode-languageclient';
+import { LanguageClient } from "vscode-languageclient/node";
 import { restartFormatServer } from './common/formatLS';
-import { initializeFileLogging, registerLogger, setLoggingLevel, traceLog, traceVerbose } from './common/logging';
+import { registerLogger, setLoggingLevel, traceLog, traceVerbose } from './common/logging';
 import { OutputChannelLogger } from './common/outputChannelLogger';
 import { getInterpreterDetails, initializePython, onDidChangePythonInterpreter } from './common/python';
 import { checkIfConfigurationChanged, getFormatterExtensionSettings, ISettings } from './common/settings';
@@ -87,9 +87,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
     );
 
-    setImmediate(async () => {
+    setImmediate (async () => {
         traceVerbose(`Python extension loading`);
         await initializePython(context.subscriptions);
         traceVerbose(`Python extension loaded`);
     });
 }
+function setImmediate(arg0: () => Promise<void>) {
+    throw new Error('Function not implemented.');
+}
+
