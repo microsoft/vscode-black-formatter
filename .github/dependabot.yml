@@ -6,7 +6,7 @@ updates:
       interval: daily
     labels:
       - 'skip news'
-      - 'code health'
+      - 'debt'
 
   - package-ecosystem: 'pip'
     directory: /src/test/python_tests
@@ -14,7 +14,7 @@ updates:
       interval: daily
     labels:
       - 'skip news'
-      - 'code health'
+      - 'debt'
 
   - package-ecosystem: 'pip'
     directory: /
@@ -22,7 +22,7 @@ updates:
       interval: daily
     labels:
       - 'news'
-      - 'code health'
+      - 'debt'
     commit-message:
       include: 'scope'
       prefix: 'pip'
@@ -33,7 +33,7 @@ updates:
       interval: weekly
     labels:
       - 'skip news'
-      - 'code health'
+      - 'debt'
     ignore:
       - dependency-name: '@types/vscode'
       - dependency-name: '@types/node'
