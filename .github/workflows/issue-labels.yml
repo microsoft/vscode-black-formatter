@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   # From https://github.com/marketplace/actions/github-script#apply-a-label-to-an-issue.
-  add-triage-needed-label:
+  add-triage-label:
     name: "Add 'triage-needed'"
     runs-on: ubuntu-latest
     steps:

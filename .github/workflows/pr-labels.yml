@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   # From https://github.com/marketplace/actions/github-script#apply-a-label-to-an-issue.
-  add-classify-label:
+  add-pr-label:
     name: 'Ensure Required Labels'
     runs-on: ubuntu-latest
     steps:
