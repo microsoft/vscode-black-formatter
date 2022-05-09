@@ -6,15 +6,15 @@ changelog:
   categories:
     - title: Bug Fixes
       labels:
-        - bug
-        - news
+        - 'bug'
+        - 'news'
 
     - title: Enhancements
       labels:
-        - feature
-        - news
+        - 'feature-request'
+        - 'news'
 
     - title: Code Health
       labels:
-        - 'code health'
-        - news
+        - 'debt'
+        - 'news'

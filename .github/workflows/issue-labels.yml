@@ -9,8 +9,8 @@ permissions:
 
 jobs:
   # From https://github.com/marketplace/actions/github-script#apply-a-label-to-an-issue.
-  add-classify-label:
-    name: "Add 'classify'"
+  add-triage-label:
+    name: "Add 'triage-needed'"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v6
@@ -26,14 +26,14 @@ jobs:
             const hasNeeds = labels.some((label) => label.startsWith('needs'))
 
             if (!hasNeeds) {
-              console.log('This issue is not labeled with a "needs __" label, add the "classify" label.')
+              console.log('This issue is not labeled with a "needs __" label, add the "triage-needed" label.')
 
               github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                labels: ['classify']
+                labels: ['triage-needed']
               })
             } else {
-              console.log('This issue already has a "needs __" label, do not add the "classify" label.')
+              console.log('This issue already has a "needs __" label, do not add the "triage-needed" label.')
             }
