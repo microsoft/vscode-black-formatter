@@ -113,7 +113,7 @@
     },
     "dependencies": {
         "fs-extra": "^10.1.0",
-        "vscode-languageclient": "^7.0.0"
+        "vscode-languageclient": "^8.0.1"
     },
     "devDependencies": {
         "@types/fs-extra": "^9.0.13",
