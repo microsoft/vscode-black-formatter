@@ -134,8 +134,9 @@ def _format(
     """Runs formatter, processes the output, and returns text edits."""
     document = LSP_SERVER.workspace.get_document(params.text_document.uri)
 
-    if utils.is_stdlib_file(document.path):
-        # Don't format standard library python files.
+    if utils.is_stdlib_file(document.path) or not is_python(document.source):
+        # Don't format standard library python files. Or, invalid python code
+        # or non-python code in case of notebooks
         return None
 
     settings = _get_settings_by_document(document)
