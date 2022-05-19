@@ -30,6 +30,15 @@ const extensionConfig = {
     module: {
         rules: [
             {
+                // vscode-nls-dev loader:
+                // * rewrite nls-calls
+                loader: 'vscode-nls-dev/lib/webpack-loader',
+                options: {
+                  // start with this being set to where your package.json is
+                  base: __dirname,
+                },
+            },
+            {
                 test: /\.ts$/,
                 exclude: /node_modules/,
                 use: [
