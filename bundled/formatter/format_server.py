@@ -4,6 +4,7 @@
 Implementation of formatting support over LSP.
 """
 import ast
+import copy
 import json
 import os
 import pathlib
@@ -139,15 +140,14 @@ def _format(
         # or non-python code in case of notebooks
         return None
 
-    settings = _get_settings_by_document(document)
+    settings = copy.deepcopy(_get_settings_by_document(document))
 
     module = FORMATTER["module"]
     cwd = settings["workspaceFS"]
-
     if len(settings["path"]) > 0:
         # 'path' setting takes priority over everything.
-        use_path = True
         argv = settings["path"]
+        use_path = True
     elif len(settings["interpreter"]) > 0 and not utils.is_current_interpreter(
         settings["interpreter"][0]
     ):
@@ -163,7 +163,6 @@ def _format(
     argv += _filter_args(FORMATTER["args"] + settings["args"])
     argv += _get_args_by_file_extension(document)
     argv += ["--stdin-filename", _get_filename_for_black(document), "-"]
-
     LSP_SERVER.show_message_log(" ".join(argv))
     LSP_SERVER.show_message_log(f"CWD Formatter: {cwd}")
 
@@ -178,6 +177,7 @@ def _format(
             result = utils.run_module(
                 module=module, argv=argv, use_stdin=True, cwd=cwd, source=source
             )
+
     except Exception:
         error_text = traceback.format_exc()
         LSP_SERVER.show_message_log(error_text, msg_type=types.MessageType.Error)
@@ -228,6 +228,7 @@ def initialize(params: types.InitializeParams):
     LSP_SERVER.show_message_log(f"sys.path used to run Formatter:\r\n    {paths}\r\n")
 
     settings = params.initialization_options["settings"]
+
     _update_workspace_settings(settings)
     LSP_SERVER.show_message_log(
         f"Settings used to run Formatter:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
