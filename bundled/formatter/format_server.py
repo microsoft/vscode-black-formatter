@@ -3,7 +3,6 @@
 """
 Implementation of formatting support over LSP.
 """
-import ast
 import json
 import os
 import pathlib
