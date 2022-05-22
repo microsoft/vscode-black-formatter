@@ -131,20 +131,25 @@ def _get_error_message_from_stderr(stderr: str) -> str:
     first_line_priority = 1
 
     for line in map(str.strip, stderr.splitlines()):
-        if line.lower().startswith('error:'):
+        if line.lower().startswith("error:"):
             error, *parse_error = line.lower().split("cannot parse:")
             if parse_error:
                 # the most relevant thing here is the line that couldn't be parsed, so show it first
-                filename = error.replace("error:", "").replace("cannot format", "").strip()
+                filename = (
+                    error.replace("error:", "").replace("cannot format", "").strip()
+                )
                 message.append(
-                    (first_line_priority, f"Error: {parse_error[0]} cannot be parsed in {filename}")
+                    (
+                        first_line_priority,
+                        f"Error: {parse_error[0]} cannot be parsed in {filename}",
                     )
+                )
             else:
                 message.append((first_line_priority, line))
         else:
             message.append((current_priority, line))
             current_priority -= 1
-    
+
     return "  ".join(line for _, line in sorted(message, reverse=True))
 
 
@@ -202,7 +207,9 @@ def _format(
             )
     except Exception as e:
         # this is quite unexpected and we should never end up here
-        error_text = f"Encountered exception while executing black:\r\n{traceback.format_exc()}"
+        error_text = (
+            f"Encountered exception while executing black:\r\n{traceback.format_exc()}"
+        )
         LSP_SERVER.show_message_log(error_text, msg_type=types.MessageType.Error)
         LSP_SERVER.show_message(
             f"Fatal error: {e!r}, please see Output > Black Formatter for more info",
@@ -213,9 +220,11 @@ def _format(
     if result.stderr:
         LSP_SERVER.show_message_log(result.stderr, msg_type=types.MessageType.Error)
         if "error:" in result.stderr.lower() and settings["show-formatting-messages"]:
-            LSP_SERVER.show_message(_get_error_message_from_stderr(result.stderr), msg_type=types.MessageType.Error)
+            LSP_SERVER.show_message(
+                _get_error_message_from_stderr(result.stderr),
+                msg_type=types.MessageType.Error,
+            )
         # not going to exit just yet, check if black gave us any stdout first
-        
 
     new_source = _match_line_endings(document, result.stdout)
 
@@ -273,7 +282,9 @@ def formatting(_server: server.LanguageServer, params: types.DocumentFormattingP
         return _format(params)
     except Exception as e:
         # gracefully handle error and notify the user
-        LSP_SERVER.show_message_log(traceback.format_exc(), msg_type=types.MessageType.Error)
+        LSP_SERVER.show_message_log(
+            traceback.format_exc(), msg_type=types.MessageType.Error
+        )
         LSP_SERVER.show_message(
             f"Fatal error: {e!r}, please see Output > Black Formatter for more info",
             msg_type=types.MessageType.Error,
