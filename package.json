@@ -92,6 +92,12 @@
                     "scope": "resource",
                     "type": "array"
                 },
+                "black-formatter.show-formatting-messages": {
+                    "default": true,
+                    "description": "Whether to show messages in UI when extension didn't format file for any reason.",
+                    "type": "boolean",
+                    "scope": "resource"
+                },
                 "black-formatter.path": {
                     "default": [],
                     "description": "When set to a path to black binary, extension will use that for formatting. NOTE: Using this option may slowdown formatting.",

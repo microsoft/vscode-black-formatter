@@ -30,15 +30,6 @@ MAX_WORKERS = 5
 LSP_SERVER = server.LanguageServer(max_workers=MAX_WORKERS)
 
 
-def is_python(code: str) -> bool:
-    """Ensures that the code provided is python."""
-    try:
-        ast.parse(code)
-    except SyntaxError:
-        return False
-    return True
-
-
 def _get_args_by_file_extension(document: workspace.Document) -> List[str]:
     """Returns arguments used by black based on file extensions."""
     if document.uri.startswith("vscode-notebook-cell"):
@@ -128,18 +119,50 @@ def _get_settings_by_document(document: workspace.Document):
     return WORKSPACE_SETTINGS[str(document_workspace)]
 
 
+def _get_error_message_from_stderr(stderr: str) -> str:
+    """
+    Compose error message from stderr, while trying to display most relevant data first.
+
+    Reason: message window in vscode is minimized and doesn't always show full message.
+    This will hopefully reduce amount of times when user have to interact with that window.
+    """
+    message: "list[tuple[int, str]]" = []
+
+    current_priority = 0
+    first_line_priority = 1
+
+    for line in map(str.strip, stderr.splitlines()):
+        if line.lower().startswith('error:'):
+            error, *parse_error = line.lower().split("cannot parse:")
+            if parse_error:
+                # the most relevant thing here is the line that couldn't be parsed, so show it first
+                filename = error.replace("error:", "").replace("cannot format", "").strip()
+                message.append(
+                    (first_line_priority, f"Error: {parse_error[0]} cannot be parsed in {filename}")
+                    )
+            else:
+                message.append((first_line_priority, line))
+        else:
+            message.append((current_priority, line))
+            current_priority -= 1
+    
+    return "  ".join(line for _, line in sorted(message, reverse=True))
+
+
 def _format(
     params: types.DocumentFormattingParams,
 ) -> Union[List[types.TextEdit], None]:
     """Runs formatter, processes the output, and returns text edits."""
     document = LSP_SERVER.workspace.get_document(params.text_document.uri)
 
-    if utils.is_stdlib_file(document.path) or not is_python(document.source):
-        # Don't format standard library python files. Or, invalid python code
-        # or non-python code in case of notebooks
-        return None
-
     settings = _get_settings_by_document(document)
+
+    if utils.is_stdlib_file(document.path):
+        message = f"Not going to reformat stdlib or site-packages ({document.path}), aborting..."
+        LSP_SERVER.show_message_log(message)
+        if settings["show-formatting-messages"]:
+            LSP_SERVER.show_message(message, msg_type=types.MessageType.Info)
+        return None
 
     module = FORMATTER["module"]
     cwd = settings["workspaceFS"]
@@ -178,23 +201,22 @@ def _format(
             result = utils.run_module(
                 module=module, argv=argv, use_stdin=True, cwd=cwd, source=source
             )
-    except Exception:
-        error_text = traceback.format_exc()
+    except Exception as e:
+        # this is quite unexpected and we should never end up here
+        error_text = f"Encountered exception while executing black:\r\n{traceback.format_exc()}"
         LSP_SERVER.show_message_log(error_text, msg_type=types.MessageType.Error)
         LSP_SERVER.show_message(
-            f"Formatting error, please see Output > Black Formatter for more info:\r\n{error_text}",
+            f"Fatal error: {e!r}, please see Output > Black Formatter for more info",
             msg_type=types.MessageType.Error,
         )
         return None
 
     if result.stderr:
         LSP_SERVER.show_message_log(result.stderr, msg_type=types.MessageType.Error)
-        if result.stderr.find("Error:") >= 0 or result.stderr.find("error:") >= 0:
-            LSP_SERVER.show_message(
-                f"Formatting error, please see Output > Black Formatter for more info:\r\n{result.stderr}",
-                msg_type=types.MessageType.Error,
-            )
-            return None
+        if "error:" in result.stderr.lower() and settings["show-formatting-messages"]:
+            LSP_SERVER.show_message(_get_error_message_from_stderr(result.stderr), msg_type=types.MessageType.Error)
+        # not going to exit just yet, check if black gave us any stdout first
+        
 
     new_source = _match_line_endings(document, result.stdout)
 
@@ -248,7 +270,16 @@ def initialize(params: types.InitializeParams):
 @LSP_SERVER.feature(lsp.FORMATTING)
 def formatting(_server: server.LanguageServer, params: types.DocumentFormattingParams):
     """LSP handler for textDocument/formatting request."""
-    return _format(params)
+    try:
+        return _format(params)
+    except Exception as e:
+        # gracefully handle error and notify the user
+        LSP_SERVER.show_message_log(traceback.format_exc(), msg_type=types.MessageType.Error)
+        LSP_SERVER.show_message(
+            f"Fatal error: {e!r}, please see Output > Black Formatter for more info",
+            msg_type=types.MessageType.Error,
+        )
+        return None
 
 
 if __name__ == "__main__":

@@ -29,6 +29,7 @@ export async function getFormatterExtensionSettings(
             trace: config.get<LoggingLevelSettingType>(`trace`) ?? 'error',
             args: config.get<string[]>(`args`) ?? [],
             severity: config.get<Record<string, string>>(`severity`) ?? {},
+            "show-formatting-messages": config.get<Boolean>(`show-formatting-messages`) ?? true,
             path: config.get<string[]>(`path`) ?? [],
             interpreter: interpreter ?? [],
         };
