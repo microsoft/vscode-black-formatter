@@ -6,7 +6,6 @@ Utility functions and classes for use with running tools over LSP.
 
 
 import contextlib
-import importlib
 import io
 import os
 import os.path
@@ -16,8 +15,6 @@ import subprocess
 import sys
 import threading
 from typing import Any, List, Sequence, Tuple, Union
-
-from packaging.version import parse
 
 # Save the working directory used when loading this module
 SERVER_CWD = os.getcwd()
@@ -55,37 +52,6 @@ def is_current_interpreter(executable) -> bool:
 def is_stdlib_file(file_path) -> bool:
     """Return True if the file belongs to standard library."""
     return os.path.normcase(os.path.normpath(file_path)).startswith(_site_paths)
-
-
-def get_executable_version(
-    settings_path: List[str],
-):
-    """Extract version number when using path to run."""
-    try:
-        args = settings_path + ["--version"]
-        result = subprocess.run(
-            args,
-            encoding="utf-8",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            check=False,
-        )
-    except SystemExit:
-        pass
-
-    # This is to just get the version number:
-    # > pylint --version
-    # pylint 2.12.2  <--- this is all we want
-    # astroid 2.9.3
-    # Python 3.10.2 (tags/v3.10.2:a58ebcc, Jan 17 2022, 14:12:15) [MSC v.1929 64 bit (AMD64)]
-    first_line = result.stdout.splitlines(keepends=False)[0]
-    return parse(first_line.split(" ")[1])
-
-
-def get_module_version(module):
-    """Extracts version from a module."""
-    imported = importlib.import_module(module)
-    return parse(imported.__getattr__("__version__"))
 
 
 # pylint: disable-next=too-few-public-methods

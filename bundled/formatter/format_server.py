@@ -4,17 +4,19 @@
 Implementation of formatting support over LSP.
 """
 import ast
+import copy
 import json
 import os
 import pathlib
 import sys
 import traceback
-from typing import List, Union
+from typing import List, Sequence, Union
 
 # Ensure that we can import LSP libraries, and other bundled formatter libraries
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "libs"))
 
 import utils
+from packaging.version import parse
 from pygls import lsp, protocol, server, uris, workspace
 from pygls.lsp import types
 
@@ -104,28 +106,38 @@ def _get_filename_for_black(document: workspace.Document) -> Union[str, None]:
     return document.path
 
 
-def _update_workspace_settings(settings):
-    for setting in settings:
-        key = uris.to_fs_path(setting["workspace"])
-        WORKSPACE_SETTINGS[key] = {
-            **setting,
-            "workspaceFS": key,
-        }
+def _log_version_info(path: Sequence[str]) -> None:
+    try:
+        settings = copy.deepcopy(WORKSPACE_SETTINGS)
+        workspace = settings["workspaceFS"]
+        module = FORMATTER["module"]
+        if len(path) > 0:
+            result = utils.run_path([*path, "--version"], False, workspace)
+        else:
+            result = utils.run_module(module, [module, "--version"], False, workspace)
+        LSP_SERVER.show_message_log(
+            f"Version info for Formatter running for {workspace}:\r\n{result.stdout}"
+        )
 
-
-def _get_settings_by_document(document: workspace.Document):
-    if len(WORKSPACE_SETTINGS) == 1 or document.path is None:
-        return list(WORKSPACE_SETTINGS.values())[0]
-
-    document_workspace = pathlib.Path(document.path)
-    workspaces = [s["workspaceFS"] for s in WORKSPACE_SETTINGS.values()]
-
-    while document_workspace != document_workspace.parent:
-        if str(document_workspace) in workspaces:
-            break
-        document_workspace = document_workspace.parent
-
-    return WORKSPACE_SETTINGS[str(document_workspace)]
+        MIN_VERSION = "22.3.0"
+        # This is to just get the version number:
+        # > black --version
+        # black, 22.3.0 (compiled: yes) <--- this is all we want
+        first_line = result.stdout.splitlines(keepends=False)[0]
+        actual_version = first_line.split(" ")[1]
+        version = parse(actual_version)
+        min_version = parse(MIN_VERSION)
+        if version < min_version:
+            LSP_SERVER.show_message_log(
+                f"Version of formatter running for {workspace} is less than min supported version:\r\n"
+                f"SUPPORTED {module}>={MIN_VERSION}\r\nFOUND {module}=={actual_version}\r\n"
+            )
+        else:
+            LSP_SERVER.show_message_log(
+                f"SUPPORTED {module}>={MIN_VERSION}\r\nFOUND {module}=={actual_version}\r\n"
+            )
+    except:
+        pass
 
 
 def _format(
@@ -139,7 +151,7 @@ def _format(
         # or non-python code in case of notebooks
         return None
 
-    settings = _get_settings_by_document(document)
+    settings = copy.deepcopy(WORKSPACE_SETTINGS)
 
     module = FORMATTER["module"]
     cwd = settings["workspaceFS"]
@@ -222,27 +234,30 @@ def _format(
 @LSP_SERVER.feature(lsp.INITIALIZE)
 def initialize(params: types.InitializeParams):
     """LSP handler for initialize request."""
-    LSP_SERVER.show_message_log(f"CWD Format Server: {os.getcwd()}")
+    global WORKSPACE_SETTINGS
+    WORKSPACE_SETTINGS = params.initialization_options["settings"]
+    workspace = uris.to_fs_path(WORKSPACE_SETTINGS["workspace"])
+    WORKSPACE_SETTINGS["workspaceFS"] = workspace
 
+    LSP_SERVER.show_message_log(f"CWD used for [{workspace}]: {os.getcwd()}\r\n")
     paths = "\r\n    ".join(sys.path)
-    LSP_SERVER.show_message_log(f"sys.path used to run Formatter:\r\n    {paths}\r\n")
-
-    settings = params.initialization_options["settings"]
-    _update_workspace_settings(settings)
     LSP_SERVER.show_message_log(
-        f"Settings used to run Formatter:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
+        f"sys.path used to run Formatter for [{workspace}]:\r\n    {paths}\r\n"
+    )
+    LSP_SERVER.show_message_log(
+        f"Settings used to run Formatter for [{workspace}]:\r\n{json.dumps(WORKSPACE_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
     )
 
     if isinstance(LSP_SERVER.lsp, protocol.LanguageServerProtocol):
-        trace = lsp.Trace.Off
-        for setting in settings:
-            if setting["trace"] == "debug":
-                trace = lsp.Trace.Verbose
-                break
-            if setting["trace"] == "off":
-                continue
+        if WORKSPACE_SETTINGS["trace"] == "debug":
+            trace = lsp.Trace.Verbose
+        elif WORKSPACE_SETTINGS["trace"] == "off":
+            trace = lsp.Trace.Off
+        else:
             trace = lsp.Trace.Messages
         LSP_SERVER.lsp.trace = trace
+
+    _log_version_info(WORKSPACE_SETTINGS["path"])
 
 
 @LSP_SERVER.feature(lsp.FORMATTING)

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { Disposable, Event, EventEmitter, extensions, Uri } from 'vscode';
-import { traceError } from './logging';
+import { traceError } from './logging/api';
 import { getWorkspaceFolder, getWorkspaceFolders } from './vscodeapi';
 
 interface IExtensionApi {
@@ -19,7 +19,7 @@ interface IExtensionApi {
     };
 }
 
-interface IInterpreterDetails {
+export interface IInterpreterDetails {
     path?: string[];
     resource?: Uri;
 }
@@ -76,7 +76,9 @@ export async function initializePython(disposables: Disposable[]): Promise<void>
                     }),
                 );
 
-                updateInterpreterFromExtension(api);
+                getWorkspaceFolders().forEach((w) => {
+                    updateInterpreterFromExtension(api, w.uri);
+                });
             }
         }
     } catch (error) {

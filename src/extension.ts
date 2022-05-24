@@ -2,40 +2,41 @@
 // Licensed under the MIT License.
 
 import * as vscode from 'vscode';
-import { LanguageClient } from 'vscode-languageclient/node';
 import { restartFormatServer } from './common/formatLS';
-import { initializeFileLogging, registerLogger, setLoggingLevel, traceLog, traceVerbose } from './common/logging';
-import { OutputChannelLogger } from './common/outputChannelLogger';
-import { getInterpreterDetails, initializePython, onDidChangePythonInterpreter } from './common/python';
-import { checkIfConfigurationChanged, getFormatterExtensionSettings, ISettings } from './common/settings';
+import { registerLogger, setLoggingLevel, traceLog, traceVerbose } from './common/logging/api';
+import { OutputChannelLogger } from './common/logging/outputChannelLogger';
+import { IInterpreterDetails, initializePython, onDidChangePythonInterpreter } from './common/python';
+import {
+    checkIfConfigurationChanged,
+    configurationChangedScope,
+    getFormatterExtensionSettings,
+    ISettings,
+} from './common/settings';
 import { loadFormatterDefaults } from './common/setup';
-import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
+import {
+    createOutputChannel,
+    getWorkspaceFolders,
+    onDidChangeConfiguration,
+    registerCommand,
+} from './common/vscodeapi';
 
 function setupLogging(settings: ISettings[], outputChannel: vscode.OutputChannel, disposables: vscode.Disposable[]) {
-    // let error: unknown;
     if (settings.length > 0) {
         setLoggingLevel(settings[0].trace);
-
-        // if (settings.logPath && settings.logPath.length > 0) {
-        //     error = initializeFileLogging(settings.logPath, disposables);
-        // }
     }
 
     disposables.push(registerLogger(new OutputChannelLogger(outputChannel)));
-
-    // if (error) {
-    //     // Capture and show log file creation error in the output channel
-    //     traceLog(`Failed to create log file: ${settings.logPath} \r\n`, error);
-    // }
 }
 
-let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // This is required to get formatter name and module. This should be
     // the first thing that we do in this extension.
     const formatter = loadFormatterDefaults();
 
-    const settings = await getFormatterExtensionSettings(formatter.module);
+    const settings: ISettings[] = [];
+    for (const workspace of getWorkspaceFolders()) {
+        settings.push(await getFormatterExtensionSettings(formatter.module, workspace.uri));
+    }
 
     const formatterName = `${formatter.name} Formatter`;
     const formatterId = `${formatter.module}-formatter`;
@@ -49,40 +50,29 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     traceLog(`Formatter Module: ${formatter.module}`);
     traceVerbose(`Formatter configuration: ${JSON.stringify(formatter)}`);
 
-    const runServer = async () => {
-        const interpreter = await getInterpreterDetails();
-        if (interpreter.path) {
-            lsClient = await restartFormatServer(
-                interpreter.path,
-                formatterId,
-                formatterName,
-                outputChannel,
-                {
-                    settings: await getFormatterExtensionSettings(formatter.module, true),
-                },
-                lsClient,
-            );
-        }
+    const runServer = async (resource: vscode.Uri | undefined) => {
+        await restartFormatServer(resource, formatterId, formatterName, outputChannel, {
+            settings: await getFormatterExtensionSettings(formatter.module, resource, true),
+        });
     };
 
     context.subscriptions.push(
-        onDidChangePythonInterpreter(async () => {
-            await runServer();
+        onDidChangePythonInterpreter(async (e: IInterpreterDetails) => {
+            await runServer(e.resource);
         }),
     );
 
     context.subscriptions.push(
         registerCommand(`${formatter.module}-formatter.restart`, async () => {
-            await runServer();
+            await Promise.all(getWorkspaceFolders().map((w) => runServer(w.uri)));
         }),
     );
 
     context.subscriptions.push(
         onDidChangeConfiguration(async (e: vscode.ConfigurationChangeEvent) => {
-            if (checkIfConfigurationChanged(e, formatter.module)) {
-                const newSettings = await getFormatterExtensionSettings(formatter.module);
-                setLoggingLevel(newSettings[0].trace);
-                await runServer();
+            const scope = configurationChangedScope(e, formatter.module);
+            if (scope) {
+                await runServer(scope.uri);
             }
         }),
     );

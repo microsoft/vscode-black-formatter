@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { Disposable, OutputChannel, WorkspaceFolder } from 'vscode';
+import * as path from 'path';
+import { Disposable, OutputChannel, Uri, WorkspaceFolder } from 'vscode';
 import { State } from 'vscode-languageclient';
 import {
     LanguageClient,
@@ -10,22 +11,25 @@ import {
     ServerOptions,
 } from 'vscode-languageclient/node';
 import { FORMATTER_SCRIPT_PATH } from './constants';
-import { traceInfo, traceVerbose } from './logging';
+import { traceInfo, traceVerbose } from './logging/api';
+import { getInterpreterDetails } from './python';
 import { ISettings } from './settings';
 import { traceLevelToLSTrace } from './utilities';
-import { getWorkspaceFolders, isVirtualWorkspace } from './vscodeapi';
+import { getWorkspaceFolder, getWorkspaceFolders, isVirtualWorkspace } from './vscodeapi';
 
-export type IFormatterInitOptions = { settings: ISettings[] };
+export type IFormatterInitOptions = { settings: ISettings };
 
-function getProjectRoot() {
+let _disposables: Disposable[] = [];
+
+function getProjectRoot(): WorkspaceFolder {
     const workspaces: readonly WorkspaceFolder[] = getWorkspaceFolders();
     if (workspaces.length === 1) {
-        return workspaces[0].uri.fsPath;
+        return workspaces[0];
     } else {
-        let root = workspaces[0].uri.fsPath;
+        let root = workspaces[0];
         for (const w of workspaces) {
-            if (root.length > w.uri.fsPath.length) {
-                root = w.uri.fsPath;
+            if (root.uri.fsPath.length > w.uri.fsPath.length) {
+                root = w;
             }
         }
         return root;
@@ -38,13 +42,17 @@ export async function createFormatServer(
     serverName: string,
     outputChannel: OutputChannel,
     initializationOptions: IFormatterInitOptions,
+    workspaceFolder: WorkspaceFolder,
 ): Promise<LanguageClient> {
     const command = interpreter[0];
     const serverOptions: ServerOptions = {
         command,
         args: interpreter.slice(1).concat([FORMATTER_SCRIPT_PATH]),
-        options: { cwd: getProjectRoot() },
+        options: { cwd: workspaceFolder.uri.fsPath },
     };
+
+    const root = workspaceFolder.uri.fsPath.replace(/\\/g, '/');
+    const pattern = `${root}/**`;
 
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
@@ -52,59 +60,69 @@ export async function createFormatServer(
         documentSelector: isVirtualWorkspace()
             ? [{ language: 'python' }]
             : [
-                  { scheme: 'file', language: 'python' },
-                  { scheme: 'untitled', language: 'python' },
-                  { scheme: 'vscode-notebook', language: 'python' },
-                  { scheme: 'vscode-notebook-cell', language: 'python' },
+                  { scheme: 'file', language: 'python', pattern },
+                  { scheme: 'untitled', language: 'python', pattern },
+                  { scheme: 'vscode-notebook', language: 'python', pattern },
+                  { scheme: 'vscode-notebook-cell', language: 'python', pattern },
               ],
         outputChannel: outputChannel,
         traceOutputChannel: outputChannel,
         revealOutputChannelOn: RevealOutputChannelOn.Never,
         initializationOptions,
+        workspaceFolder,
     };
 
-    return new LanguageClient(serverId, serverName, serverOptions, clientOptions);
+    const client = new LanguageClient(serverId, serverName, serverOptions, clientOptions);
+    client.trace = traceLevelToLSTrace(initializationOptions.settings.trace);
+
+    return client;
 }
 
-let _disposables: Disposable[] = [];
+const _lsClients: Map<string, LanguageClient> = new Map();
 export async function restartFormatServer(
-    interpreter: string[],
+    resource: Uri | undefined,
     serverId: string,
     serverName: string,
     outputChannel: OutputChannel,
     initializationOptions: IFormatterInitOptions,
-    lsClient?: LanguageClient,
-): Promise<LanguageClient> {
-    if (lsClient) {
-        traceInfo(`Server: Stop requested`);
-        await lsClient.stop();
-        _disposables.forEach((d) => d.dispose());
-        _disposables = [];
+): Promise<void> {
+    const workspaceFolder = resource ? getWorkspaceFolder(resource) : getProjectRoot();
+    if (workspaceFolder) {
+        const lsClient = _lsClients.get(workspaceFolder.uri.toString());
+        if (lsClient) {
+            traceInfo(`Server: Stop requested`);
+            await lsClient.stop();
+            _disposables.forEach((d) => d.dispose());
+        }
+
+        const interpreter = await getInterpreterDetails(workspaceFolder.uri);
+        if (interpreter.path) {
+            const newLSClient = await createFormatServer(
+                interpreter.path,
+                serverId,
+                serverName,
+                outputChannel,
+                initializationOptions,
+                workspaceFolder,
+            );
+            _lsClients.set(workspaceFolder.uri.toString(), newLSClient);
+            traceInfo(`Server: Start requested.`);
+            _disposables.push(
+                newLSClient.onDidChangeState((e) => {
+                    switch (e.newState) {
+                        case State.Stopped:
+                            traceVerbose(`Server State: Stopped`);
+                            break;
+                        case State.Starting:
+                            traceVerbose(`Server State: Starting`);
+                            break;
+                        case State.Running:
+                            traceVerbose(`Server State: Running`);
+                            break;
+                    }
+                }),
+                newLSClient.start(),
+            );
+        }
     }
-    const newLSClient = await createFormatServer(
-        interpreter,
-        serverId,
-        serverName,
-        outputChannel,
-        initializationOptions,
-    );
-    newLSClient.trace = traceLevelToLSTrace(initializationOptions.settings[0].trace);
-    traceInfo(`Server: Start requested.`);
-    _disposables.push(
-        newLSClient.onDidChangeState((e) => {
-            switch (e.newState) {
-                case State.Stopped:
-                    traceVerbose(`Server State: Stopped`);
-                    break;
-                case State.Starting:
-                    traceVerbose(`Server State: Starting`);
-                    break;
-                case State.Running:
-                    traceVerbose(`Server State: Running`);
-                    break;
-            }
-        }),
-        newLSClient.start(),
-    );
-    return newLSClient;
 }

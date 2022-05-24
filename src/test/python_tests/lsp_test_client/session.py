@@ -8,7 +8,6 @@ import os
 import subprocess
 import sys
 from concurrent.futures import Future, ThreadPoolExecutor
-from threading import Event
 
 from pyls_jsonrpc.dispatchers import MethodDispatcher
 from pyls_jsonrpc.endpoint import Endpoint
@@ -84,25 +83,20 @@ class LspSession(MethodDispatcher):
         process_server_capabilities=None,
     ):
         """Sends the initialize request to LSP server."""
-        server_initialized = Event()
-
-        def _after_initialize(fut):
-            if process_server_capabilities:
-                process_server_capabilities(fut.result())
-            self.initialized()
-            server_initialized.set()
-
-        self._send_request(
+        fut = self._send_request(
             "initialize",
             params=(
                 initialize_params
                 if initialize_params is not None
                 else VSCODE_DEFAULT_INITIALIZE
             ),
-            handle_response=_after_initialize,
         )
 
-        server_initialized.wait()
+        result = fut.result()
+        if process_server_capabilities:
+            process_server_capabilities(result)
+        self.initialized()
+        return result
 
     def initialized(self, initialized_params=None):
         """Sends the initialized notification to LSP server."""
