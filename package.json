@@ -2,7 +2,8 @@
     "name": "black-formatter",
     "displayName": "Black Formatter",
     "description": "Formatting support for python files using `black`.",
-    "version": "2022.1.0-dev",
+    "version": "2022.2.0",
+    "preview": true,
     "formatter": {
         "name": "Black",
         "module": "black"
