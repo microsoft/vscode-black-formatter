@@ -15,7 +15,7 @@ import site
 import subprocess
 import sys
 import threading
-from typing import Any, List, Sequence, Tuple, Union
+from typing import Any, List, NamedTuple, Sequence, Tuple, Union
 
 from packaging.version import parse
 
@@ -89,12 +89,11 @@ def get_module_version(module):
 
 
 # pylint: disable-next=too-few-public-methods
-class RunResult:
+class RunResult(NamedTuple):
     """Object to hold result from running tool."""
-
-    def __init__(self, stdout: str, stderr: str):
-        self.stdout: str = stdout
-        self.stderr: str = stderr
+    stdout: str
+    stderr: str
+    status_code: int
 
 
 class CustomIO(io.TextIOWrapper):
@@ -149,6 +148,7 @@ def _run_module(
     """Runs as a module."""
     str_output = CustomIO("<stdout>", encoding="utf-8")
     str_error = CustomIO("<stderr>", encoding="utf-8")
+    status_code = 0
 
     try:
         with substitute_attr(sys, "argv", argv):
@@ -162,10 +162,10 @@ def _run_module(
                             runpy.run_module(module, run_name="__main__")
                     else:
                         runpy.run_module(module, run_name="__main__")
-    except SystemExit:
-        pass
+    except SystemExit as e:
+        status_code = e.code
 
-    return RunResult(str_output.get_value(), str_error.get_value())
+    return RunResult(str_output.get_value(), str_error.get_value(), status_code)
 
 
 def run_module(
@@ -192,7 +192,7 @@ def run_path(
             stdin=subprocess.PIPE,
             cwd=cwd,
         ) as process:
-            return RunResult(*process.communicate(input=source))
+            return RunResult(*process.communicate(input=source), process.returncode)
     else:
         result = subprocess.run(
             argv,
@@ -202,4 +202,4 @@ def run_path(
             check=False,
             cwd=cwd,
         )
-        return RunResult(result.stdout, result.stderr)
+        return RunResult(result.stdout, result.stderr, result.returncode)

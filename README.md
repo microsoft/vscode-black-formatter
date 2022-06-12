@@ -40,7 +40,7 @@ If you want to disable Black formatter, you can [disable this extension](https:/
 | black-formatter.args  | `[]`    | Custom arguments passed to `black`. E.g `"black-formatter.args" = ["--config", "<file>"]`                                                                                                                                                                                |
 | black-formatter.trace | `error` | Sets the tracing level for the extension.                                                                                                                                                                                                                                |
 | black-formatter.path  | `[]`    | Setting to provide custom `black` executable. This will slow down formatting, since we will have to run `black` executable every time or file save or open. Example 1: `["~/global_env/black"]` Example 2: `["conda", "run", "-n", "lint_env", "python", "-m", "black"]` |
-| black-formatter.show-formatting-messages | `true` | Whether to show messages in UI when extension didn't format file for any reason.
+| black-formatter.showNotification | `on-warn` | When extension is allowed to show messages in UI: `on-message`, `on-warn`, `on-error`, `on-crash`.
 
 ## Commands
 

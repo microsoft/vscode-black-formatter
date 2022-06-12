@@ -92,11 +92,17 @@
                     "scope": "resource",
                     "type": "array"
                 },
-                "black-formatter.show-formatting-messages": {
-                    "default": true,
-                    "description": "Whether to show messages in UI when extension didn't format file for any reason.",
-                    "type": "boolean",
-                    "scope": "resource"
+                "black-formatter.showNotification": {
+                    "default": "on-warn",
+                    "description": "When extension is allowed to notifications messages in UI.",
+                    "enum": [
+                        "on-crash",
+                        "on-error",
+                        "on-warn",
+                        "on-message"
+                    ],
+                    "scope": "resource",
+                    "type": "string"
                 },
                 "black-formatter.path": {
                     "default": [],

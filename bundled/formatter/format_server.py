@@ -8,14 +8,16 @@ import os
 import pathlib
 import sys
 import traceback
+from enum import IntEnum
 from typing import List, Union
 
 # Ensure that we can import LSP libraries, and other bundled formatter libraries
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "libs"))
 
-import utils
 from pygls import lsp, protocol, server, uris, workspace
 from pygls.lsp import types
+
+import utils
 
 FORMATTER = {
     "name": "Black",
@@ -27,6 +29,27 @@ RUNNER = pathlib.Path(__file__).parent / "runner.py"
 
 MAX_WORKERS = 5
 LSP_SERVER = server.LanguageServer(max_workers=MAX_WORKERS)
+
+
+class NotificationVerbosity(IntEnum):
+    on_crash = 0
+    on_error = 1
+    on_warn = 2
+    on_message = 3
+
+    @classmethod
+    def _missing_(cls, value: str) -> "NotificationVerbosity":
+        """Allow creation from settings values ('on-warn' -> cls.on_warn)"""
+        return getattr(cls, value.replace('-', '_'), None)
+
+    @property
+    def message_type(self):
+        return {
+            NotificationVerbosity.on_crash: types.MessageType.Error,
+            NotificationVerbosity.on_error: types.MessageType.Error,
+            NotificationVerbosity.on_warn: types.MessageType.Warning,
+            NotificationVerbosity.on_message: types.MessageType.Info,
+        }[self]
 
 
 def _get_args_by_file_extension(document: workspace.Document) -> List[str]:
@@ -160,12 +183,13 @@ def _format(
     document = LSP_SERVER.workspace.get_document(params.text_document.uri)
 
     settings = _get_settings_by_document(document)
+    verbosity = NotificationVerbosity(settings["showNotification"])
 
     if utils.is_stdlib_file(document.path):
         message = f"Not going to reformat stdlib or site-packages ({document.path}), aborting..."
         LSP_SERVER.show_message_log(message)
-        if settings["show-formatting-messages"]:
-            LSP_SERVER.show_message(message, msg_type=types.MessageType.Info)
+        if verbosity >= NotificationVerbosity.on_warn:
+            LSP_SERVER.show_message(message, msg_type=types.MessageType.Warning)
         return None
 
     module = FORMATTER["module"]
@@ -211,22 +235,36 @@ def _format(
             f"Encountered exception while executing black:\r\n{traceback.format_exc()}"
         )
         LSP_SERVER.show_message_log(error_text, msg_type=types.MessageType.Error)
-        LSP_SERVER.show_message(
-            f"Fatal error: {e!r}, please see Output > Black Formatter for more info",
-            msg_type=types.MessageType.Error,
-        )
-        return None
-
-    if result.stderr:
-        LSP_SERVER.show_message_log(result.stderr, msg_type=types.MessageType.Error)
-        if "error:" in result.stderr.lower() and settings["show-formatting-messages"]:
+        if verbosity >= NotificationVerbosity.on_error:
             LSP_SERVER.show_message(
-                _get_error_message_from_stderr(result.stderr),
+                f"Fatal error: {e!r}, please see Output > Black Formatter for more info",
                 msg_type=types.MessageType.Error,
+            )
+        return None
+    
+    stdout, stderr, status_code = result
+    if stderr:
+        LSP_SERVER.show_message_log(stderr, msg_type=types.MessageType.Error)
+        stderr_lower = stderr.lower()
+        if status_code != 0 or "error:" in stderr_lower:
+            event_verbosity = NotificationVerbosity.on_error
+        elif (
+                    "file reformatted" not in stderr_lower 
+                    and "file left unchanged" not in stderr_lower
+            ):
+            # expecting file to be either unchanged or reformatted
+            event_verbosity = NotificationVerbosity.on_warn
+        else:
+            event_verbosity = NotificationVerbosity.on_message
+            
+        if verbosity >= event_verbosity:
+            LSP_SERVER.show_message(
+                _get_error_message_from_stderr(stderr),
+                msg_type=event_verbosity.message_type,
             )
         # not going to exit just yet, check if black gave us any stdout first
 
-    new_source = _match_line_endings(document, result.stdout)
+    new_source = _match_line_endings(document, stdout)
 
     # Skip last line ending in a notebook cell
     if document.uri.startswith("vscode-notebook-cell"):
@@ -235,7 +273,7 @@ def _format(
         elif new_source.endswith("\n"):
             new_source = new_source[:-1]
 
-    if new_source == document.source or not result.stdout:
+    if new_source == document.source or not stdout:
         return None
 
     return [
@@ -285,6 +323,7 @@ def formatting(_server: server.LanguageServer, params: types.DocumentFormattingP
         LSP_SERVER.show_message_log(
             traceback.format_exc(), msg_type=types.MessageType.Error
         )
+        # report crash regardless of showNotification settings
         LSP_SERVER.show_message(
             f"Fatal error: {e!r}, please see Output > Black Formatter for more info",
             msg_type=types.MessageType.Error,
