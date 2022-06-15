@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { Disposable, Event, EventEmitter, extensions, Uri } from 'vscode';
-import { traceError } from './logging';
+import { traceError } from './log/logging';
 import { getWorkspaceFolder, getWorkspaceFolders } from './vscodeapi';
 
 interface IExtensionApi {

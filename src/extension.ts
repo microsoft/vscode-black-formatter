@@ -3,62 +3,44 @@
 
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { restartFormatServer } from './common/formatLS';
-import { initializeFileLogging, registerLogger, setLoggingLevel, traceLog, traceVerbose } from './common/logging';
-import { OutputChannelLogger } from './common/outputChannelLogger';
+import { restartServer } from './common/server';
+import { initializeFileLogging, registerLogger, setLoggingLevel, traceLog, traceVerbose } from './common/log/logging';
+import { OutputChannelLogger } from './common/log/outputChannelLogger';
 import { getInterpreterDetails, initializePython, onDidChangePythonInterpreter } from './common/python';
-import { checkIfConfigurationChanged, getFormatterExtensionSettings, ISettings } from './common/settings';
-import { loadFormatterDefaults } from './common/setup';
+import { checkIfConfigurationChanged, getExtensionSettings, ISettings } from './common/settings';
+import { loadServerDefaults } from './common/setup';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
-
-function setupLogging(settings: ISettings[], outputChannel: vscode.OutputChannel, disposables: vscode.Disposable[]) {
-    // let error: unknown;
-    if (settings.length > 0) {
-        setLoggingLevel(settings[0].trace);
-
-        // if (settings.logPath && settings.logPath.length > 0) {
-        //     error = initializeFileLogging(settings.logPath, disposables);
-        // }
-    }
-
-    disposables.push(registerLogger(new OutputChannelLogger(outputChannel)));
-
-    // if (error) {
-    //     // Capture and show log file creation error in the output channel
-    //     traceLog(`Failed to create log file: ${settings.logPath} \r\n`, error);
-    // }
-}
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // This is required to get formatter name and module. This should be
     // the first thing that we do in this extension.
-    const formatter = loadFormatterDefaults();
+    const serverInfo = loadServerDefaults();
+    const serverName = `${serverInfo.name} Formatter`;
+    const serverId = `${serverInfo.module}-formatter`;
 
-    const settings = await getFormatterExtensionSettings(formatter.module);
-
-    const formatterName = `${formatter.name} Formatter`;
-    const formatterId = `${formatter.module}-formatter`;
+    const settings = await getExtensionSettings(serverId);
 
     // Setup logging
-    const outputChannel = createOutputChannel(formatterName);
+    const outputChannel = createOutputChannel(serverName);
     context.subscriptions.push(outputChannel);
-    setupLogging(settings, outputChannel, context.subscriptions);
+    setLoggingLevel(settings[0].trace);
+    context.subscriptions.push(registerLogger(new OutputChannelLogger(outputChannel)));
 
-    traceLog(`Formatter Name: ${formatter.name}`);
-    traceLog(`Formatter Module: ${formatter.module}`);
-    traceVerbose(`Formatter configuration: ${JSON.stringify(formatter)}`);
+    traceLog(`Name: ${serverInfo.name}`);
+    traceLog(`Module: ${serverInfo.module}`);
+    traceVerbose(`Configuration: ${JSON.stringify(serverInfo)}`);
 
     const runServer = async () => {
         const interpreter = await getInterpreterDetails();
         if (interpreter.path) {
-            lsClient = await restartFormatServer(
+            lsClient = await restartServer(
                 interpreter.path,
-                formatterId,
-                formatterName,
+                serverId,
+                serverName,
                 outputChannel,
                 {
-                    settings: await getFormatterExtensionSettings(formatter.module, true),
+                    settings: await getExtensionSettings(serverId, true),
                 },
                 lsClient,
             );
@@ -72,15 +54,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
     context.subscriptions.push(
-        registerCommand(`${formatter.module}-formatter.restart`, async () => {
+        registerCommand(`${serverId}.restart`, async () => {
             await runServer();
         }),
     );
 
     context.subscriptions.push(
         onDidChangeConfiguration(async (e: vscode.ConfigurationChangeEvent) => {
-            if (checkIfConfigurationChanged(e, formatter.module)) {
-                const newSettings = await getFormatterExtensionSettings(formatter.module);
+            if (checkIfConfigurationChanged(e, serverId)) {
+                const newSettings = await getExtensionSettings(serverId);
                 setLoggingLevel(newSettings[0].trace);
                 await runServer();
             }

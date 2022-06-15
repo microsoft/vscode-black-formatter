@@ -10,12 +10,12 @@ import {
     ServerOptions,
 } from 'vscode-languageclient/node';
 import { FORMATTER_SCRIPT_PATH } from './constants';
-import { traceInfo, traceVerbose } from './logging';
+import { traceInfo, traceVerbose } from './log/logging';
 import { ISettings } from './settings';
 import { traceLevelToLSTrace } from './utilities';
 import { getWorkspaceFolders, isVirtualWorkspace } from './vscodeapi';
 
-export type IFormatterInitOptions = { settings: ISettings[] };
+export type IInitOptions = { settings: ISettings[] };
 
 function getProjectRoot() {
     const workspaces: readonly WorkspaceFolder[] = getWorkspaceFolders();
@@ -32,12 +32,12 @@ function getProjectRoot() {
     }
 }
 
-export async function createFormatServer(
+export async function createServer(
     interpreter: string[],
     serverId: string,
     serverName: string,
     outputChannel: OutputChannel,
-    initializationOptions: IFormatterInitOptions,
+    initializationOptions: IInitOptions,
 ): Promise<LanguageClient> {
     const command = interpreter[0];
     const serverOptions: ServerOptions = {
@@ -67,12 +67,12 @@ export async function createFormatServer(
 }
 
 let _disposables: Disposable[] = [];
-export async function restartFormatServer(
+export async function restartServer(
     interpreter: string[],
     serverId: string,
     serverName: string,
     outputChannel: OutputChannel,
-    initializationOptions: IFormatterInitOptions,
+    initializationOptions: IInitOptions,
     lsClient?: LanguageClient,
 ): Promise<LanguageClient> {
     if (lsClient) {
@@ -81,13 +81,7 @@ export async function restartFormatServer(
         _disposables.forEach((d) => d.dispose());
         _disposables = [];
     }
-    const newLSClient = await createFormatServer(
-        interpreter,
-        serverId,
-        serverName,
-        outputChannel,
-        initializationOptions,
-    );
+    const newLSClient = await createServer(interpreter, serverId, serverName, outputChannel, initializationOptions);
     newLSClient.trace = traceLevelToLSTrace(initializationOptions.settings[0].trace);
     traceInfo(`Server: Start requested.`);
     _disposables.push(

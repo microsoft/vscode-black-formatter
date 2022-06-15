@@ -3,7 +3,7 @@
 
 import { ConfigurationChangeEvent } from 'vscode';
 import { getInterpreterDetails } from './python';
-import { LoggingLevelSettingType } from './types';
+import { LoggingLevelSettingType } from './log/types';
 import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
 
 export interface ISettings {
@@ -14,15 +14,12 @@ export interface ISettings {
     interpreter: string[];
 }
 
-export async function getFormatterExtensionSettings(
-    moduleName: string,
-    includeInterpreter?: boolean,
-): Promise<ISettings[]> {
+export async function getExtensionSettings(namespace: string, includeInterpreter?: boolean): Promise<ISettings[]> {
     const settings: ISettings[] = [];
     const workspaces = getWorkspaceFolders();
 
     for (const workspace of workspaces) {
-        const config = getConfiguration(`${moduleName}-formatter`, workspace.uri);
+        const config = getConfiguration(namespace, workspace.uri);
         const interpreter = includeInterpreter ? (await getInterpreterDetails(workspace.uri)).path : [];
         const workspaceSetting = {
             workspace: workspace.uri.toString(),
@@ -39,8 +36,8 @@ export async function getFormatterExtensionSettings(
     return settings;
 }
 
-export function checkIfConfigurationChanged(e: ConfigurationChangeEvent, moduleName: string): boolean {
-    const settings = [`${moduleName}-formatter.trace`, `${moduleName}-formatter.args`, `${moduleName}-formatter.path`];
+export function checkIfConfigurationChanged(e: ConfigurationChangeEvent, namespace: string): boolean {
+    const settings = [`${namespace}.trace`, `${namespace}.args`, `${namespace}.path`];
     const changed = settings.map((s) => e.affectsConfiguration(s));
     return changed.includes(true);
 }
