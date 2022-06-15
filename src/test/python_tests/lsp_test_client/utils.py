@@ -36,11 +36,11 @@ def python_file(contents: str, root: pathlib.Path):
     os.unlink(str(fullpath))
 
 
-def get_formatter_defaults():
-    """Returns formatter details from package.json"""
+def get_server_info_defaults():
+    """Returns server info details from package.json"""
     package_json_path = PROJECT_ROOT / "package.json"
     package_json = json.loads(package_json_path.read_text())
-    return package_json["formatter"]
+    return package_json["serverInfo"]
 
 
 def get_initialization_options():
@@ -48,13 +48,15 @@ def get_initialization_options():
     package_json_path = PROJECT_ROOT / "package.json"
     package_json = json.loads(package_json_path.read_text())
 
-    formatter = package_json["formatter"]
+    server_info = package_json["serverInfo"]
+    server_id = f"{server_info['module']}-formatter"
+
     properties = package_json["contributes"]["configuration"]["properties"]
     settings = [
         {
             "trace": "error",
-            "args": properties[f"{formatter['module']}-formatter.args"]["default"],
-            "path": properties[f"{formatter['module']}-formatter.path"]["default"],
+            "args": properties[f"{server_id}.args"]["default"],
+            "path": properties[f"{server_id}.path"]["default"],
             "workspace": as_uri(str(PROJECT_ROOT)),
             "interpreter": [],
         }

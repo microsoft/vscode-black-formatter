@@ -7,7 +7,7 @@ from hamcrest import assert_that, is_
 
 from .lsp_test_client import constants, session, utils
 
-FORMATTER = utils.get_formatter_defaults()
+FORMATTER = utils.get_server_info_defaults()
 TIMEOUT = 10  # 10 seconds
 
 

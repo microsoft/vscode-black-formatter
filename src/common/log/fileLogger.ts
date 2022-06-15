@@ -5,7 +5,7 @@ import { WriteStream } from 'fs-extra';
 import * as util from 'util';
 import { Disposable } from 'vscode-jsonrpc';
 import { Arguments, ILogging } from './types';
-import { getTimeForLogging } from './utilities';
+import { getTimeForLogging } from '../utilities';
 
 function formatMessage(level: string, ...data: Arguments): string {
     return `[${level.toUpperCase()} ${getTimeForLogging()}]: ${util.format(...data)}\r\n`;
