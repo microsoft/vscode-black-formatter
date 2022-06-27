@@ -7,6 +7,7 @@ Note:
 -   This extension is supported for all [actively supported versions](https://devguide.python.org/#status-of-python-branches) of the `python` language (i.e., python >= 3.7).
 -   The bundled `black` is only used if there is no installed version of `black` found in the selected `python` environment.
 -   Minimum supported version of `black` is `22.3.0`.
+-   This extension is experimental. The plan is that it will eventually replace the `black` formatting functionality of [the Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python).
 
 ## Usage
 
@@ -16,6 +17,12 @@ Once installed in Visual Studio Code, "Black Formatter" will be available as a f
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
   }
+```
+
+and change the following, if set:
+
+```json
+  "python.formatting.provider": "none"
 ```
 
 ### Format on save
