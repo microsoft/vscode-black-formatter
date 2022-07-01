@@ -7,8 +7,59 @@ All the action we need during build
 import json
 import pathlib
 import re
+import urllib.request as url_lib
 
 import nox
+
+
+def _update_pip_packages(session: nox.Session) -> None:
+    session.run("pip-compile", "--generate-hashes", "--upgrade", "./requirements.in")
+    session.run(
+        "pip-compile",
+        "--generate-hashes",
+        "--upgrade",
+        "./src/test/python_tests/requirements.in",
+    )
+
+
+def _get_package_data(package):
+    json_uri = f"https://registry.npmjs.org/{package}"
+    with url_lib.urlopen(json_uri) as response:
+        return json.loads(response.read())
+
+
+def _update_npm_packages(session: nox.Session) -> None:
+    pinned = {
+        "vscode-languageclient",
+        "@types/vscode",
+        "@types/node",
+    }
+    package_json_path = pathlib.Path(__file__).parent / "package.json"
+    package_json = json.loads(package_json_path.read_text(encoding="utf-8"))
+
+    for package in package_json["dependencies"]:
+        if package not in pinned:
+            data = _get_package_data(package)
+            latest = "^" + data["dist-tags"]["latest"]
+            package_json["dependencies"][package] = latest
+
+    for package in package_json["devDependencies"]:
+        if package not in pinned:
+            data = _get_package_data(package)
+            latest = "^" + data["dist-tags"]["latest"]
+            package_json["devDependencies"][package] = latest
+
+    # Ensure engine matches the package
+    if (
+        package_json["engines"]["vscode"]
+        != package_json["devDependencies"]["@types/vscode"]
+    ):
+        print(
+            "Please check VS Code engine version and @types/vscode version in package.json."
+        )
+
+    package_json_path.write_text(json.dumps(package_json, indent=4), encoding="utf-8")
+    session.run("npm", "install", external=True)
 
 
 @nox.session(python="3.7")
@@ -105,3 +156,11 @@ def validate_readme(session):
     if f"{name}={version}" not in content:
         raise ValueError(f"Formatter info {name}={version} was not found in README.md.")
     session.log(f"FOUND {name}={version} in README.md")
+
+
+@nox.session()
+def update_packages(session: nox.Session) -> None:
+    """Update pip and npm packages."""
+    session.install("wheel", "pip-tools")
+    _update_pip_packages(session)
+    _update_npm_packages(session)
