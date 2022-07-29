@@ -1,40 +1,21 @@
-name: PR labels
-
+name: 'PR labels'
 on:
   pull_request:
-    types: ['opened', 'reopened', 'synchronize', 'labeled', 'unlabeled']
-
-permissions:
-  pull-requests: write
+    types:
+      - 'opened'
+      - 'reopened'
+      - 'labeled'
+      - 'unlabeled'
+      - 'synchronize'
 
 jobs:
-  # From https://github.com/marketplace/actions/github-script#apply-a-label-to-an-issue.
   add-pr-label:
     name: 'Ensure Required Labels'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v6
+      - name: 'PR impact specified'
+        uses: mheap/github-action-required-labels@v2
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const result = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-            })
-            const labels = result.data.labels.map((label) => label.name)
-            const hasNewsLabels = labels.some((label) => label === 'news' || label === 'skip news' )
-
-            if (hasNewsLabels) {
-              console.log('This PR has the required "news" or "skip news" labels.')
-            } else {
-              core.setFailed('Please add "news" or "skip news" labels to the PR.')
-            }
-
-            const hasLabels = labels.some((label) => label === 'bug' || label === 'feature-request' || label === 'debt' )
-
-            if (hasLabels) {
-              console.log('This PR has the required "bug", "feature-request" or "debt" labels.')
-            } else {
-              core.setFailed('Please add "bug", "feature-request" or "debt" labels to the PR.')
-            }
+          mode: exactly
+          count: 1
+          labels: 'bug, debt, feature-request, no-changelog'

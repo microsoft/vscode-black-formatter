@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: monthly
     labels:
-      - 'skip news'
+      - 'no-changelog'
       - 'debt'
 
   - package-ecosystem: 'pip'
@@ -13,7 +13,7 @@ updates:
     schedule:
       interval: daily
     labels:
-      - 'skip news'
+      - 'no-changelog'
       - 'debt'
 
   - package-ecosystem: 'pip'
@@ -21,7 +21,6 @@ updates:
     schedule:
       interval: daily
     labels:
-      - 'news'
       - 'debt'
     commit-message:
       include: 'scope'
@@ -32,7 +31,7 @@ updates:
     schedule:
       interval: monthly
     labels:
-      - 'skip news'
+      - 'no-changelog'
       - 'debt'
     ignore:
       - dependency-name: '@types/vscode'
