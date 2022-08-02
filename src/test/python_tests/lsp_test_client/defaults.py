@@ -214,6 +214,6 @@ VSCODE_DEFAULT_INITIALIZE = {
         "window": {"workDoneProgress": True},
     },
     "trace": "verbose",
-    "workspaceFolders": [{"uri": as_uri(str(PROJECT_ROOT)), "name": "formatter_lsp"}],
+    "workspaceFolders": [{"uri": as_uri(str(PROJECT_ROOT)), "name": "my_project"}],
     "initializationOptions": get_initialization_options(),
 }

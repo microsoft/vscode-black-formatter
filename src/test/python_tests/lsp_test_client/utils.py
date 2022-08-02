@@ -37,7 +37,7 @@ def python_file(contents: str, root: pathlib.Path):
 
 
 def get_server_info_defaults():
-    """Returns server info details from package.json"""
+    """Returns server info from package.json"""
     package_json_path = PROJECT_ROOT / "package.json"
     package_json = json.loads(package_json_path.read_text())
     return package_json["serverInfo"]
@@ -52,14 +52,13 @@ def get_initialization_options():
     server_id = f"{server_info['module']}-formatter"
 
     properties = package_json["contributes"]["configuration"]["properties"]
-    settings = [
-        {
-            "trace": "error",
-            "args": properties[f"{server_id}.args"]["default"],
-            "path": properties[f"{server_id}.path"]["default"],
-            "workspace": as_uri(str(PROJECT_ROOT)),
-            "interpreter": [],
-        }
-    ]
+    setting = {}
+    for prop in properties:
+        name = prop[len(server_id) + 1 :]
+        value = properties[prop]["default"]
+        setting[name] = value
 
-    return {"settings": settings}
+    setting["workspace"] = as_uri(str(PROJECT_ROOT))
+    setting["interpreter"] = []
+
+    return {"settings": [setting]}

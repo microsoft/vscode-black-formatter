@@ -37,9 +37,7 @@ class LspSession(MethodDispatcher):
         self._endpoint = None
         self._notification_callbacks = {}
         self.script = (
-            script
-            if script
-            else (PROJECT_ROOT / "bundled" / "formatter" / "format_server.py")
+            script if script else (PROJECT_ROOT / "bundled" / "tool" / "server.py")
         )
 
     def __enter__(self):
@@ -84,6 +82,8 @@ class LspSession(MethodDispatcher):
         process_server_capabilities=None,
     ):
         """Sends the initialize request to LSP server."""
+        if initialize_params is None:
+            initialize_params = VSCODE_DEFAULT_INITIALIZE
         server_initialized = Event()
 
         def _after_initialize(fut):
