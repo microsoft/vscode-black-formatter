@@ -245,11 +245,14 @@ def run_over_json_rpc(
         )
 
     if "error" in data:
-        if data.get("exception", False):
-            return RpcRunResult(data["result"], "", data["error"])
-        return RpcRunResult(data["result"], data["error"])
+        result = data["result"] if "result" in data else ""
+        error = data["error"]
 
-    return RpcRunResult(data["result"], "")
+        if data.get("exception", False):
+            return RpcRunResult(result, "", error)
+        return RpcRunResult(result, error)
+
+    return RpcRunResult(result, "")
 
 
 def shutdown_json_rpc():

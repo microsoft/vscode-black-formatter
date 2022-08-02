@@ -27,13 +27,16 @@ def as_uri(path: str) -> str:
 
 @contextlib.contextmanager
 def python_file(contents: str, root: pathlib.Path):
-    basename = (
-        "".join(random.choice("abcdefghijklmnopqrstuvwxyz") for _ in range(9)) + ".py"
-    )
-    fullpath = root / basename
-    fullpath.write_text(contents)
-    yield fullpath
-    os.unlink(str(fullpath))
+    try:
+        basename = (
+            "".join(random.choice("abcdefghijklmnopqrstuvwxyz") for _ in range(9))
+            + ".py"
+        )
+        fullpath = root / basename
+        fullpath.write_text(contents)
+        yield fullpath
+    finally:
+        os.unlink(str(fullpath))
 
 
 def get_server_info_defaults():

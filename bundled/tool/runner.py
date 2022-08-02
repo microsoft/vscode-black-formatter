@@ -65,9 +65,8 @@ while not EXIT_NOW:
                 result = utils.RunResult("", traceback.format_exc(chain=True))
                 is_exception = True  # pylint: disable=invalid-name
 
-        response = {"id": msg["id"]}
-        if result.stderr:
-            response["error"] = result.stderr
+        response = {"id": msg["id"], "error": result.stderr}
+        if is_exception:
             response["exception"] = is_exception
         elif result.stdout:
             response["result"] = result.stdout

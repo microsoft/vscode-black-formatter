@@ -1,5 +1,5 @@
 """
-Test for argv duplicaiton over LSP.
+Test for argv duplication over LSP.
 """
 import copy
 
@@ -7,7 +7,7 @@ from hamcrest import assert_that, is_
 
 from .lsp_test_client import constants, defaults, session, utils
 
-FORMATTER = utils.get_formatter_defaults()
+FORMATTER = utils.get_server_info_defaults()
 TIMEOUT = 10  # 10 seconds
 
 
@@ -28,8 +28,8 @@ class CallbackObject:
             return None
 
 
-def test_argv_duplication_path():
-    """Test formating a python file."""
+def test_path():
+    """Test formatting a python file."""
     FORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample1" / "sample.py"
     VSCODE_DEFAULT_INITIALIZE = copy.deepcopy(defaults.VSCODE_DEFAULT_INITIALIZE)
     VSCODE_DEFAULT_INITIALIZE["initializationOptions"]["settings"][0]["path"] = [
@@ -82,12 +82,12 @@ def test_argv_duplication_path():
     assert_that(actual, is_(EXPECTED))
 
 
-def test_argv_duplication_interpreter():
-    """Test formating a python file."""
+def test_interpreter():
+    """Test formatting a python file."""
     FORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample1" / "sample.py"
     VSCODE_DEFAULT_INITIALIZE = copy.deepcopy(defaults.VSCODE_DEFAULT_INITIALIZE)
     VSCODE_DEFAULT_INITIALIZE["initializationOptions"]["settings"][0]["interpreter"] = [
-        "python3"
+        "python"
     ]
     EXPECTED = False
 
