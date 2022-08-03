@@ -1,12 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-"""
-Utility functions and classes for use with running tools over LSP.
-"""
-
+"""Utility functions and classes for use with running tools over LSP."""
+from __future__ import annotations
 
 import contextlib
-import importlib
 import io
 import os
 import os.path
@@ -15,9 +12,7 @@ import site
 import subprocess
 import sys
 import threading
-from typing import Any, List, Sequence, Tuple, Union
-
-from packaging.version import parse
+from typing import Any, Callable, List, Sequence, Tuple, Union
 
 # Save the working directory used when loading this module
 SERVER_CWD = os.getcwd()
@@ -57,44 +52,13 @@ def is_stdlib_file(file_path) -> bool:
     return os.path.normcase(os.path.normpath(file_path)).startswith(_site_paths)
 
 
-def get_executable_version(
-    settings_path: List[str],
-):
-    """Extract version number when using path to run."""
-    try:
-        args = settings_path + ["--version"]
-        result = subprocess.run(
-            args,
-            encoding="utf-8",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            check=False,
-        )
-    except SystemExit:
-        pass
-
-    # This is to just get the version number:
-    # > pylint --version
-    # pylint 2.12.2  <--- this is all we want
-    # astroid 2.9.3
-    # Python 3.10.2 (tags/v3.10.2:a58ebcc, Jan 17 2022, 14:12:15) [MSC v.1929 64 bit (AMD64)]
-    first_line = result.stdout.splitlines(keepends=False)[0]
-    return parse(first_line.split(" ")[1])
-
-
-def get_module_version(module):
-    """Extracts version from a module."""
-    imported = importlib.import_module(module)
-    return parse(imported.__getattr__("__version__"))
-
-
 # pylint: disable-next=too-few-public-methods
 class RunResult:
     """Object to hold result from running tool."""
 
-    def __init__(self, stdout: str, stderr: str):
-        self.stdout: str = stdout
-        self.stderr: str = stderr
+    def __init__(self, stdout, stderr):
+        self.stdout = stdout
+        self.stderr = stderr
 
 
 class CustomIO(io.TextIOWrapper):
@@ -203,3 +167,45 @@ def run_path(
             cwd=cwd,
         )
         return RunResult(result.stdout, result.stderr)
+
+
+def run_api(
+    callback: Callable[[Sequence[str], CustomIO, CustomIO, CustomIO | None], None],
+    argv: Sequence[str],
+    use_stdin: bool,
+    cwd: str,
+    source: str = None,
+) -> RunResult:
+    """Run a API."""
+    with CWD_LOCK:
+        if is_same_path(os.getcwd(), cwd):
+            return _run_api(callback, argv, use_stdin, source)
+        with change_cwd(cwd):
+            return _run_api(callback, argv, use_stdin, source)
+
+
+def _run_api(
+    callback: Callable[[Sequence[str], CustomIO, CustomIO, CustomIO | None], None],
+    argv: Sequence[str],
+    use_stdin: bool,
+    source: str = None,
+) -> RunResult:
+    str_output = CustomIO("<stdout>", encoding="utf-8")
+    str_error = CustomIO("<stderr>", encoding="utf-8")
+
+    try:
+        with substitute_attr(sys, "argv", argv):
+            with redirect_io("stdout", str_output):
+                with redirect_io("stderr", str_error):
+                    if use_stdin and source is not None:
+                        str_input = CustomIO("<stdin>", encoding="utf-8", newline="\n")
+                        with redirect_io("stdin", str_input):
+                            str_input.write(source)
+                            str_input.seek(0)
+                            callback(argv, str_output, str_error, str_input)
+                    else:
+                        callback(argv, str_output, str_error)
+    except SystemExit:
+        pass
+
+    return RunResult(str_output.get_value(), str_error.get_value())

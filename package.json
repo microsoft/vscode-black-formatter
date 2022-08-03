@@ -1,7 +1,7 @@
 {
     "name": "black-formatter",
     "displayName": "Black Formatter",
-    "description": "Formatting support for python files using `black`.",
+    "description": "%extension.description%",
     "version": "2022.3.0-dev",
     "preview": true,
     "serverInfo": {
@@ -71,9 +71,9 @@
         ],
         "configuration": {
             "properties": {
-                "black-formatter.trace": {
+                "black-formatter.logLevel": {
                     "default": "error",
-                    "description": "The trace level the extension logs at, defaults to 'error'",
+                    "description": "%settings.logLevel.description%",
                     "enum": [
                         "debug",
                         "error",
@@ -82,11 +82,18 @@
                         "warn"
                     ],
                     "scope": "window",
-                    "type": "string"
+                    "type": "string",
+                    "enumDescriptions": [
+                        "%settings.logLevel.debug.description%",
+                        "%settings.logLevel.error.description%",
+                        "%settings.logLevel.info.description%",
+                        "%settings.logLevel.off.description%",
+                        "%settings.logLevel.warn.description%"
+                    ]
                 },
                 "black-formatter.args": {
                     "default": [],
-                    "description": "Arguments passed in. Each argument is a separate item in the array.",
+                    "description": "%settings.args.description%",
                     "items": {
                         "type": "string"
                     },
@@ -95,18 +102,69 @@
                 },
                 "black-formatter.path": {
                     "default": [],
-                    "description": "When set to a path to black binary, extension will use that for formatting. NOTE: Using this option may slowdown formatting.",
+                    "description": "%settings.path.description%",
                     "scope": "resource",
                     "items": {
                         "type": "string"
                     },
+                    "type": "array",
+                    "examples": [
+                        [
+                            "~/global_env/black"
+                        ],
+                        [
+                            "~/.env/python",
+                            "-m",
+                            "black"
+                        ]
+                    ]
+                },
+                "black-formatter.importStrategy": {
+                    "default": "useBundled",
+                    "description": "%settings.importStrategy.description%",
+                    "enum": [
+                        "useBundled",
+                        "fromEnvironment"
+                    ],
+                    "enumDescriptions": [
+                        "%settings.importStrategy.useBundled.description%",
+                        "%settings.importStrategy.fromEnvironment.description%"
+                    ],
+                    "scope": "window",
+                    "type": "string"
+                },
+                "black-formatter.interpreter": {
+                    "default": [],
+                    "description": "%settings.interpreter.description%",
+                    "scope": "window",
+                    "items": {
+                        "type": "string"
+                    },
                     "type": "array"
+                },
+                "black-formatter.showNotifications": {
+                    "default": "off",
+                    "description": "%settings.showNotifications.description%",
+                    "enum": [
+                        "off",
+                        "onError",
+                        "onWarning",
+                        "always"
+                    ],
+                    "enumDescriptions": [
+                        "%settings.showNotifications.off.description%",
+                        "%settings.showNotifications.onError.description%",
+                        "%settings.showNotifications.onWarning.description%",
+                        "%settings.showNotifications.always.description%"
+                    ],
+                    "scope": "machine",
+                    "type": "string"
                 }
             }
         },
         "commands": [
             {
-                "title": "Restart Server",
+                "title": "%command.restartServer%",
                 "category": "Black Formatter",
                 "command": "black-formatter.restart"
             }
@@ -114,23 +172,25 @@
     },
     "dependencies": {
         "fs-extra": "^10.1.0",
-        "vscode-languageclient": "^7.0.0"
+        "vscode-languageclient": "^7.0.0",
+        "vscode-nls": "^5.0.1"
     },
     "devDependencies": {
         "@types/fs-extra": "^9.0.13",
         "@types/vscode": "^1.64.0",
         "@types/glob": "^7.2.0",
         "@types/node": "14.x",
-        "@typescript-eslint/eslint-plugin": "^5.30.3",
-        "@typescript-eslint/parser": "^5.30.3",
+        "@typescript-eslint/eslint-plugin": "^5.32.0",
+        "@typescript-eslint/parser": "^5.32.0",
         "@vscode/test-electron": "^2.1.5",
-        "eslint": "^8.18.0",
+        "eslint": "^8.21.0",
         "glob": "^8.0.3",
         "prettier": "^2.7.1",
         "typescript": "^4.7.4",
         "ts-loader": "^9.3.1",
-        "webpack": "^5.73.0",
+        "webpack": "^5.74.0",
         "webpack-cli": "^4.10.0",
-        "vsce": "^2.9.2"
+        "vsce": "^2.10.0",
+        "vscode-nls-dev": "^4.0.0"
     }
 }
