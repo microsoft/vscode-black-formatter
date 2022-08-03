@@ -364,7 +364,9 @@ def _run_tool_on_document(
         if result.stderr:
             log_to_output(result.stderr)
 
-    log_to_output(f"{document.uri} :\r\n{result.stdout}")
+    if LSP_SERVER.lsp.trace == lsp.Trace.Verbose:
+        log_to_output(f"{document.uri} :\r\n{result.stdout}")
+
     return result
 
 
@@ -431,7 +433,9 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         if result.stderr:
             log_to_output(result.stderr)
 
-    log_to_output(f"\r\n{result.stdout}\r\n")
+    if LSP_SERVER.lsp.trace == lsp.Trace.Verbose:
+        log_to_output(f"\r\n{result.stdout}\r\n")
+
     return result
 
 
