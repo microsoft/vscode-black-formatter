@@ -92,6 +92,16 @@ def _formatting_helper(document: workspace.Document) -> list[lsp.TextEdit] | Non
     extra_args += ["--stdin-filename", _get_filename_for_black(document)]
     result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
     if result and result.stdout:
+        if LSP_SERVER.lsp.trace == lsp.Trace.Verbose:
+            log_to_output(
+                f"{document.uri} :\r\n"
+                + ("*" * 100)
+                + "\r\n"
+                + f"{result.stdout}\r\n"
+                + ("*" * 100)
+                + "\r\n"
+            )
+
         new_source = _match_line_endings(document, result.stdout)
 
         # Skip last line ending in a notebook cell
@@ -210,6 +220,11 @@ def _log_version_info() -> None:
             log_to_output(
                 f"Version info for formatter running for {code_workspace}:\r\n{result.stdout}"
             )
+
+            if "The typed_ast package is required but not installed" in result.stdout:
+                log_to_output(
+                    'Install black in your environment and set "black-formatter.importStrategy": "fromEnvironment"'
+                )
 
             # This is text we get from running `black --version`
             # black, 22.3.0 (compiled: yes) <--- This is the version we want.
@@ -363,9 +378,6 @@ def _run_tool_on_document(
                 raise
         if result.stderr:
             log_to_output(result.stderr)
-
-    if LSP_SERVER.lsp.trace == lsp.Trace.Verbose:
-        log_to_output(f"{document.uri} :\r\n{result.stdout}")
 
     return result
 

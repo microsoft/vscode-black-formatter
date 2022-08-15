@@ -1,11 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """All the action we need during build"""
+import io
 import json
 import os
 import pathlib
 import re
 import urllib.request as url_lib
+import zipfile
 from typing import List
 
 import nox  # pylint: disable=import-error
@@ -23,6 +25,9 @@ def _install_bundle(session: nox.Session) -> None:
         "-r",
         "./requirements.txt",
     )
+
+    session.install("packaging")
+    _install_wheels(f"{os.getcwd()}/bundled/libs", "typed-ast")
 
 
 def _check_files(names: List[str]) -> None:
@@ -228,3 +233,49 @@ def update_packages(session: nox.Session) -> None:
     _update_pip_packages(session)
     _update_npm_packages(session)
     _update_readme()
+
+
+def _contains(s, parts=()):
+    return any(p for p in parts if p in s)
+
+
+def _get_pypi_package_data(package_name):
+    json_uri = "https://pypi.org/pypi/{0}/json".format(package_name)
+    # Response format: https://warehouse.readthedocs.io/api-reference/json/#project
+    # Release metadata format: https://github.com/pypa/interoperability-peps/blob/master/pep-0426-core-metadata.rst
+    with url_lib.urlopen(json_uri) as response:
+        return json.loads(response.read())
+
+
+def _get_wheel_urls(data, version):
+    return list(
+        r["url"] for r in data["releases"][version] if _contains(r["url"], ("cp37",))
+    )
+
+
+def _download_and_extract(root, url, version):
+    root = os.getcwd() if root is None or root == "." else root
+    print(url)
+    with url_lib.urlopen(url) as response:
+        data = response.read()
+        with zipfile.ZipFile(io.BytesIO(data), "r") as wheel:
+            for zip_info in wheel.infolist():
+                # Ignore dist info since we are merging multiple wheels
+                if ".dist-info/" in zip_info.filename:
+                    continue
+                print("\t" + zip_info.filename)
+                wheel.extract(zip_info.filename, root)
+
+
+def _install_wheels(root, package_name, version="latest"):
+    from packaging.version import parse as version_parser
+
+    data = _get_pypi_package_data(package_name)
+
+    if version == "latest":
+        use_version = max(data["releases"].keys(), key=version_parser)
+    else:
+        use_version = version
+
+    for url in _get_wheel_urls(data, use_version):
+        _download_and_extract(root, url, use_version)
