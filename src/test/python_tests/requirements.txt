@@ -37,9 +37,9 @@ py==1.11.0 \
     --hash=sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719 \
     --hash=sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378
     # via pytest
-pyhamcrest==2.0.3 \
-    --hash=sha256:c29dc977154c49e17c30d1ed49a0a6e31cb0dc7bcf733ac4aa9cb58519c2b00c \
-    --hash=sha256:dfb19cf6d71743e086fbb761ed7faea5aacbc8ec10c17a08b93ecde39192a3db
+pyhamcrest==2.0.4 \
+    --hash=sha256:60a41d4783b9d56c9ec8586635d2301db5072b3ea8a51c32dd03c408ae2b0f79 \
+    --hash=sha256:b5d9ce6b977696286cf232ce2adf8969b4d0b045975b0936ac9005e84e67e9c1
     # via -r ./src/test/python_tests/requirements.in
 pyparsing==3.0.9 \
     --hash=sha256:2b020ecf7d21b687f219b71ecad3631f644a47f01403fa1d1036b0c6416d70fb \
