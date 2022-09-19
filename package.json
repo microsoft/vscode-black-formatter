@@ -171,7 +171,6 @@
         ]
     },
     "dependencies": {
-        "ci": "^2.2.0",
         "fs-extra": "^10.1.0",
         "vscode-languageclient": "^7.0.0",
         "vscode-nls": "^5.2.0"
