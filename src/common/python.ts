@@ -29,25 +29,25 @@ type Environment = EnvironmentPath & {
      * Carries details if it is an environment, otherwise `undefined` in case of global interpreters and others.
      */
     readonly environment:
-        | {
-              /**
-               * Type of the environment.
-               */
-              readonly type: EnvironmentType;
-              /**
-               * Name to the environment if any.
-               */
-              readonly name: string | undefined;
-              /**
-               * Uri of the environment folder.
-               */
-              readonly folderUri: Uri;
-              /**
-               * Any specific workspace folder this environment is created for.
-               */
-              readonly workspaceFolder: Uri | undefined;
-          }
-        | undefined;
+    | {
+        /**
+         * Type of the environment.
+         */
+        readonly type: EnvironmentType;
+        /**
+         * Name to the environment if any.
+         */
+        readonly name: string | undefined;
+        /**
+         * Uri of the environment folder.
+         */
+        readonly folderUri: Uri;
+        /**
+         * Any specific workspace folder this environment is created for.
+         */
+        readonly workspaceFolder: Uri | undefined;
+    }
+    | undefined;
     /**
      * Carries Python version information known at this moment.
      */
