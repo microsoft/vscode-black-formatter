@@ -5,7 +5,6 @@
 import { commands, Disposable, Event, EventEmitter, extensions, Uri, WorkspaceFolder } from 'vscode';
 import { traceError, traceLog } from './log/logging';
 
-
 type Environment = EnvironmentPath & {
     /**
      * Carries details about python executable.
@@ -29,25 +28,25 @@ type Environment = EnvironmentPath & {
      * Carries details if it is an environment, otherwise `undefined` in case of global interpreters and others.
      */
     readonly environment:
-    | {
-        /**
-         * Type of the environment.
-         */
-        readonly type: EnvironmentType;
-        /**
-         * Name to the environment if any.
-         */
-        readonly name: string | undefined;
-        /**
-         * Uri of the environment folder.
-         */
-        readonly folderUri: Uri;
-        /**
-         * Any specific workspace folder this environment is created for.
-         */
-        readonly workspaceFolder: Uri | undefined;
-    }
-    | undefined;
+        | {
+              /**
+               * Type of the environment.
+               */
+              readonly type: EnvironmentType;
+              /**
+               * Name to the environment if any.
+               */
+              readonly name: string | undefined;
+              /**
+               * Uri of the environment folder.
+               */
+              readonly folderUri: Uri;
+              /**
+               * Any specific workspace folder this environment is created for.
+               */
+              readonly workspaceFolder: Uri | undefined;
+          }
+        | undefined;
     /**
      * Carries Python version information known at this moment.
      */
@@ -197,7 +196,6 @@ type ResolvedVersionInfo = {
     readonly release: PythonVersionRelease;
 };
 
-
 interface IExtensionApi {
     ready: Promise<void>;
     debug: {
@@ -257,7 +255,9 @@ export async function initializePython(disposables: Disposable[]): Promise<void>
 
 export async function getInterpreterDetails(resource?: Uri): Promise<IInterpreterDetails> {
     const api = await getPythonExtensionAPI();
-    const environment = await api?.environments.resolveEnvironment(api?.environments.getActiveEnvironmentPath(resource));
+    const environment = await api?.environments.resolveEnvironment(
+        api?.environments.getActiveEnvironmentPath(resource),
+    );
     if (environment?.executable.uri) {
         return { path: [environment?.executable.uri.fsPath], resource };
     }
