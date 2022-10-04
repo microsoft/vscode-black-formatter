@@ -37,9 +37,9 @@ colorama==0.4.5 \
     --hash=sha256:854bf444933e37f5824ae7bfc1e98d5bce2ebe4160d46b5edf346a89358e99da \
     --hash=sha256:e6c6b4334fc50988a639d9b98aa429a0b57da6e17b9a44f0451f930b6967b7a4
     # via click
-importlib-metadata==4.12.0 \
-    --hash=sha256:637245b8bab2b6502fcbc752cc4b7a6f6243bb02b31c5c26156ad103d3d45670 \
-    --hash=sha256:7401a975809ea1fdc658c3aa4f78cc2195a0e019c5cbc4c06122884e9ae80c23
+importlib-metadata==5.0.0 \
+    --hash=sha256:da31db32b304314d044d3c12c79bd59e307889b287ad12ff387b3500835fc2ab \
+    --hash=sha256:ddb0e35065e8938f867ed4928d0ae5bf2a53b7773871bfe6bcc7e4fcdc7dea43
     # via click
 mypy-extensions==0.4.3 \
     --hash=sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d \
@@ -94,9 +94,9 @@ pydantic==1.9.2 \
     --hash=sha256:fafe841be1103f340a24977f61dee76172e4ae5f647ab9e7fd1e1fca51524f08 \
     --hash=sha256:ff68fc85355532ea77559ede81f35fff79a6a5543477e168ab3a381887caea76
     # via pygls
-pygls==0.12.1 \
-    --hash=sha256:3b9da223fd6e7624aed047dec2cbb6ab471c1441d5b48369daad012594c11610 \
-    --hash=sha256:733167e836e6b73b3f0fb8ae254ca168ea8d3e84a7302ea0e1fc91a7a1672547
+pygls==0.12.2 \
+    --hash=sha256:48465ba74a32d50fbc110111ee0b60721c169f5bd9d8eedc582931ff765d6bc6 \
+    --hash=sha256:ad83aea5c45c915b6b0b47ef0faca3c3b4778d087110c8e912da14b9f1c9f9d7
     # via -r ./requirements.in
 pyparsing==3.0.9 \
     --hash=sha256:2b020ecf7d21b687f219b71ecad3631f644a47f01403fa1d1036b0c6416d70fb \
