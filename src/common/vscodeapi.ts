@@ -7,6 +7,9 @@ import {
     commands,
     ConfigurationScope,
     Disposable,
+    DocumentFormattingEditProvider,
+    DocumentSelector,
+    languages,
     OutputChannel,
     Uri,
     window,
@@ -40,4 +43,11 @@ export function getWorkspaceFolders(): readonly WorkspaceFolder[] {
 
 export function getWorkspaceFolder(uri: Uri): WorkspaceFolder | undefined {
     return workspace.getWorkspaceFolder(uri);
+}
+
+export function registerDocumentFormattingEditProvider(
+    selector: DocumentSelector,
+    provider: DocumentFormattingEditProvider,
+): Disposable {
+    return languages.registerDocumentFormattingEditProvider(selector, provider);
 }

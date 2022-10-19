@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { WorkspaceFolder } from 'vscode';
+import * as path from 'path';
+import { Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
-import { getWorkspaceFolders } from './vscodeapi';
+import { DocumentSelector } from 'vscode-languageclient';
+import { getWorkspaceFolders, isVirtualWorkspace } from './vscodeapi';
 
 export function getTimeForLogging(): string {
     const date = new Date();
@@ -25,7 +27,13 @@ export function traceLevelToLSTrace(level: string): Trace {
 
 export function getProjectRoot(): WorkspaceFolder {
     const workspaces: readonly WorkspaceFolder[] = getWorkspaceFolders();
-    if (workspaces.length === 1) {
+    if (workspaces.length === 0) {
+        return {
+            uri: Uri.file(process.cwd()),
+            name: path.basename(process.cwd()),
+            index: 0,
+        };
+    } else if (workspaces.length === 1) {
         return workspaces[0];
     } else {
         let root = workspaces[0].uri.fsPath;
@@ -38,4 +46,15 @@ export function getProjectRoot(): WorkspaceFolder {
         }
         return rootWorkspace;
     }
+}
+
+export function getDocumentSelector(): DocumentSelector {
+    return isVirtualWorkspace()
+        ? [{ language: 'python' }]
+        : [
+              { scheme: 'file', language: 'python' },
+              { scheme: 'untitled', language: 'python' },
+              { scheme: 'vscode-notebook', language: 'python' },
+              { scheme: 'vscode-notebook-cell', language: 'python' },
+          ];
 }

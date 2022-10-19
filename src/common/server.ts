@@ -11,9 +11,10 @@ import {
 } from 'vscode-languageclient/node';
 import { DEBUG_SERVER_SCRIPT_PATH, SERVER_SCRIPT_PATH } from './constants';
 import { traceError, traceInfo, traceVerbose } from './log/logging';
+import { unregisterEmptyFormatter } from './nullFormatter';
 import { getDebuggerPath } from './python';
 import { getExtensionSettings, getWorkspaceSettings, ISettings } from './settings';
-import { getProjectRoot, traceLevelToLSTrace } from './utilities';
+import { getDocumentSelector, getProjectRoot, traceLevelToLSTrace } from './utilities';
 import { isVirtualWorkspace } from './vscodeapi';
 
 export type IInitOptions = { settings: ISettings[] };
@@ -59,14 +60,7 @@ export async function createServer(
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
         // Register the server for python documents
-        documentSelector: isVirtualWorkspace()
-            ? [{ language: 'python' }]
-            : [
-                  { scheme: 'file', language: 'python' },
-                  { scheme: 'untitled', language: 'python' },
-                  { scheme: 'vscode-notebook', language: 'python' },
-                  { scheme: 'vscode-notebook-cell', language: 'python' },
-              ],
+        documentSelector: getDocumentSelector(),
         outputChannel: outputChannel,
         traceOutputChannel: outputChannel,
         revealOutputChannelOn: RevealOutputChannelOn.Never,
@@ -120,6 +114,7 @@ export async function restartServer(
                     break;
                 case State.Starting:
                     traceVerbose(`Server State: Starting`);
+                    unregisterEmptyFormatter();
                     break;
                 case State.Running:
                     traceVerbose(`Server State: Running`);
