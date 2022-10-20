@@ -1,5 +1,3 @@
-# Change Log
+# Changelog
 
-## 2022.2.0
-
--   Initial release of vscode-black-formatter extension, with `black` version `22.3.0`.
+**Please see https://github.com/microsoft/vscode-black-formatter/releases for the latest release notes.**
