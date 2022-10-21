@@ -229,7 +229,11 @@ def _log_version_info() -> None:
             # This is text we get from running `black --version`
             # black, 22.3.0 (compiled: yes) <--- This is the version we want.
             first_line = result.stdout.splitlines(keepends=False)[0]
-            actual_version = first_line.split(" ")[1]
+            parts = [v for v in first_line.split(" ") if "." in v]
+            if len(parts) == 1:
+                actual_version = parts[0]
+            else:
+                actual_version = "0.0.0"
 
             version = parse_version(actual_version)
             min_version = parse_version(MIN_VERSION)
@@ -255,6 +259,20 @@ def _log_version_info() -> None:
 # Internal functional and settings management APIs.
 # *****************************************************
 def _update_workspace_settings(settings):
+    if not settings:
+        key = os.getcwd()
+        WORKSPACE_SETTINGS[key] = {
+            "workspaceFS": key,
+            "workspace": uris.from_fs_path(key),
+            "logLevel": "error",
+            "path": [],
+            "interpreter": [sys.executable],
+            "args": [],
+            "importStrategy": "useBundled",
+            "showNotifications": "off",
+        }
+        return
+
     for setting in settings:
         key = uris.to_fs_path(setting["workspace"])
         WORKSPACE_SETTINGS[key] = {
@@ -263,20 +281,36 @@ def _update_workspace_settings(settings):
         }
 
 
-def _get_settings_by_document(document: workspace.Document | None):
-    if len(WORKSPACE_SETTINGS) == 1 or document is None or document.path is None:
-        return list(WORKSPACE_SETTINGS.values())[0]
-
+def _get_document_key(document: workspace.Document):
     document_workspace = pathlib.Path(document.path)
     workspaces = {s["workspaceFS"] for s in WORKSPACE_SETTINGS.values()}
 
-    # COMMENT: about non workspace files
     while document_workspace != document_workspace.parent:
         if str(document_workspace) in workspaces:
-            break
+            return str(document_workspace)
         document_workspace = document_workspace.parent
+    return None
 
-    return WORKSPACE_SETTINGS[str(document_workspace)]
+
+def _get_settings_by_document(document: workspace.Document | None):
+    if document is None or document.path is None:
+        return list(WORKSPACE_SETTINGS.values())[0]
+
+    key = _get_document_key(document)
+    if key is None:
+        key = os.fspath(pathlib.Path(document.path).parent)
+        return {
+            "workspaceFS": key,
+            "workspace": uris.from_fs_path(key),
+            "logLevel": "error",
+            "path": [],
+            "interpreter": [sys.executable],
+            "args": [],
+            "importStrategy": "useBundled",
+            "showNotifications": "off",
+        }
+
+    return WORKSPACE_SETTINGS[str(key)]
 
 
 # *****************************************************
