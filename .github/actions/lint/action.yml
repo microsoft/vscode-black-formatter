@@ -28,9 +28,9 @@ runs:
       shell: bash
 
     - name: Install Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
-        python-version: '3.x'
+        python-version: '3.7'
 
     - name: Pip cache
       uses: actions/cache@v2
@@ -44,13 +44,13 @@ runs:
       run: python -m pip install -U pip
       shell: bash
 
-    # For faster/better builds of sdists.
-    - name: Install build pre-requisite
-      run: python -m pip install wheel
+    - name: Install wheel and nox
+      run: python -m pip install wheel nox
       shell: bash
 
-    - name: Install nox
-      run: python -m pip install nox
+    # This will install libraries to a target directory.
+    - name: Install bundled python libraries
+      run: python -m nox --session install_bundled_libs
       shell: bash
 
     - name: Check linting and formatting
