@@ -36,14 +36,17 @@ update_sys_path(
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
 import jsonrpc
+import lsprotocol.types as lsp
 import utils
-from pygls import lsp, protocol, server, uris, workspace
+from pygls import protocol, server, uris, workspace
 
 WORKSPACE_SETTINGS = {}
 RUNNER = pathlib.Path(__file__).parent / "runner.py"
 
 MAX_WORKERS = 5
-LSP_SERVER = server.LanguageServer(max_workers=MAX_WORKERS)
+LSP_SERVER = server.LanguageServer(
+    name="black-server", version="v0.1.0", max_workers=MAX_WORKERS
+)
 
 
 # **********************************************************
@@ -63,7 +66,7 @@ MIN_VERSION = "22.3.0"
 # **********************************************************
 
 
-@LSP_SERVER.feature(lsp.FORMATTING)
+@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_FORMATTING)
 def formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit] | None:
     """LSP handler for textDocument/formatting request."""
 
@@ -92,7 +95,7 @@ def _formatting_helper(document: workspace.Document) -> list[lsp.TextEdit] | Non
     extra_args += ["--stdin-filename", _get_filename_for_black(document)]
     result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
     if result and result.stdout:
-        if LSP_SERVER.lsp.trace == lsp.Trace.Verbose:
+        if LSP_SERVER.lsp.trace == lsp.TraceValues.Verbose:
             log_to_output(
                 f"{document.uri} :\r\n"
                 + ("*" * 100)
@@ -193,13 +196,13 @@ def initialize(params: lsp.InitializeParams) -> None:
 
     if isinstance(LSP_SERVER.lsp, protocol.LanguageServerProtocol):
         if any(setting["logLevel"] == "debug" for setting in settings):
-            LSP_SERVER.lsp.trace = lsp.Trace.Verbose
+            LSP_SERVER.lsp.trace = lsp.TraceValues.Verbose
         elif any(
             setting["logLevel"] in ["error", "warn", "info"] for setting in settings
         ):
-            LSP_SERVER.lsp.trace = lsp.Trace.Messages
+            LSP_SERVER.lsp.trace = lsp.TraceValues.Messages
         else:
-            LSP_SERVER.lsp.trace = lsp.Trace.Off
+            LSP_SERVER.lsp.trace = lsp.TraceValues.Off
     _log_version_info()
 
 
@@ -479,7 +482,7 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         if result.stderr:
             log_to_output(result.stderr)
 
-    if LSP_SERVER.lsp.trace == lsp.Trace.Verbose:
+    if LSP_SERVER.lsp.trace == lsp.TraceValues.Verbose:
         log_to_output(f"\r\n{result.stdout}\r\n")
 
     return result
