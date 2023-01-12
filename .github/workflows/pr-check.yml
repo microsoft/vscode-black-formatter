@@ -9,7 +9,6 @@ env:
   # Force a path with spaces and unicode chars to test extension works in these scenarios
   special-working-directory: './🐍 🐛'
   special-working-directory-relative: '🐍 🐛'
-  DISABLE_TRANSLATIONS: true
 
 jobs:
   build-vsix:

@@ -46,6 +46,7 @@
         "onCommand:black-formatter.restart"
     ],
     "main": "./dist/extension.js",
+    "l10n": "./l10n",
     "scripts": {
         "vscode:prepublish": "npm run package",
         "compile": "webpack",
@@ -172,25 +173,23 @@
     },
     "dependencies": {
         "fs-extra": "^11.1.0",
-        "vscode-languageclient": "^7.0.0",
-        "vscode-nls": "^5.2.0"
+        "vscode-languageclient": "^7.0.0"
     },
     "devDependencies": {
         "@types/fs-extra": "^9.0.13",
-        "@types/vscode": "^1.72.0",
         "@types/glob": "^8.0.0",
         "@types/node": "14.x",
+        "@types/vscode": "^1.74.0",
         "@typescript-eslint/eslint-plugin": "^5.48.0",
         "@typescript-eslint/parser": "^5.48.0",
         "@vscode/test-electron": "^2.2.1",
         "eslint": "^8.31.0",
         "glob": "^8.0.3",
         "prettier": "^2.8.1",
-        "typescript": "^4.9.4",
         "ts-loader": "^9.4.2",
-        "webpack": "^5.75.0",
-        "webpack-cli": "^5.0.1",
+        "typescript": "^4.9.4",
         "vsce": "^2.15.0",
-        "vscode-nls-dev": "^4.0.3"
+        "webpack": "^5.75.0",
+        "webpack-cli": "^5.0.1"
     }
 }
