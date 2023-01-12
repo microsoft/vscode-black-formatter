@@ -29,7 +29,7 @@
         "black"
     ],
     "engines": {
-        "vscode": "^1.72.0"
+        "vscode": "^1.74.0"
     },
     "categories": [
         "Programming Languages",
