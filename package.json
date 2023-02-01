@@ -42,8 +42,7 @@
         "onLanguage:python",
         "workspaceContains:pyproject.toml",
         "workspaceContains:.black",
-        "workspaceContains:*.py",
-        "onCommand:black-formatter.restart"
+        "workspaceContains:*.py"
     ],
     "main": "./dist/extension.js",
     "l10n": "./l10n",
