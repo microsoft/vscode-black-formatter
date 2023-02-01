@@ -185,7 +185,7 @@
         "@vscode/test-electron": "^2.2.1",
         "eslint": "^8.31.0",
         "glob": "^8.0.3",
-        "prettier": "^2.8.1",
+        "prettier": "^2.8.3",
         "ts-loader": "^9.4.2",
         "typescript": "^4.9.4",
         "vsce": "^2.15.0",
