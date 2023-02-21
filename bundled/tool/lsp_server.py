@@ -35,13 +35,13 @@ update_sys_path(
 # Imports needed for the language server goes below this.
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
-import jsonrpc
+import lsp_jsonrpc as jsonrpc
 import lsprotocol.types as lsp
-import utils
+import lsp_utils as utils
 from pygls import protocol, server, uris, workspace
 
 WORKSPACE_SETTINGS = {}
-RUNNER = pathlib.Path(__file__).parent / "runner.py"
+RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
 LSP_SERVER = server.LanguageServer(

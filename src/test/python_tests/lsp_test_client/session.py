@@ -37,7 +37,7 @@ class LspSession(MethodDispatcher):
         self._endpoint = None
         self._notification_callbacks = {}
         self.script = (
-            script if script else (PROJECT_ROOT / "bundled" / "tool" / "server.py")
+            script if script else (PROJECT_ROOT / "bundled" / "tool" / "lsp_server.py")
         )
 
     def __enter__(self):
