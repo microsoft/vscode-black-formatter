@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import BinaryIO, Dict, Sequence, Union
 
 CONTENT_LENGTH = "Content-Length: "
-RUNNER_SCRIPT = str(pathlib.Path(__file__).parent / "runner.py")
+RUNNER_SCRIPT = str(pathlib.Path(__file__).parent / "lsp_runner.py")
 
 
 def to_str(text) -> str:
