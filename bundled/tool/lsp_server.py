@@ -36,8 +36,8 @@ update_sys_path(
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
 import lsp_jsonrpc as jsonrpc
-import lsprotocol.types as lsp
 import lsp_utils as utils
+import lsprotocol.types as lsp
 from pygls import protocol, server, uris, workspace
 
 WORKSPACE_SETTINGS = {}
