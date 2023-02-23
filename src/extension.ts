@@ -60,7 +60,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             if (interpreter?.length || interpreterDetails.path) {
                 await runServer();
             } else {
-                runPythonExtensionCommand('python.triggerEnvSelection', getProjectRoot().uri);
+                const root = await getProjectRoot();
+                runPythonExtensionCommand('python.triggerEnvSelection', root.uri);
             }
         }),
     );

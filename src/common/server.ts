@@ -15,7 +15,6 @@ import { unregisterEmptyFormatter } from './nullFormatter';
 import { getDebuggerPath } from './python';
 import { getExtensionSettings, getWorkspaceSettings, ISettings } from './settings';
 import { getDocumentSelector, getProjectRoot, traceLevelToLSTrace } from './utilities';
-import { isVirtualWorkspace } from './vscodeapi';
 
 export type IInitOptions = { settings: ISettings[] };
 
@@ -28,7 +27,8 @@ export async function createServer(
     workspaceSetting: ISettings,
 ): Promise<LanguageClient> {
     const command = interpreter[0];
-    const cwd = getProjectRoot().uri.fsPath;
+    const root = await getProjectRoot();
+    const cwd = root.uri.fsPath;
 
     // Set debugger path needed for debugging python code.
     const newEnv = { ...process.env };
@@ -83,7 +83,8 @@ export async function restartServer(
         _disposables.forEach((d) => d.dispose());
         _disposables = [];
     }
-    const workspaceSetting = await getWorkspaceSettings(serverId, getProjectRoot(), true);
+    const root = await getProjectRoot();
+    const workspaceSetting = await getWorkspaceSettings(serverId, root, true);
     if (workspaceSetting.interpreter.length === 0) {
         traceError(
             'Python interpreter missing:\r\n' +
