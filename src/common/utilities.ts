@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import * as path from 'path';
+import * as fsapi from 'fs-extra';
 import { Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
 import { DocumentSelector } from 'vscode-languageclient';
@@ -25,7 +26,7 @@ export function traceLevelToLSTrace(level: string): Trace {
     }
 }
 
-export function getProjectRoot(): WorkspaceFolder {
+export async function getProjectRoot(): Promise<WorkspaceFolder> {
     const workspaces: readonly WorkspaceFolder[] = getWorkspaceFolders();
     if (workspaces.length === 0) {
         return {
@@ -36,13 +37,25 @@ export function getProjectRoot(): WorkspaceFolder {
     } else if (workspaces.length === 1) {
         return workspaces[0];
     } else {
-        let root = workspaces[0].uri.fsPath;
-        let rootWorkspace = workspaces[0];
+        let rootWorkspace: WorkspaceFolder | undefined;
         for (const w of workspaces) {
-            if (root.length > w.uri.fsPath.length) {
-                root = w.uri.fsPath;
-                rootWorkspace = w;
+            if (await fsapi.pathExists(w.uri.fsPath)) {
+                if (!rootWorkspace) {
+                    rootWorkspace = w;
+                }
+
+                if (rootWorkspace.uri.fsPath.length > w.uri.fsPath.length) {
+                    rootWorkspace = w;
+                }
             }
+        }
+
+        if (!rootWorkspace) {
+            return {
+                uri: Uri.file(process.cwd()),
+                name: path.basename(process.cwd()),
+                index: 0,
+            };
         }
         return rootWorkspace;
     }
