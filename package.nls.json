@@ -1,12 +1,6 @@
 {
     "extension.description": "Formatting support for python files using `black`.",
     "command.restartServer": "Restart Server",
-    "settings.logLevel.description": "The trace level the extension logs at, defaults to 'error'.",
-    "settings.logLevel.debug.description": "Includes verbose logging intended for debugging purposes.",
-    "settings.logLevel.error.description": "Only errors and always logged information.",
-    "settings.logLevel.info.description": "Includes all messages that are not marked as verbose or debug.",
-    "settings.logLevel.off.description": "Most logging is turned off, any information that is always logged might still be shown.",
-    "settings.logLevel.warn.description": "Includes all messages in the error category and any additional warnings.",
     "settings.args.description": "Arguments passed in. Each argument is a separate string in the array.",
     "settings.path.description": "When set to a path to `black` binary, extension will use that for linting. NOTE: Using this option may slowdown linting.",
     "settings.importStrategy.description": "Defines where `black` is imported from. This setting may be ignored if `black-formatter.path` is set.",

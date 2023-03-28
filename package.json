@@ -71,29 +71,9 @@
         ],
         "configuration": {
             "properties": {
-                "black-formatter.logLevel": {
-                    "default": "error",
-                    "description": "%settings.logLevel.description%",
-                    "enum": [
-                        "debug",
-                        "error",
-                        "info",
-                        "off",
-                        "warn"
-                    ],
-                    "scope": "window",
-                    "type": "string",
-                    "enumDescriptions": [
-                        "%settings.logLevel.debug.description%",
-                        "%settings.logLevel.error.description%",
-                        "%settings.logLevel.info.description%",
-                        "%settings.logLevel.off.description%",
-                        "%settings.logLevel.warn.description%"
-                    ]
-                },
                 "black-formatter.args": {
                     "default": [],
-                    "description": "%settings.args.description%",
+                    "markdownDescription": "%settings.args.description%",
                     "items": {
                         "type": "string"
                     },
@@ -102,7 +82,7 @@
                 },
                 "black-formatter.path": {
                     "default": [],
-                    "description": "%settings.path.description%",
+                    "markdownDescription": "%settings.path.description%",
                     "scope": "resource",
                     "items": {
                         "type": "string"
@@ -121,12 +101,12 @@
                 },
                 "black-formatter.importStrategy": {
                     "default": "useBundled",
-                    "description": "%settings.importStrategy.description%",
+                    "markdownDescription": "%settings.importStrategy.description%",
                     "enum": [
                         "useBundled",
                         "fromEnvironment"
                     ],
-                    "enumDescriptions": [
+                    "markdownEnumDescriptions": [
                         "%settings.importStrategy.useBundled.description%",
                         "%settings.importStrategy.fromEnvironment.description%"
                     ],
@@ -135,7 +115,7 @@
                 },
                 "black-formatter.interpreter": {
                     "default": [],
-                    "description": "%settings.interpreter.description%",
+                    "markdownDescription": "%settings.interpreter.description%",
                     "scope": "window",
                     "items": {
                         "type": "string"
@@ -144,14 +124,14 @@
                 },
                 "black-formatter.showNotifications": {
                     "default": "off",
-                    "description": "%settings.showNotifications.description%",
+                    "markdownDescription": "%settings.showNotifications.description%",
                     "enum": [
                         "off",
                         "onError",
                         "onWarning",
                         "always"
                     ],
-                    "enumDescriptions": [
+                    "markdownEnumDescriptions": [
                         "%settings.showNotifications.off.description%",
                         "%settings.showNotifications.onError.description%",
                         "%settings.showNotifications.onWarning.description%",
