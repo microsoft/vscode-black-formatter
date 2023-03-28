@@ -1,29 +1,38 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as fsapi from 'fs-extra';
-import { Uri, WorkspaceFolder } from 'vscode';
-import { Trace } from 'vscode-jsonrpc/node';
-import { DocumentSelector } from 'vscode-languageclient';
-import { getWorkspaceFolders, isVirtualWorkspace } from './vscodeapi';
+import { env, LogLevel, Uri, WorkspaceFolder } from 'vscode';
+import { Trace, TraceValues } from 'vscode-jsonrpc/node';
+import { getWorkspaceFolders } from './vscodeapi';
 
-export function getTimeForLogging(): string {
-    const date = new Date();
-    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}.${date.getMilliseconds()}`;
-}
-
-export function traceLevelToLSTrace(level: string): Trace {
-    switch (level) {
-        case 'error':
-        case 'warn':
-        case 'info':
+function logLevelToTrace(logLevel: LogLevel): Trace {
+    switch (logLevel) {
+        case LogLevel.Error:
+        case LogLevel.Warning:
+        case LogLevel.Info:
             return Trace.Messages;
-        case 'debug':
+
+        case LogLevel.Debug:
+        case LogLevel.Trace:
             return Trace.Verbose;
+
+        case LogLevel.Off:
         default:
             return Trace.Off;
     }
+}
+
+export function getLSClientTraceLevel(channelLogLevel: LogLevel, globalLogLevel: LogLevel): Trace {
+    if (channelLogLevel === LogLevel.Off) {
+        return logLevelToTrace(globalLogLevel);
+    }
+    if (globalLogLevel === LogLevel.Off) {
+        return logLevelToTrace(channelLogLevel);
+    }
+    const level = logLevelToTrace(channelLogLevel <= globalLogLevel ? channelLogLevel : globalLogLevel);
+    return level;
 }
 
 export async function getProjectRoot(): Promise<WorkspaceFolder> {
@@ -37,37 +46,22 @@ export async function getProjectRoot(): Promise<WorkspaceFolder> {
     } else if (workspaces.length === 1) {
         return workspaces[0];
     } else {
-        let rootWorkspace: WorkspaceFolder | undefined;
+        let rootWorkspace = workspaces[0];
+        let root = undefined;
         for (const w of workspaces) {
-            if (await fsapi.pathExists(w.uri.fsPath)) {
-                if (!rootWorkspace) {
-                    rootWorkspace = w;
-                }
-
-                if (rootWorkspace.uri.fsPath.length > w.uri.fsPath.length) {
-                    rootWorkspace = w;
-                }
+            if (await fs.pathExists(w.uri.fsPath)) {
+                root = w.uri.fsPath;
+                rootWorkspace = w;
+                break;
             }
         }
 
-        if (!rootWorkspace) {
-            return {
-                uri: Uri.file(process.cwd()),
-                name: path.basename(process.cwd()),
-                index: 0,
-            };
+        for (const w of workspaces) {
+            if (root && root.length > w.uri.fsPath.length && (await fs.pathExists(w.uri.fsPath))) {
+                root = w.uri.fsPath;
+                rootWorkspace = w;
+            }
         }
         return rootWorkspace;
     }
-}
-
-export function getDocumentSelector(): DocumentSelector {
-    return isVirtualWorkspace()
-        ? [{ language: 'python' }]
-        : [
-              { scheme: 'file', language: 'python' },
-              { scheme: 'untitled', language: 'python' },
-              { scheme: 'vscode-notebook', language: 'python' },
-              { scheme: 'vscode-notebook-cell', language: 'python' },
-          ];
 }
