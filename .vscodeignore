@@ -23,3 +23,4 @@ noxfile.py
 .flake8
 **/requirements.txt
 **/requirements.in
+**/tool/_debug_server.py
