@@ -17,6 +17,7 @@ import { getExtensionSettings, getGlobalSettings, getWorkspaceSettings, ISetting
 import { getLSClientTraceLevel, getProjectRoot } from './utilities';
 import { isVirtualWorkspace } from './vscodeapi';
 import { updateStatus } from './status';
+import { unregisterEmptyFormatter } from './nullFormatter';
 
 export type IInitOptions = { settings: ISettings[]; globalSettings: ISettings };
 
@@ -121,6 +122,7 @@ export async function restartServer(
                     break;
                 case State.Starting:
                     traceVerbose(`Server State: Starting`);
+                    unregisterEmptyFormatter();
                     break;
                 case State.Running:
                     traceVerbose(`Server State: Running`);
