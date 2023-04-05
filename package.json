@@ -2,7 +2,7 @@
     "name": "black-formatter",
     "displayName": "Black Formatter",
     "description": "%extension.description%",
-    "version": "2023.1.0-dev",
+    "version": "2023.2.0",
     "preview": true,
     "serverInfo": {
         "name": "Black",
@@ -159,16 +159,16 @@
         "@types/glob": "^8.1.0",
         "@types/node": "14.x",
         "@types/vscode": "^1.74.0",
-        "@typescript-eslint/eslint-plugin": "^5.57.0",
-        "@typescript-eslint/parser": "^5.57.0",
+        "@typescript-eslint/eslint-plugin": "^5.57.1",
+        "@typescript-eslint/parser": "^5.57.1",
         "@vscode/test-electron": "^2.3.0",
         "eslint": "^8.37.0",
-        "glob": "^9.3.2",
+        "glob": "^9.3.4",
         "prettier": "^2.8.7",
         "ts-loader": "^9.4.2",
-        "typescript": "^5.0.2",
+        "typescript": "^5.0.3",
         "vsce": "^2.15.0",
-        "webpack": "^5.77.0",
+        "webpack": "^5.78.0",
         "webpack-cli": "^5.0.1"
     }
 }
