@@ -15,20 +15,30 @@ export interface ISettings {
     showNotifications: string;
 }
 
-export async function getExtensionSettings(namespace: string, includeInterpreter?: boolean): Promise<ISettings[]> {
-    const settings: ISettings[] = [];
-    const workspaces = getWorkspaceFolders();
-
-    for (const workspace of workspaces) {
-        const workspaceSetting = await getWorkspaceSettings(namespace, workspace, includeInterpreter);
-        settings.push(workspaceSetting);
-    }
-
-    return settings;
+export function getExtensionSettings(namespace: string, includeInterpreter?: boolean): Promise<ISettings[]> {
+    return Promise.all(getWorkspaceFolders().map((w) => getWorkspaceSettings(namespace, w, includeInterpreter)));
 }
 
-function resolveWorkspace(workspace: WorkspaceFolder, value: string): string {
-    return value.replace('${workspaceFolder}', workspace.uri.fsPath);
+function resolveVariables(value: string[], workspace?: WorkspaceFolder): string[] {
+    const substitutions = new Map<string, string>();
+    const home = process.env.HOME || process.env.USERPROFILE;
+    if (home) {
+        substitutions.set('${userHome}', home);
+    }
+    if (workspace) {
+        substitutions.set('${workspaceFolder}', workspace.uri.fsPath);
+    }
+    substitutions.set('${cwd}', process.cwd());
+    getWorkspaceFolders().forEach((w) => {
+        substitutions.set('${workspaceFolder:' + w.name + '}', w.uri.fsPath);
+    });
+
+    return value.map((s) => {
+        for (const [key, value] of substitutions) {
+            s = s.replace(key, value);
+        }
+        return s;
+    });
 }
 
 function getArgs(namespace: string, workspace: WorkspaceFolder): string[] {
@@ -71,54 +81,52 @@ export async function getWorkspaceSettings(
 ): Promise<ISettings> {
     const config = getConfiguration(namespace, workspace.uri);
 
-    let interpreter: string[] | undefined = [];
+    let interpreter: string[] = [];
     if (includeInterpreter) {
-        interpreter = getInterpreterFromSetting(namespace);
-        if (interpreter === undefined || interpreter.length === 0) {
-            interpreter = (await getInterpreterDetails(workspace.uri)).path;
-        }
+        const value = getInterpreterFromSetting(namespace) ?? (await getInterpreterDetails(workspace.uri)).path;
+        interpreter = value ?? [];
     }
 
-    const args = getArgs(namespace, workspace).map((s) => resolveWorkspace(workspace, s));
-    const path = getPath(namespace, workspace).map((s) => resolveWorkspace(workspace, s));
+    const args = getArgs(namespace, workspace);
+    const path = getPath(namespace, workspace);
     const workspaceSetting = {
         cwd: workspace.uri.fsPath,
         workspace: workspace.uri.toString(),
-        args,
-        path,
-        interpreter: (interpreter ?? []).map((s) => resolveWorkspace(workspace, s)),
+        args: resolveVariables(args, workspace),
+        path: resolveVariables(path, workspace),
+        interpreter: resolveVariables(interpreter, workspace),
         importStrategy: config.get<string>('importStrategy', 'fromEnvironment'),
         showNotifications: config.get<string>('showNotifications', 'off'),
     };
     return workspaceSetting;
 }
-function getGlobalValue<T>(config: WorkspaceConfiguration, key: string, defaultValue: T): T {
+
+function getGlobalValue<T>(config: WorkspaceConfiguration, key: string): T | undefined {
     const inspect = config.inspect<T>(key);
-    return inspect?.globalValue ?? inspect?.defaultValue ?? defaultValue;
+    return inspect?.globalValue ?? inspect?.defaultValue;
 }
 
 export async function getGlobalSettings(namespace: string, includeInterpreter?: boolean): Promise<ISettings> {
     const config = getConfiguration(namespace);
 
-    let interpreter: string[] | undefined = [];
+    let interpreter: string[] = [];
     if (includeInterpreter) {
-        interpreter = getGlobalValue<string[]>(config, 'interpreter', []);
-        if (interpreter === undefined || interpreter.length === 0) {
-            interpreter = (await getInterpreterDetails()).path;
-        }
+        const value = getGlobalValue<string[]>(config, 'interpreter') || (await getInterpreterDetails()).path;
+        interpreter = value ?? [];
     }
 
     const setting = {
         cwd: process.cwd(),
         workspace: process.cwd(),
-        args: getGlobalValue<string[]>(config, 'args', []),
-        path: getGlobalValue<string[]>(config, 'path', []),
+        args: getGlobalValue<string[]>(config, 'args') ?? [],
+        path: getGlobalValue<string[]>(config, 'path') ?? [],
         interpreter: interpreter ?? [],
-        importStrategy: getGlobalValue<string>(config, 'importStrategy', 'fromEnvironment'),
-        showNotifications: getGlobalValue<string>(config, 'showNotifications', 'off'),
+        importStrategy: getGlobalValue<string>(config, 'importStrategy') ?? 'fromEnvironment',
+        showNotifications: getGlobalValue<string>(config, 'showNotifications') ?? 'off',
     };
     return setting;
 }
+
 export function checkIfConfigurationChanged(e: ConfigurationChangeEvent, namespace: string): boolean {
     const settings = [
         `${namespace}.trace`,
