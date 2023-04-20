@@ -83,8 +83,10 @@ export async function getWorkspaceSettings(
 
     let interpreter: string[] = [];
     if (includeInterpreter) {
-        const value = getInterpreterFromSetting(namespace) ?? (await getInterpreterDetails(workspace.uri)).path;
-        interpreter = value ?? [];
+        interpreter = getInterpreterFromSetting(namespace) ?? [];
+        if (interpreter.length === 0) {
+            interpreter = (await getInterpreterDetails(workspace.uri)).path ?? [];
+        }
     }
 
     const args = getArgs(namespace, workspace);
@@ -111,8 +113,10 @@ export async function getGlobalSettings(namespace: string, includeInterpreter?: 
 
     let interpreter: string[] = [];
     if (includeInterpreter) {
-        const value = getGlobalValue<string[]>(config, 'interpreter') || (await getInterpreterDetails()).path;
-        interpreter = value ?? [];
+        interpreter = getGlobalValue<string[]>(config, 'interpreter') ?? [];
+        if (interpreter === undefined || interpreter.length === 0) {
+            interpreter = (await getInterpreterDetails()).path ?? [];
+        }
     }
 
     const setting = {
