@@ -116,7 +116,7 @@
                 "black-formatter.interpreter": {
                     "default": [],
                     "markdownDescription": "%settings.interpreter.description%",
-                    "scope": "window",
+                    "scope": "resource",
                     "items": {
                         "type": "string"
                     },
