@@ -4,7 +4,7 @@ on:
   pull_request:
 
 env:
-  NODE_VERSION: 14.19.0
+  NODE_VERSION: 16.17.0
   TEST_RESULTS_DIRECTORY: .
   # Force a path with spaces and unicode chars to test extension works in these scenarios
   special-working-directory: './🐍 🐛'

@@ -157,18 +157,18 @@
     "devDependencies": {
         "@types/fs-extra": "^11.0.1",
         "@types/glob": "^8.1.0",
-        "@types/node": "14.x",
+        "@types/node": "16.x",
         "@types/vscode": "^1.74.0",
-        "@typescript-eslint/eslint-plugin": "^5.57.1",
-        "@typescript-eslint/parser": "^5.57.1",
+        "@typescript-eslint/eslint-plugin": "^5.59.2",
+        "@typescript-eslint/parser": "^5.59.2",
         "@vscode/test-electron": "^2.3.0",
-        "eslint": "^8.37.0",
-        "glob": "^9.3.4",
-        "prettier": "^2.8.7",
+        "@vscode/vsce": "^2.19.0",
+        "eslint": "^8.39.0",
+        "glob": "^10.2.2",
+        "prettier": "^2.8.8",
         "ts-loader": "^9.4.2",
-        "typescript": "^5.0.3",
-        "vsce": "^2.15.0",
-        "webpack": "^5.78.0",
-        "webpack-cli": "^5.0.1"
+        "typescript": "^5.0.4",
+        "webpack": "^5.81.0",
+        "webpack-cli": "^5.0.2"
     }
 }
