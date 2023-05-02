@@ -6,7 +6,6 @@ updates:
       interval: monthly
     labels:
       - 'no-changelog'
-      - 'debt'
 
   - package-ecosystem: 'pip'
     directory: /src/test/python_tests
@@ -14,7 +13,6 @@ updates:
       interval: daily
     labels:
       - 'no-changelog'
-      - 'debt'
 
   - package-ecosystem: 'pip'
     directory: /
@@ -32,7 +30,6 @@ updates:
       interval: monthly
     labels:
       - 'no-changelog'
-      - 'debt'
     ignore:
       - dependency-name: '@types/vscode'
       - dependency-name: '@types/node'
