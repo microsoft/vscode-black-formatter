@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ConfigurationChangeEvent, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
+import { ConfigurationChangeEvent, ConfigurationScope, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
 import { getInterpreterDetails } from './python';
 import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
 
@@ -69,8 +69,8 @@ function getPath(namespace: string, workspace: WorkspaceFolder): string[] {
     return [];
 }
 
-export function getInterpreterFromSetting(namespace: string) {
-    const config = getConfiguration(namespace);
+export function getInterpreterFromSetting(namespace: string, scope?: ConfigurationScope) {
+    const config = getConfiguration(namespace, scope);
     return config.get<string[]>('interpreter');
 }
 
@@ -83,7 +83,7 @@ export async function getWorkspaceSettings(
 
     let interpreter: string[] = [];
     if (includeInterpreter) {
-        interpreter = getInterpreterFromSetting(namespace) ?? [];
+        interpreter = getInterpreterFromSetting(namespace, workspace) ?? [];
         if (interpreter.length === 0) {
             interpreter = (await getInterpreterDetails(workspace.uri)).path ?? [];
         }
