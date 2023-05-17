@@ -6,12 +6,13 @@
 import atexit
 import io
 import json
+import os
 import pathlib
 import subprocess
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from typing import BinaryIO, Dict, Sequence, Union
+from typing import BinaryIO, Dict, Optional, Sequence, Union
 
 CONTENT_LENGTH = "Content-Length: "
 RUNNER_SCRIPT = str(pathlib.Path(__file__).parent / "lsp_runner.py")
@@ -141,14 +142,24 @@ class ProcessManager:
                 pass
         self._thread_pool.shutdown(wait=False)
 
-    def start_process(self, workspace: str, args: Sequence[str], cwd: str) -> None:
+    def start_process(
+        self,
+        workspace: str,
+        args: Sequence[str],
+        cwd: str,
+        env: Optional[Dict[str, str]],
+    ) -> None:
         """Starts a process and establishes JSON-RPC communication over stdio."""
+        new_env = os.environ.copy()
+        if env:
+            new_env.update(env)
         # pylint: disable=consider-using-with
         proc = subprocess.Popen(
             args,
             cwd=cwd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
+            env=new_env,
         )
         self._processes[workspace] = proc
         self._rpc[workspace] = create_json_rpc(proc.stdout, proc.stdin)
@@ -187,13 +198,16 @@ def _get_json_rpc(workspace: str) -> Union[JsonRpc, None]:
 
 
 def get_or_start_json_rpc(
-    workspace: str, interpreter: Sequence[str], cwd: str
+    workspace: str,
+    interpreter: Sequence[str],
+    cwd: str,
+    env: Optional[Dict[str, str]] = None,
 ) -> Union[JsonRpc, None]:
     """Gets an existing JSON-RPC connection or starts one and return it."""
     res = _get_json_rpc(workspace)
     if not res:
         args = [*interpreter, RUNNER_SCRIPT]
-        _process_manager.start_process(workspace, args, cwd)
+        _process_manager.start_process(workspace, args, cwd, env)
         res = _get_json_rpc(workspace)
     return res
 
@@ -216,10 +230,11 @@ def run_over_json_rpc(
     argv: Sequence[str],
     use_stdin: bool,
     cwd: str,
-    source: str = None,
+    source: Optional[str] = None,
+    env: Optional[Dict[str, str]] = None,
 ) -> RpcRunResult:
     """Uses JSON-RPC to execute a command."""
-    rpc: Union[JsonRpc, None] = get_or_start_json_rpc(workspace, interpreter, cwd)
+    rpc: Union[JsonRpc, None] = get_or_start_json_rpc(workspace, interpreter, cwd, env)
     if not rpc:
         raise Exception("Failed to run over JSON-RPC.")
 
