@@ -91,7 +91,7 @@
                         "%settings.importStrategy.fromEnvironment.description%",
                         "%settings.importStrategy.useBundled.description%"
                     ],
-                    "scope": "window",
+                    "scope": "resource",
                     "type": "string"
                 },
                 "black-formatter.interpreter": {

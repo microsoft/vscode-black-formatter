@@ -3,6 +3,8 @@
 """
 Test for formatting over LSP.
 """
+import pathlib
+
 from hamcrest import assert_that, is_
 
 from .lsp_test_client import constants, session, utils
@@ -104,4 +106,35 @@ def test_formatting_cell():
         }
     ]
 
+    assert_that(actual, is_(expected))
+
+
+def test_skipping_site_packages_files():
+    """Test skipping formatting when the file is in site-packages"""
+
+    UNFORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample1" / "sample.unformatted"
+    with session.LspSession() as ls_session:
+        # Use any stdlib path here
+        uri = utils.as_uri(pathlib.__file__)
+        ls_session.initialize()
+        ls_session.notify_did_open(
+            {
+                "textDocument": {
+                    "uri": uri,
+                    "languageId": "python",
+                    "version": 1,
+                    "text": UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8"),
+                }
+            }
+        )
+
+        actual = ls_session.text_document_formatting(
+            {
+                "textDocument": {"uri": uri},
+                # `options` is not used by black
+                "options": {"tabSize": 4, "insertSpaces": True},
+            }
+        )
+
+    expected = None
     assert_that(actual, is_(expected))
