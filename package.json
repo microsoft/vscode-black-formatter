@@ -47,17 +47,17 @@
     "main": "./dist/extension.js",
     "l10n": "./l10n",
     "scripts": {
-        "vscode:prepublish": "npm run package",
         "compile": "webpack",
-        "watch": "webpack --watch",
-        "package": "webpack --mode production --devtool hidden-source-map",
         "compile-tests": "tsc -p . --outDir out",
-        "watch-tests": "tsc -p . -w --outDir out",
-        "pretest": "npm run compile-tests && npm run compile && npm run lint",
-        "lint": "eslint src --ext ts",
         "format-check": "prettier --check 'src/**/*.ts' 'build/**/*.yml' '.github/**/*.yml'",
+        "lint": "eslint src --ext ts",
+        "package": "webpack --mode production --devtool hidden-source-map",
+        "pretest": "npm run compile-tests && npm run compile && npm run lint",
         "test": "node ./out/test/runTest.js",
-        "vsce-package": "vsce package -o black-formatter.vsix"
+        "vsce-package": "vsce package -o black-formatter.vsix",
+        "vscode:prepublish": "npm run package",
+        "watch": "webpack --watch",
+        "watch-tests": "tsc -p . -w --outDir out"
     },
     "contributes": {
         "languages": [
@@ -73,69 +73,69 @@
             "properties": {
                 "black-formatter.args": {
                     "default": [],
-                    "markdownDescription": "%settings.args.description%",
                     "items": {
                         "type": "string"
                     },
+                    "markdownDescription": "%settings.args.description%",
                     "scope": "resource",
                     "type": "array"
                 },
-                "black-formatter.path": {
-                    "default": [],
-                    "markdownDescription": "%settings.path.description%",
-                    "scope": "resource",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array",
-                    "examples": [
-                        [
-                            "~/global_env/black"
-                        ],
-                        [
-                            "~/.env/python",
-                            "-m",
-                            "black"
-                        ]
-                    ]
-                },
                 "black-formatter.importStrategy": {
                     "default": "useBundled",
-                    "markdownDescription": "%settings.importStrategy.description%",
                     "enum": [
-                        "useBundled",
-                        "fromEnvironment"
+                        "fromEnvironment",
+                        "useBundled"
                     ],
+                    "markdownDescription": "%settings.importStrategy.description%",
                     "markdownEnumDescriptions": [
-                        "%settings.importStrategy.useBundled.description%",
-                        "%settings.importStrategy.fromEnvironment.description%"
+                        "%settings.importStrategy.fromEnvironment.description%",
+                        "%settings.importStrategy.useBundled.description%"
                     ],
                     "scope": "window",
                     "type": "string"
                 },
                 "black-formatter.interpreter": {
                     "default": [],
-                    "markdownDescription": "%settings.interpreter.description%",
-                    "scope": "resource",
                     "items": {
                         "type": "string"
                     },
+                    "markdownDescription": "%settings.interpreter.description%",
+                    "scope": "resource",
+                    "type": "array"
+                },
+                "black-formatter.path": {
+                    "default": [],
+                    "examples": [
+                        [
+                            "-m",
+                            "black",
+                            "~/.env/python"
+                        ],
+                        [
+                            "~/global_env/black"
+                        ]
+                    ],
+                    "items": {
+                        "type": "string"
+                    },
+                    "markdownDescription": "%settings.path.description%",
+                    "scope": "resource",
                     "type": "array"
                 },
                 "black-formatter.showNotifications": {
                     "default": "off",
-                    "markdownDescription": "%settings.showNotifications.description%",
                     "enum": [
+                        "always",
                         "off",
                         "onError",
-                        "onWarning",
-                        "always"
+                        "onWarning"
                     ],
+                    "markdownDescription": "%settings.showNotifications.description%",
                     "markdownEnumDescriptions": [
+                        "%settings.showNotifications.always.description%",
                         "%settings.showNotifications.off.description%",
                         "%settings.showNotifications.onError.description%",
-                        "%settings.showNotifications.onWarning.description%",
-                        "%settings.showNotifications.always.description%"
+                        "%settings.showNotifications.onWarning.description%"
                     ],
                     "scope": "machine",
                     "type": "string"
