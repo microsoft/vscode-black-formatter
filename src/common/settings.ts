@@ -4,6 +4,7 @@
 import { ConfigurationChangeEvent, ConfigurationScope, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
 import { getInterpreterDetails } from './python';
 import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
+import { traceLog } from './logging';
 
 export interface ISettings {
     cwd: string;
@@ -85,7 +86,21 @@ export async function getWorkspaceSettings(
     if (includeInterpreter) {
         interpreter = getInterpreterFromSetting(namespace, workspace) ?? [];
         if (interpreter.length === 0) {
+            traceLog(`No interpreter found from setting ${namespace}.interpreter`);
+            traceLog(`Getting interpreter from ms-python.python extension for workspace ${workspace.uri.fsPath}`);
             interpreter = (await getInterpreterDetails(workspace.uri)).path ?? [];
+            if (interpreter.length > 0) {
+                traceLog(
+                    `Interpreter from ms-python.python extension for ${workspace.uri.fsPath}:`,
+                    `${interpreter.join(' ')}`,
+                );
+            }
+        } else {
+            traceLog(`Interpreter from setting ${namespace}.interpreter: ${interpreter.join(' ')}`);
+        }
+
+        if (interpreter.length === 0) {
+            traceLog(`No interpreter found for ${workspace.uri.fsPath} in settings or from ms-python.python extension`);
         }
     }
 

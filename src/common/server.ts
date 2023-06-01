@@ -13,8 +13,8 @@ import {
 import { DEBUG_SERVER_SCRIPT_PATH, SERVER_SCRIPT_PATH } from './constants';
 import { traceError, traceInfo, traceVerbose } from './logging';
 import { getDebuggerPath } from './python';
-import { getExtensionSettings, getGlobalSettings, getWorkspaceSettings, ISettings } from './settings';
-import { getLSClientTraceLevel, getProjectRoot } from './utilities';
+import { getExtensionSettings, getGlobalSettings, ISettings } from './settings';
+import { getLSClientTraceLevel } from './utilities';
 import { isVirtualWorkspace } from './vscodeapi';
 import { updateStatus } from './status';
 import { unregisterEmptyFormatter } from './nullFormatter';
@@ -81,6 +81,7 @@ async function createServer(
 
 let _disposables: Disposable[] = [];
 export async function restartServer(
+    workspaceSetting: ISettings,
     serverId: string,
     serverName: string,
     outputChannel: LogOutputChannel,
@@ -97,22 +98,12 @@ export async function restartServer(
         _disposables = [];
     }
     updateStatus(undefined, LanguageStatusSeverity.Information, true);
-    const projectRoot = await getProjectRoot();
-    const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
-    if (workspaceSetting.interpreter.length === 0) {
-        updateStatus(l10n.t('Please select a Python interpreter.'), LanguageStatusSeverity.Error);
-        traceError(
-            'Python interpreter missing:\r\n' +
-                '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
-                `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n`,
-        );
-        return undefined;
-    }
 
     const newLSClient = await createServer(workspaceSetting, serverId, serverName, outputChannel, {
         settings: await getExtensionSettings(serverId, true),
         globalSettings: await getGlobalSettings(serverId, false),
     });
+
     traceInfo(`Server: Start requested.`);
     _disposables.push(
         newLSClient.onDidChangeState((e) => {

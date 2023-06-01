@@ -5,18 +5,12 @@ import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { restartServer } from './common/server';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/logging';
-import {
-    checkVersion,
-    getInterpreterDetails,
-    initializePython,
-    onDidChangePythonInterpreter,
-    resolveInterpreter,
-    runPythonExtensionCommand,
-} from './common/python';
+import { initializePython, onDidChangePythonInterpreter } from './common/python';
 import {
     checkIfConfigurationChanged,
     getExtensionSettings,
     getInterpreterFromSetting,
+    getWorkspaceSettings,
     ISettings,
 } from './common/settings';
 import { loadServerDefaults } from './common/setup';
@@ -44,27 +38,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     traceVerbose(`Configuration: ${JSON.stringify(serverInfo)}`);
 
     const runServer = async () => {
-        const interpreter = getInterpreterFromSetting(serverId);
-        if (interpreter && interpreter.length > 0 && checkVersion(await resolveInterpreter(interpreter))) {
-            traceVerbose(`Using interpreter from ${serverInfo.module}.interpreter: ${interpreter.join(' ')}`);
-            lsClient = await restartServer(serverId, serverName, outputChannel, lsClient);
-            return;
-        }
-
-        const interpreterDetails = await getInterpreterDetails();
-        if (interpreterDetails.path) {
-            traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);
-            lsClient = await restartServer(serverId, serverName, outputChannel, lsClient);
-            return;
-        }
-
-        updateStatus(vscode.l10n.t('Please select a Python interpreter.'), vscode.LanguageStatusSeverity.Error);
-        traceError(
-            'Python interpreter missing:\r\n' +
-                '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
-                `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n` +
+        const projectRoot = await getProjectRoot();
+        const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
+        if (workspaceSetting.interpreter.length === 0) {
+            updateStatus(vscode.l10n.t('Please select a Python interpreter.'), vscode.LanguageStatusSeverity.Error);
+            traceError(
+                'Python interpreter missing:\r\n' +
+                    '[Option 1] Select python interpreter using the ms-python.python.\r\n' +
+                    `[Option 2] Set an interpreter using "${serverId}.interpreter" setting.\r\n`,
                 'Please use Python 3.7 or greater.',
-        );
+            );
+        } else {
+            lsClient = await restartServer(workspaceSetting, serverId, serverName, outputChannel, lsClient);
+        }
     };
 
     context.subscriptions.push(
