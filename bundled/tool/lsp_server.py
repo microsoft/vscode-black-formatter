@@ -328,7 +328,7 @@ def _get_settings_by_document(document: workspace.Document | None):
     key = _get_document_key(document)
     if key is None:
         # This is either a non-workspace file or there is no workspace.
-        key = utils.normalize_path(str(pathlib.Path(document.path).parent))
+        key = utils.normalize_path(pathlib.Path(document.path).parent)
         return {
             "cwd": key,
             "workspaceFS": key,

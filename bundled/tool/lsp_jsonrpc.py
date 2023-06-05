@@ -147,7 +147,7 @@ class ProcessManager:
         workspace: str,
         args: Sequence[str],
         cwd: str,
-        env: Optional[Dict[str, str]],
+        env: Optional[Dict[str, str]] = None,
     ) -> None:
         """Starts a process and establishes JSON-RPC communication over stdio."""
         new_env = os.environ.copy()
