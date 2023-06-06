@@ -56,3 +56,7 @@ If you want to disable Black formatter, you can [disable this extension](https:/
 | Command                  | Description                       |
 | ------------------------ | --------------------------------- |
 | Black Formatter: Restart | Force re-start the format server. |
+
+## Logging
+
+Use `Developer : Set Log Level...` command from the **Command Palette**, and select `Black Formatter` from the extensions list to set the Log Level for the extension. For detailed LSP traces, add `"black-formatter.trace.server" : "verbose"` to your **User** `settings.json` file.
