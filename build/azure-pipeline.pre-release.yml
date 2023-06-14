@@ -64,4 +64,3 @@ extends:
         displayName: Build extension
     
     publishExtension: ${{ parameters.publishExtension }}
-
