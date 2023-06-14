@@ -62,5 +62,5 @@ extends:
 
       - script: npm run package
         displayName: Build extension
-    
+
     publishExtension: ${{ parameters.publishExtension }}
