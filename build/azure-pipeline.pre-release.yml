@@ -28,7 +28,6 @@ extends:
   template: azure-pipelines/extension/pre-release.yml@templates
   parameters:
     l10nSourcePaths: ./src
-    customNPMRegistry: ''
     buildSteps:
       - task: NodeTool@0
         inputs:
