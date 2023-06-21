@@ -38,6 +38,12 @@
     "extensionDependencies": [
         "ms-python.python"
     ],
+    "capabilities": {
+        "virtualWorkspaces": {
+            "supported": false,
+            "description": "Virtual Workspaces are not supported with Black formatter."
+        }
+    },
     "activationEvents": [
         "onLanguage:python",
         "workspaceContains:pyproject.toml",
