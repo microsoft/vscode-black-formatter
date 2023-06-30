@@ -29,6 +29,9 @@ jobs:
       - name: Update Pre-Release version
         run: python ./.github/workflows/update_prerelease_version.py
 
+      - name: Update package-lock.json
+        run: npm install
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:

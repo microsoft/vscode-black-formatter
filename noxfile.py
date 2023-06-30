@@ -129,6 +129,7 @@ def tests(session: nox.Session) -> None:
 
     session.install("freezegun")
     session.run("pytest", "build")
+    session.run("pytest", ".github/workflows")
 
 
 @nox.session()

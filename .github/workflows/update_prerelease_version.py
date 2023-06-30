@@ -1,19 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import datetime
 import json
 import pathlib
-import subprocess
-from datetime import datetime
-from typing import Tuple, Union
+from typing import Tuple
 
 EXT_ROOT = pathlib.Path(__file__).parent.parent.parent
 PACKAGE_JSON_PATH = EXT_ROOT / "package.json"
-
-
-def is_even(v: Union[int, str]) -> bool:
-    """Returns True if `v` is even."""
-    return not int(v) % 2
 
 
 def parse_version(version: str) -> Tuple[int, int, int, str]:
@@ -27,23 +21,39 @@ def parse_version(version: str) -> Tuple[int, int, int, str]:
     return int(major), int(minor), int(micro), suffix
 
 
-def main(package_json: pathlib.Path) -> None:
+def update_version(package_json: pathlib.Path, new_version: str) -> None:
     package = json.loads(package_json.read_text(encoding="utf-8"))
+    package["version"] = new_version
+    print(f"Updating version to {new_version}")
 
-    major, minor, micro, _ = parse_version(package["version"])
+    # Overwrite package.json with new data add a new-line at the end of the file.
+    package_json.write_text(
+        json.dumps(package, indent=4, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
-    if is_even(minor):
-        year = datetime.datetime.now().year
-        if int(major) < year:
-            major = year
-        version = f"{major}.{int(minor)+1}.{micro}-dev"
-        package["version"] = version
 
-        # Overwrite package.json with new data add a new-line at the end of the file.
-        package_json.write_text(
-            json.dumps(package, indent=4, ensure_ascii=False) + "\n", encoding="utf-8"
-        )
-        subprocess.run(["npm", "install"], cwd=EXT_ROOT, check=True)
+def get_version(package_json: pathlib.Path) -> str:
+    package = json.loads(package_json.read_text(encoding="utf-8"))
+    return package["version"]
+
+
+def main(package_json: pathlib.Path) -> None:
+    major, minor, micro, suffix = parse_version(get_version(package_json))
+    new_minor = 1
+    # Pre-release minor should always be odd
+    if not minor % 2:
+        new_minor = minor + 1
+
+    # major version should always match the current year
+    year = int(datetime.datetime.now().year)
+    new_major = year
+    if major != new_major:
+        # reset minor version to 1 on year change
+        new_minor = 1
+
+    if not (major, minor, micro, suffix) == (new_major, new_minor, 0, "dev"):
+        version = f"{new_major}.{new_minor}.{0}-dev"
+        update_version(package_json, version)
 
 
 if __name__ == "__main__":

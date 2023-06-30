@@ -99,6 +99,6 @@ def test_invalid_args(tmp_path, version, args):
         ),
     ],
 )
-@freezegun.freeze_time("2022-03-14 01:23:45")
+@freezegun.freeze_time(TEST_DATETIME)
 def test_update_ext_version(tmp_path, version, args, expected):
     run_test(tmp_path, version, args, expected)
