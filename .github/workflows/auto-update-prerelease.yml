@@ -1,0 +1,55 @@
+name: Version Update
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.17.0'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install wheel
+          python -m pip install PyGithub
+        shell: bash
+
+      - name: Update Pre-Release version
+        run: python ./.github/workflows/update_prerelease_version.py
+        env:
+          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create version-update branch
+        run: |
+          git checkout -b version-update
+          git push -u origin version-update
+
+      - name: Update Pre-Release version
+        if: steps.pr.outputs.pull_request == 'false'
+        run: python update_version.py
+
+      - name: Commit and push changes
+        if: steps.pr.outputs.pull_request == 'false'
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add package.json
+          git commit -m "Update version"
+          git push origin HEAD
