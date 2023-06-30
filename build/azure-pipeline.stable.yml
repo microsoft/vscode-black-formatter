@@ -25,6 +25,7 @@ extends:
   parameters:
     l10nSourcePaths: ./src
     publishExtension: ${{ parameters.publishExtension }}
+    ghCreateTag: true
     buildSteps:
       - task: NodeTool@0
         inputs:
