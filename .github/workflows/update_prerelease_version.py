@@ -1,9 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from datetime import datetime
 import json
 import pathlib
+import subprocess
+from datetime import datetime
 from typing import Tuple, Union
 
 EXT_ROOT = pathlib.Path(__file__).parent.parent.parent
@@ -42,6 +43,7 @@ def main(package_json: pathlib.Path) -> None:
         package_json.write_text(
             json.dumps(package, indent=4, ensure_ascii=False) + "\n", encoding="utf-8"
         )
+        subprocess.run(["npm", "install"], cwd=EXT_ROOT, check=True)
 
 
 if __name__ == "__main__":

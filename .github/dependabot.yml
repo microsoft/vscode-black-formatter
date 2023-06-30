@@ -7,6 +7,20 @@ updates:
     labels:
       - 'no-changelog'
 
+  - package-ecosystem: 'github-actions'
+    directory: .github/actions/lint
+    schedule:
+      interval: monthly
+    labels:
+      - 'no-changelog'
+
+  - package-ecosystem: 'github-actions'
+    directory: .github/actions/build-vsix
+    schedule:
+      interval: monthly
+    labels:
+      - 'no-changelog'
+
   - package-ecosystem: 'pip'
     directory: /src/test/python_tests
     schedule:

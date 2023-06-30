@@ -1,12 +1,11 @@
-name: Pre-Release Version Update
+name: Update Packages
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: '0 6 * * 3' # 6AM UTC WED => 11PM PDT TUE
 
 jobs:
-  update-version:
+  update-packages:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -26,17 +25,22 @@ jobs:
           node-version: '16.17.0'
           cache: 'npm'
 
-      - name: Update Pre-Release version
-        run: python ./.github/workflows/update_prerelease_version.py
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install wheel nox
+
+      - name: Update packages
+        run: nox --session update_packages
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Update `main` to next pre-release
-          branch: auto-update-prerelease
+          commit-message: Update Packages
+          branch: auto-update-packages
           delete-branch: true
-          title: 'Update `main` to next pre-release'
+          title: 'Auto Update Packages'
           labels: no-changelog
           assignees: karthiknadig
           reviewers: |
