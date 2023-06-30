@@ -52,7 +52,7 @@ def _update_pip_packages(session: nox.Session) -> None:
         "--generate-hashes",
         "--resolver=backtracking",
         "--upgrade",
-        "./src/test/python_tests/requirements.in",
+        "./test-requirements.in",
     )
 
 
@@ -124,10 +124,8 @@ def setup(session: nox.Session) -> None:
 @nox.session()
 def tests(session: nox.Session) -> None:
     """Runs all the tests for the extension."""
-    session.install("-r", "src/test/python_tests/requirements.txt")
+    session.install("-r", "test-requirements.txt")
     session.run("pytest", "src/test/python_tests")
-
-    session.install("freezegun")
     session.run("pytest", "build")
     session.run("pytest", ".github/workflows")
 

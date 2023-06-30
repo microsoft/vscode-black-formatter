@@ -39,17 +39,15 @@ def get_version(package_json: pathlib.Path) -> str:
 
 def main(package_json: pathlib.Path) -> None:
     major, minor, micro, suffix = parse_version(get_version(package_json))
-    new_minor = 1
+
     # Pre-release minor should always be odd
-    if not minor % 2:
-        new_minor = minor + 1
+    new_minor = minor + (0 if minor % 2 else 1)
 
     # major version should always match the current year
-    year = int(datetime.datetime.now().year)
-    new_major = year
-    if major != new_major:
-        # reset minor version to 1 on year change
-        new_minor = 1
+    new_major = int(datetime.datetime.now().year)
+
+    # reset minor version to 1 on year change
+    new_minor = new_minor if major == new_major else 1
 
     if not (major, minor, micro, suffix) == (new_major, new_minor, 0, "dev"):
         version = f"{new_major}.{new_minor}.{0}-dev"
