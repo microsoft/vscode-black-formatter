@@ -260,17 +260,18 @@ def _get_wheel_urls(data, version):
 
 
 def _download_and_extract(root, url, version):
-    root = os.getcwd() if root is None or root == "." else root
-    print(url)
-    with url_lib.urlopen(url) as response:
-        data = response.read()
-        with zipfile.ZipFile(io.BytesIO(data), "r") as wheel:
-            for zip_info in wheel.infolist():
-                # Ignore dist info since we are merging multiple wheels
-                if ".dist-info/" in zip_info.filename:
-                    continue
-                print("\t" + zip_info.filename)
-                wheel.extract(zip_info.filename, root)
+    if "manylinux" in url or "macosx" in url or "win_amd64" in url:
+        root = os.getcwd() if root is None or root == "." else root
+        print(url)
+        with url_lib.urlopen(url) as response:
+            data = response.read()
+            with zipfile.ZipFile(io.BytesIO(data), "r") as wheel:
+                for zip_info in wheel.infolist():
+                    # Ignore dist info since we are merging multiple wheels
+                    if ".dist-info/" in zip_info.filename:
+                        continue
+                    print("\t" + zip_info.filename)
+                    wheel.extract(zip_info.filename, root)
 
 
 def _install_wheels(root, package_name, version="latest"):
