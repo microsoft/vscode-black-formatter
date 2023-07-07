@@ -16,8 +16,12 @@ EXPECTED_BUILD_ID = "10730123"
 
 def create_package_json(directory, version):
     """Create `package.json` in `directory` with a specified version of `version`."""
+    json_data = json.loads(
+        update_ext_version.PACKAGE_JSON_PATH.read_text(encoding="utf-8")
+    )
     package_json = directory / "package.json"
-    package_json.write_text(json.dumps({"version": version}), encoding="utf-8")
+    json_data["version"] = version
+    package_json.write_text(json.dumps(json_data, ensure_ascii=False), encoding="utf-8")
     return package_json
 
 

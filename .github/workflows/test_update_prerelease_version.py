@@ -12,16 +12,13 @@ TEST_DATETIME = "2023-01-01 01:23:45"
 
 def create_package_json(directory, version):
     """Create `package.json` in `directory` with a specified version of `version`."""
+    json_data = json.loads(
+        update_prerelease_version.PACKAGE_JSON_PATH.read_text(encoding="utf-8")
+    )
     package_json = directory / "package.json"
-    package_json.write_text(json.dumps({"version": version}), encoding="utf-8")
+    json_data["version"] = version
+    package_json.write_text(json.dumps(json_data, ensure_ascii=False), encoding="utf-8")
     return package_json
-
-
-def run_test(tmp_path, version, expected):
-    package_json = create_package_json(tmp_path, version)
-    update_prerelease_version.main(package_json)
-    package = json.loads(package_json.read_text(encoding="utf-8"))
-    assert expected == update_prerelease_version.parse_version(package["version"])
 
 
 @pytest.mark.parametrize(
@@ -41,4 +38,7 @@ def run_test(tmp_path, version, expected):
 )
 @freezegun.freeze_time(TEST_DATETIME)
 def test_update_prerelease_version(tmp_path, version, expected):
-    run_test(tmp_path, version, expected)
+    package_json = create_package_json(tmp_path, version)
+    update_prerelease_version.main(package_json)
+    package = json.loads(package_json.read_text(encoding="utf-8"))
+    assert expected == update_prerelease_version.parse_version(package["version"])

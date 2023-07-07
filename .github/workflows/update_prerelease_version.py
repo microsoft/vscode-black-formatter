@@ -6,8 +6,7 @@ import json
 import pathlib
 from typing import Tuple
 
-EXT_ROOT = pathlib.Path(__file__).parent.parent.parent
-PACKAGE_JSON_PATH = EXT_ROOT / "package.json"
+PACKAGE_JSON_PATH = pathlib.Path(__file__).parent.parent.parent / "package.json"
 
 
 def parse_version(version: str) -> Tuple[int, int, int, str]:
@@ -16,8 +15,7 @@ def parse_version(version: str) -> Tuple[int, int, int, str]:
     try:
         micro, suffix = parts.split("-", maxsplit=1)
     except ValueError:
-        micro = parts
-        suffix = ""
+        micro, _, suffix = parts.partition("-")
     return int(major), int(minor), int(micro), suffix
 
 

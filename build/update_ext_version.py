@@ -8,8 +8,7 @@ import pathlib
 import sys
 from typing import Sequence, Tuple, Union
 
-EXT_ROOT = pathlib.Path(__file__).parent.parent
-PACKAGE_JSON_PATH = EXT_ROOT / "package.json"
+PACKAGE_JSON_PATH = pathlib.Path(__file__).parent.parent / "package.json"
 
 
 def build_arg_parse() -> argparse.ArgumentParser:
@@ -56,8 +55,7 @@ def parse_version(version: str) -> Tuple[str, str, str, str]:
     try:
         micro, suffix = parts.split("-", maxsplit=1)
     except ValueError:
-        micro = parts
-        suffix = ""
+        micro, _, suffix = parts.partition("-")
     return major, minor, micro, suffix
 
 
