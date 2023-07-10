@@ -8,7 +8,7 @@ import pathlib
 import re
 import urllib.request as url_lib
 import zipfile
-from typing import List
+from typing import List, Optional, Union
 
 import nox  # pylint: disable=import-error
 
@@ -200,16 +200,24 @@ def _get_module_name() -> str:
     return package_json["serverInfo"]["module"]
 
 
+def _get_version(module: str) -> Union[str, None]:
+    requirements_file = pathlib.Path(__file__).parent / "requirements.txt"
+    lines = requirements_file.read_text(encoding="utf-8").splitlines(keepends=False)
+    for line in lines:
+        if line.startswith(module):
+            _, version = line.split(" ")[0].split("==")
+            return version
+    return None
+
+
 @nox.session()
 def validate_readme(session: nox.Session) -> None:
     """Ensures the formatter version in 'requirements.txt' matches 'readme.md'."""
-    requirements_file = pathlib.Path(__file__).parent / "requirements.txt"
+
     readme_file = pathlib.Path(__file__).parent / "README.md"
 
-    lines = requirements_file.read_text(encoding="utf-8").splitlines(keepends=False)
-    module = _get_module_name()
-    formatter_ver = list(line for line in lines if line.startswith(module))[0]
-    name, version = formatter_ver.split(" ")[0].split("==")
+    name = _get_module_name()
+    version = _get_version(name)
 
     session.log(f"Looking for {name}={version} in README.md")
     content = readme_file.read_text(encoding="utf-8")
@@ -259,7 +267,7 @@ def _get_wheel_urls(data, version):
     )
 
 
-def _download_and_extract(root, url, version):
+def _download_and_extract(root, url):
     if "manylinux" in url or "macosx" in url or "win_amd64" in url:
         root = os.getcwd() if root is None or root == "." else root
         print(url)
@@ -274,15 +282,17 @@ def _download_and_extract(root, url, version):
                     wheel.extract(zip_info.filename, root)
 
 
-def _install_wheels(root, package_name, version="latest"):
+def _install_wheels(root, package_name, version: Optional[str] = None):
     from packaging.version import parse as version_parser
 
     data = _get_pypi_package_data(package_name)
 
-    if version == "latest":
+    if version is None:
+        use_version = _get_version(package_name)
+    elif version == "latest":
         use_version = max(data["releases"].keys(), key=version_parser)
     else:
         use_version = version
 
     for url in _get_wheel_urls(data, use_version):
-        _download_and_extract(root, url, use_version)
+        _download_and_extract(root, url)
