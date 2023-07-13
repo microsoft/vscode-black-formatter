@@ -51,7 +51,7 @@ def _get_extensions_dir() -> List[str]:
 
 
 _stdlib_paths = set(
-    str(pathlib.Path(p).resolve())
+    str(pathlib.Path(p).absolute())
     for p in (
         as_list(site.getsitepackages())
         + as_list(site.getusersitepackages())
@@ -68,7 +68,7 @@ def is_same_path(file_path1: str, file_path2: str) -> bool:
 
 def normalize_path(file_path: str) -> str:
     """Returns normalized path."""
-    return str(pathlib.Path(file_path).resolve())
+    return str(pathlib.Path(file_path).absolute())
 
 
 def is_current_interpreter(executable) -> bool:
@@ -78,7 +78,7 @@ def is_current_interpreter(executable) -> bool:
 
 def is_stdlib_file(file_path: str) -> bool:
     """Return True if the file belongs to the standard library."""
-    normalized_path = str(pathlib.Path(file_path).resolve())
+    normalized_path = str(pathlib.Path(file_path).absolute())
     return any(normalized_path.startswith(path) for path in _stdlib_paths)
 
 
