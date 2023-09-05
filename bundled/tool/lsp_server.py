@@ -8,6 +8,7 @@ import copy
 import json
 import os
 import pathlib
+import re
 import sys
 import traceback
 from typing import Any, Dict, List, Optional, Sequence, Union
@@ -238,7 +239,7 @@ def _log_version_info() -> None:
             # This is text we get from running `black --version`
             # black, 22.3.0 (compiled: yes) <--- This is the version we want.
             first_line = result.stdout.splitlines(keepends=False)[0]
-            parts = [v for v in first_line.split(" ") if "." in v]
+            parts = [v for v in first_line.split(" ") if re.match("\d+\.\d+\S*", v)]
             if len(parts) == 1:
                 actual_version = parts[0]
             else:
