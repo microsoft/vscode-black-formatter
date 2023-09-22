@@ -107,10 +107,7 @@
                     },
                     "markdownDescription": "%settings.interpreter.description%",
                     "scope": "resource",
-                    "type": "array",
-                    "tags": [
-                        "experimental"
-                    ]
+                    "type": "array"
                 },
                 "black-formatter.path": {
                     "default": [],
