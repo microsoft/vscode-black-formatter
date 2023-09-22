@@ -50,6 +50,7 @@ If you want to disable Black formatter, you can [disable this extension](https:/
 | black-formatter.interpreter      | `[]`         | Path to a python interpreter to use to run the linter server.                                                                                                                                                                                                            |
 | black-formatter.importStrategy   | `useBundled` | Setting to choose where to load `black` from. `useBundled` picks black bundled with the extension. `fromEnvironment` uses `black` available in the environment.                                                                                                          |
 | black-formatter.showNotification | `off`        | Setting to control when a notification is shown.                                                                                                                                                                                                                         |
+| mypy-type-checker.interpreter | `[]` | Path to a python interpreter to use to run the linter server. When set to `[]`, the interpreter for the workspace is obtained from `ms-python.python` extension. If set to some path, that path takes precedence, and the Python extension is not queried for the interpreter. |
 
 ## Commands
 
