@@ -107,7 +107,10 @@
                     },
                     "markdownDescription": "%settings.interpreter.description%",
                     "scope": "resource",
-                    "type": "array"
+                    "type": "array",
+                    "tags": [
+                        "experimental"
+                    ]
                 },
                 "black-formatter.path": {
                     "default": [],
@@ -145,18 +148,6 @@
                     ],
                     "scope": "machine",
                     "type": "string"
-                },
-                "mypy-type-checker.interpreter": {
-                    "default": [],
-                    "markdownDescription": "%settings.interpreter.description%",
-                    "scope": "resource",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array",
-                    "tags": [
-                        "experimental"
-                    ]
                 }
             }
         },
