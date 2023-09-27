@@ -4,7 +4,8 @@
 import { ConfigurationChangeEvent, ConfigurationScope, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
 import { getInterpreterDetails } from './python';
 import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
-import { traceLog } from './logging';
+import { traceInfo, traceLog, traceWarn } from './logging';
+import { EXTENSION_ID } from './constants';
 
 export interface ISettings {
     cwd: string;
@@ -156,4 +157,23 @@ export function checkIfConfigurationChanged(e: ConfigurationChangeEvent, namespa
     ];
     const changed = settings.map((s) => e.affectsConfiguration(s));
     return changed.includes(true);
+}
+
+export function logDefaultFormatter():void {
+    getWorkspaceFolders().forEach((workspace) => {
+        let config = getConfiguration('editor', { uri: workspace.uri, languageId: 'python' });
+        if (!config){
+            config = getConfiguration('editor', workspace.uri);
+            if (!config){
+                traceInfo('Unable to get editor configuration');
+            }
+        }
+        const formatter = config.get<string>('defaultFormatter', '');
+        traceInfo(`Default formatter is set to ${formatter} for workspace ${workspace.uri.fsPath}`);
+        if (formatter !== EXTENSION_ID){
+            traceWarn(`Black Formatter is NOT set as the default formatter for workspace ${workspace.uri.fsPath}`);
+            traceWarn('To set Black Formatter as the default formatter, add the following to your settings.json file:');
+            traceWarn(`\n"[python]": {\n    "editor.defaultFormatter": "${EXTENSION_ID}",\n    "editor.formatOnSave": true\n}`);
+        }
+    });
 }
