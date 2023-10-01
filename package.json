@@ -161,7 +161,7 @@
         "vscode-languageclient": "^8.1.0"
     },
     "devDependencies": {
-        "@types/fs-extra": "^11.0.1",
+        "@types/fs-extra": "^11.0.2",
         "@types/glob": "^8.1.0",
         "@types/node": "16.x",
         "@types/vscode": "^1.74.0",
