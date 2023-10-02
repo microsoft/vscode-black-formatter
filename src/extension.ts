@@ -12,6 +12,7 @@ import {
     getInterpreterFromSetting,
     getWorkspaceSettings,
     ISettings,
+    logDefaultFormatter,
 } from './common/settings';
 import { loadServerDefaults } from './common/setup';
 import { getProjectRoot } from './common/utilities';
@@ -72,6 +73,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
     registerEmptyFormatter();
+
+    logDefaultFormatter();
 
     setImmediate(async () => {
         const interpreter = getInterpreterFromSetting(serverId);
