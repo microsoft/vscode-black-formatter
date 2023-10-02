@@ -30,7 +30,7 @@ runs:
     - name: Install Python
       uses: actions/setup-python@v3
       with:
-        python-version: '3.7'
+        python-version: '3.8'
 
     - name: Pip cache
       uses: actions/cache@v3
