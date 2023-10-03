@@ -43,34 +43,6 @@ function resolveVariables(value: string[], workspace?: WorkspaceFolder): string[
     });
 }
 
-function getArgs(namespace: string, workspace: WorkspaceFolder): string[] {
-    const config = getConfiguration(namespace, workspace.uri);
-    const args = config.get<string[]>('args', []);
-
-    if (args.length > 0) {
-        return args;
-    }
-
-    const legacyConfig = getConfiguration('python', workspace.uri);
-    return legacyConfig.get<string[]>('formatting.blackArgs', []);
-}
-
-function getPath(namespace: string, workspace: WorkspaceFolder): string[] {
-    const config = getConfiguration(namespace, workspace.uri);
-    const path = config.get<string[]>('path', []);
-
-    if (path.length > 0) {
-        return path;
-    }
-
-    const legacyConfig = getConfiguration('python', workspace.uri);
-    const legacyPath = legacyConfig.get<string>('formatting.blackPath', '');
-    if (legacyPath.length > 0 && legacyPath !== 'black') {
-        return [legacyPath];
-    }
-    return [];
-}
-
 export function getInterpreterFromSetting(namespace: string, scope?: ConfigurationScope) {
     const config = getConfiguration(namespace, scope);
     return config.get<string[]>('interpreter');
@@ -105,13 +77,11 @@ export async function getWorkspaceSettings(
         }
     }
 
-    const args = getArgs(namespace, workspace);
-    const path = getPath(namespace, workspace);
     const workspaceSetting = {
         cwd: workspace.uri.fsPath,
         workspace: workspace.uri.toString(),
-        args: resolveVariables(args, workspace),
-        path: resolveVariables(path, workspace),
+        args: resolveVariables(config.get<string[]>('args', []), workspace),
+        path: resolveVariables(config.get<string[]>('path', []), workspace),
         interpreter: resolveVariables(interpreter, workspace),
         importStrategy: config.get<string>('importStrategy', 'fromEnvironment'),
         showNotifications: config.get<string>('showNotifications', 'off'),
@@ -174,6 +144,29 @@ export function logDefaultFormatter(): void {
             traceWarn(`Black Formatter is NOT set as the default formatter for workspace ${workspace.uri.fsPath}`);
             traceWarn('To set Black Formatter as the default formatter, add the following to your settings.json file:');
             traceWarn(`\n"[python]": {\n    "editor.defaultFormatter": "${EXTENSION_ID}"\n}`);
+        }
+    });
+}
+
+export function logLegacySettings(): void {
+    getWorkspaceFolders().forEach((workspace) => {
+        try {
+            const legacyConfig = getConfiguration('python', workspace.uri);
+            const legacyArgs = legacyConfig.get<string[]>('formatting.blackArgs', []);
+            const legacyPath = legacyConfig.get<string>('formatting.blackPath', '');
+            if (legacyArgs.length > 0) {
+                traceWarn(`"python.formatting.blackArgs" is deprecated. Use "black-formatter.args" instead.`);
+                traceWarn(`"python.formatting.blackArgs" for workspace ${workspace.uri.fsPath}:`);
+                traceWarn(`\n${JSON.stringify(legacyArgs, null, 4)}`);
+            }
+
+            if (legacyPath.length > 0 && legacyPath !== 'black') {
+                traceWarn(`"python.formatting.blackPath" is deprecated. Use "black-formatter.path" instead.`);
+                traceWarn(`"python.formatting.blackPath" for workspace ${workspace.uri.fsPath}:`);
+                traceWarn(`\n${JSON.stringify(legacyPath, null, 4)}`);
+            }
+        } catch (err) {
+            traceWarn(`Error while logging legacy settings: ${err}`);
         }
     });
 }
