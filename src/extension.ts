@@ -13,6 +13,7 @@ import {
     getWorkspaceSettings,
     ISettings,
     logDefaultFormatter,
+    logLegacySettings,
 } from './common/settings';
 import { loadServerDefaults } from './common/setup';
 import { getProjectRoot } from './common/utilities';
@@ -72,9 +73,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         registerLanguageStatusItem(serverId, serverName, `${serverId}.showLogs`),
     );
 
+    // This is needed to ensure that the formatter is registered before the
+    // language server is started. If the language server takes too long to start,
+    // and user triggers formatting, they can see a weird message that formatting
+    // although registered by extension it is not supported.
     registerEmptyFormatter();
 
+    // This is needed to inform users that they might have not set this extension
+    // as the formatter. Instructions are printed in the output channel on how to
+    // set it.
     logDefaultFormatter();
+
+    // This is needed to inform users that they might have some legacy settings that
+    // are no longer supported. Instructions are printed in the output channel on how
+    // to update them.
+    logLegacySettings();
 
     setImmediate(async () => {
         const interpreter = getInterpreterFromSetting(serverId);
