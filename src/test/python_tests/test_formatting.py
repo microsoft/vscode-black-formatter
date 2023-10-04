@@ -5,21 +5,21 @@ Test for formatting over LSP.
 """
 import pathlib
 
+import pytest
 from hamcrest import assert_that, is_
 
 from .lsp_test_client import constants, session, utils
 
 FORMATTER = utils.get_server_info_defaults()
-TIMEOUT = 10  # 10 seconds
 
 
-def test_formatting():
+@pytest.mark.parametrize("sample", ["sample1", "sample3"])
+def test_formatting(sample: str):
     """Test formatting a python file."""
-    FORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample1" / "sample.py"
-    UNFORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample1" / "sample.unformatted"
+    FORMATTED_TEST_FILE_PATH = constants.TEST_DATA / sample / "sample.py"
+    UNFORMATTED_TEST_FILE_PATH = constants.TEST_DATA / sample / "sample.unformatted"
 
-    contents = UNFORMATTED_TEST_FILE_PATH.read_text()
-    lines = contents.splitlines(keepends=False)
+    contents = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
 
     actual = []
     with utils.python_file(contents, UNFORMATTED_TEST_FILE_PATH.parent) as pf:
@@ -45,17 +45,9 @@ def test_formatting():
                 }
             )
 
-    expected = [
-        {
-            "range": {
-                "start": {"line": 0, "character": 0},
-                "end": {"line": len(lines), "character": 0},
-            },
-            "newText": FORMATTED_TEST_FILE_PATH.read_text(),
-        }
-    ]
-
-    assert_that(actual, is_(expected))
+    expected_text = FORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
+    actual_text = utils.apply_text_edits(contents, utils.destructure_text_edits(actual))
+    assert_that(actual_text, is_(expected_text))
 
 
 def test_formatting_cell():
@@ -63,8 +55,7 @@ def test_formatting_cell():
     FORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample2" / "sample.formatted"
     UNFORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample2" / "sample.unformatted"
 
-    contents = UNFORMATTED_TEST_FILE_PATH.read_text()
-    lines = contents.splitlines(keepends=False)
+    contents = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
 
     actual = []
 
@@ -96,17 +87,9 @@ def test_formatting_cell():
             }
         )
 
-    expected = [
-        {
-            "range": {
-                "start": {"line": 0, "character": 0},
-                "end": {"line": len(lines), "character": 0},
-            },
-            "newText": FORMATTED_TEST_FILE_PATH.read_text(),
-        }
-    ]
-
-    assert_that(actual, is_(expected))
+    expected_text = FORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
+    actual_text = utils.apply_text_edits(contents, utils.destructure_text_edits(actual))
+    assert_that(actual_text, is_(expected_text))
 
 
 def test_skipping_site_packages_files():
