@@ -61,6 +61,7 @@ update_environ_path()
 # Imports needed for the language server goes below this.
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
+import lsp_edit_utils as edit_utils
 import lsp_jsonrpc as jsonrpc
 import lsp_utils as utils
 import lsprotocol.types as lsp
@@ -97,14 +98,17 @@ MIN_VERSION = "22.3.0"
 def formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit] | None:
     """LSP handler for textDocument/formatting request."""
 
-    document = LSP_SERVER.workspace.get_document(params.text_document.uri)
-    edits = _formatting_helper(document)
-    if edits:
-        return edits
+    document = LSP_SERVER.workspace.get_text_document(params.text_document.uri)
+    return _formatting_helper(document)
 
-    # NOTE: If you provide [] array, VS Code will clear the file of all contents.
-    # To indicate no changes to file return None.
-    return None
+
+@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_RANGE_FORMATTING)
+def range_formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit] | None:
+    """LSP handler for textDocument/formatting request."""
+
+    log_warning("Black does not support range formatting. Formatting entire document.")
+    document = LSP_SERVER.workspace.get_text_document(params.text_document.uri)
+    return _formatting_helper(document)
 
 
 def is_python(code: str) -> bool:
@@ -143,15 +147,11 @@ def _formatting_helper(document: workspace.Document) -> list[lsp.TextEdit] | Non
 
         # If code is already formatted, then no need to send any edits.
         if new_source != document.source:
-            return [
-                lsp.TextEdit(
-                    range=lsp.Range(
-                        start=lsp.Position(line=0, character=0),
-                        end=lsp.Position(line=len(document.lines), character=0),
-                    ),
-                    new_text=new_source,
-                )
-            ]
+            edits = edit_utils.get_text_edits(document.source, new_source)
+            if edits:
+                # NOTE: If you provide [] array, VS Code will clear the file of all contents.
+                # To indicate no changes to file return None.
+                return edits
     return None
 
 
