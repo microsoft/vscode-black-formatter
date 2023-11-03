@@ -56,14 +56,3 @@ export function registerDocumentFormattingEditProvider(
 export function createLanguageStatusItem(id: string, selector: DocumentSelector): LanguageStatusItem {
     return languages.createLanguageStatusItem(id, selector);
 }
-
-export function getDocumentSelector(): DocumentSelector {
-    return isVirtualWorkspace()
-        ? [{ language: 'python' }]
-        : [
-              { scheme: 'file', language: 'python' },
-              { scheme: 'untitled', language: 'python' },
-              { scheme: 'vscode-notebook', language: 'python' },
-              { scheme: 'vscode-notebook-cell', language: 'python' },
-          ];
-}

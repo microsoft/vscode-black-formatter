@@ -2,6 +2,7 @@
     "extension.description": "Formatting support for Python files using Black formatter.",
     "command.restartServer": "Restart Server",
     "settings.args.description": "Arguments passed in. Each argument is a separate string in the array.",
+    "settings.cwd.description": "Sets the current working directory used to format Python files with Black. By default, it uses the root directory of the workspace `${workspaceFolder}`. You can set it to `${fileDirname}` to use the parent folder of the file being formatted as the working directory for Black.",
     "settings.path.description": "When set to a path to `black` binary, extension will use that for linting. NOTE: Using this option may slowdown formatting.",
     "settings.importStrategy.description": "Defines where `black` is imported from. This setting may be ignored if `black-formatter.path` is set.",
     "settings.importStrategy.useBundled.description": "Always use the bundled version of `black`.",

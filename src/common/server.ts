@@ -14,8 +14,7 @@ import { DEBUG_SERVER_SCRIPT_PATH, SERVER_SCRIPT_PATH } from './constants';
 import { traceError, traceInfo, traceVerbose } from './logging';
 import { getDebuggerPath } from './python';
 import { getExtensionSettings, getGlobalSettings, ISettings } from './settings';
-import { getLSClientTraceLevel } from './utilities';
-import { getDocumentSelector } from './vscodeapi';
+import { getDocumentSelector, getLSClientTraceLevel } from './utilities';
 import { updateStatus } from './status';
 import { unregisterEmptyFormatter } from './nullFormatter';
 
