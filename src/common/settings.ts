@@ -21,7 +21,12 @@ export function getExtensionSettings(namespace: string, includeInterpreter?: boo
     return Promise.all(getWorkspaceFolders().map((w) => getWorkspaceSettings(namespace, w, includeInterpreter)));
 }
 
-function resolveVariables(value: string[], workspace?: WorkspaceFolder): string[] {
+function resolveVariables(
+    value: string[],
+    workspace?: WorkspaceFolder,
+    interpreter?: string[],
+    env?: NodeJS.ProcessEnv,
+): string[] {
     const substitutions = new Map<string, string>();
     const home = process.env.HOME || process.env.USERPROFILE;
     if (home) {
@@ -35,12 +40,35 @@ function resolveVariables(value: string[], workspace?: WorkspaceFolder): string[
         substitutions.set('${workspaceFolder:' + w.name + '}', w.uri.fsPath);
     });
 
-    return value.map((s) => {
+    env = env || process.env;
+    if (env) {
+        for (const [key, value] of Object.entries(env)) {
+            if (value) {
+                substitutions.set('${env:' + key + '}', value);
+            }
+        }
+    }
+
+    const modifiedValue = [];
+    for (const v of value) {
+        if (interpreter && v === '${interpreter}') {
+            modifiedValue.push(...interpreter);
+        } else {
+            modifiedValue.push(v);
+        }
+    }
+
+    return modifiedValue.map((s) => {
         for (const [key, value] of substitutions) {
             s = s.replace(key, value);
         }
         return s;
     });
+}
+
+function getCwd(config: WorkspaceConfiguration, workspace: WorkspaceFolder): string {
+    const cwd = config.get<string>('cwd', workspace.uri.fsPath);
+    return resolveVariables([cwd], workspace)[0];
 }
 
 export function getInterpreterFromSetting(namespace: string, scope?: ConfigurationScope) {
@@ -78,12 +106,12 @@ export async function getWorkspaceSettings(
     }
 
     const workspaceSetting = {
-        cwd: workspace.uri.fsPath,
+        cwd: getCwd(config, workspace),
         workspace: workspace.uri.toString(),
         args: resolveVariables(config.get<string[]>('args', []), workspace),
-        path: resolveVariables(config.get<string[]>('path', []), workspace),
+        path: resolveVariables(config.get<string[]>('path', []), workspace, interpreter),
         interpreter: resolveVariables(interpreter, workspace),
-        importStrategy: config.get<string>('importStrategy', 'fromEnvironment'),
+        importStrategy: config.get<string>('importStrategy', 'useBundled'),
         showNotifications: config.get<string>('showNotifications', 'off'),
     };
     return workspaceSetting;
@@ -111,7 +139,7 @@ export async function getGlobalSettings(namespace: string, includeInterpreter?: 
         args: getGlobalValue<string[]>(config, 'args') ?? [],
         path: getGlobalValue<string[]>(config, 'path') ?? [],
         interpreter: interpreter ?? [],
-        importStrategy: getGlobalValue<string>(config, 'importStrategy') ?? 'fromEnvironment',
+        importStrategy: getGlobalValue<string>(config, 'importStrategy') ?? 'useBundled',
         showNotifications: getGlobalValue<string>(config, 'showNotifications') ?? 'off',
     };
     return setting;

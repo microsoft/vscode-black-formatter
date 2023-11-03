@@ -87,3 +87,41 @@ jobs:
       - name: Validate README.md
         run: python -m nox --session validate_readme
         shell: bash
+
+  ts-tests:
+    name: TypeScript Tests
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ${{ env.special-working-directory }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: ${{ env.special-working-directory-relative }}
+
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.special-working-directory-relative }}/package-lock.json
+
+      - name: Install Node dependencies
+        run: npm ci
+        shell: bash
+
+      - name: Compile TS tests
+        run: npm run pretest
+        shell: bash
+
+      - name: Run TS tests
+        uses: GabrielBB/xvfb-action@v1.6
+        with:
+          run: npm run tests
+          working-directory: ${{ env.special-working-directory }}

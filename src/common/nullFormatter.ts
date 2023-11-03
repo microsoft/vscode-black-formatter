@@ -3,7 +3,8 @@
 
 import { Disposable } from 'vscode';
 import { traceLog } from './logging';
-import { getDocumentSelector, registerDocumentFormattingEditProvider } from './vscodeapi';
+import { registerDocumentFormattingEditProvider } from './vscodeapi';
+import { getDocumentSelector } from './utilities';
 
 let disposables: Disposable[] = [];
 export function registerEmptyFormatter(): void {
