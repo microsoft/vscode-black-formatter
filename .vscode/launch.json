@@ -6,14 +6,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": true
-        },
-        {
             "name": "Debug Extension Only",
             "type": "extensionHost",
             "request": "launch",
@@ -41,6 +33,20 @@
                 "group": "",
                 "order": 3
             }
+        },
+        {
+            "name": "TS Unit Tests",
+            "type": "extensionHost",
+            "request": "launch",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "--extensionTestsPath=${workspaceFolder}/out/test/ts_tests/index"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/out/**/*.js",
+                "${workspaceFolder}/dist/**/*.js"
+            ],
+            "preLaunchTask": "tasks: watch-tests"
         },
         {
             "name": "Python Config for test explorer (hidden)",
