@@ -1,15 +1,15 @@
 {
-    "extension.description": "Formatting support for Python files using `black`.",
+    "extension.description": "Formatting support for Python files using the Black formatter.",
     "command.restartServer": "Restart Server",
-    "settings.args.description": "Arguments passed in. Each argument is a separate string in the array.",
-    "settings.path.description": "When set to a path to `black` binary, extension will use that for linting. NOTE: Using this option may slowdown formatting.",
-    "settings.importStrategy.description": "Defines where `black` is imported from. This setting may be ignored if `black-formatter.path` is set.",
-    "settings.importStrategy.useBundled.description": "Always use the bundled version of `black`.",
-    "settings.importStrategy.fromEnvironment.description": "Use `black` from environment, fallback to bundled version only if `black` not available in the environment.",
-    "settings.interpreter.description": "When set to a path to Python executable, extension will use that to launch the server and any subprocess.",
+    "settings.args.description": "Arguments passed to Black to format Python files. Each argument should be provided as a separate string in the array. \n Example: \n `\"black-formatter.args\" = [\"--config\", \"<file>\"]`",
+    "settings.path.description": "Path or command to be used by the extension to format Python files with Black. Accepts an array of a single or multiple strings. If passing a command, each argument should be provided as a separate string in the array. If set to `[\"black\"]`, it will use the version of Black available in the `PATH` environment variable. Note: Using this option may slowdown formatting. \n  Examples: \n  - `[\"~/global_env/black\"]` \n  - `[\"conda\", \"run\", \"-n\", \"lint_env\", \"python\", \"-m\", \"black\"]`",
+    "settings.importStrategy.description": "Defines which Black formatter binary to be used to format Python files. When set to `useBundled`, the extension will use the Black formatter binary that is shipped with the extension. When set to `fromEnvironment`, the extension will attempt to use the Black formatter binary and all dependencies that are available in the currently selected environment. **Note**: If the extension can't find a valid Black formatter binary in the selected environment, it will fallback to using the binary that is shipped with the extension. The `black-formatter.path` setting takes precedence and overrides the behavior of `black-formatter.importStrategy`.",
+    "settings.importStrategy.useBundled.description": "Always use the bundled version of Black to format Python files.",
+    "settings.importStrategy.fromEnvironment.description": "Use the Black binary from the selected Python environment. If the extension fails to find a valid Black binary, it will fallback to using the bundled version of Black.",
+    "settings.interpreter.description": "Path to a Python executable or a command that will be used to launch the Black server and any subprocess. Accepts an array of a single or multiple strings. When set to `[]`, the extension will use the path to the selected Python interpreter. If passing a command, each argument should be provided as a separate string in the array.",
     "settings.showNotifications.description": "Controls when notifications are shown by this extension.",
-    "settings.showNotifications.off.description": "All notifications are turned off, any errors or warning are still available in the logs.",
-    "settings.showNotifications.onError.description": "Notifications are shown only in the case of an error.",
-    "settings.showNotifications.onWarning.description": "Notifications are shown for errors and warnings.",
-    "settings.showNotifications.always.description": "Notifications are show for anything that the server chooses to show."
+    "settings.showNotifications.off.description": "All notifications are turned off, any errors or warnings when formatting Python files are still available in the logs.",
+    "settings.showNotifications.onError.description": "Notifications are shown only in the case of an error when formatting Python files.",
+    "settings.showNotifications.onWarning.description": "Notifications are shown for any errors and warnings when formatting Python files.",
+    "settings.showNotifications.always.description": "Notifications are show for anything that the server chooses to show when formatting Python files."
 }
