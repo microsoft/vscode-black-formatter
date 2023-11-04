@@ -2,7 +2,7 @@
     "name": "black-formatter",
     "displayName": "Black Formatter",
     "description": "%extension.description%",
-    "version": "2023.5.0-dev",
+    "version": "2023.7.0-dev",
     "preview": true,
     "serverInfo": {
         "name": "Black",
@@ -59,7 +59,7 @@
         "lint": "eslint src --ext ts",
         "package": "webpack --mode production --devtool hidden-source-map",
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
-        "test": "node ./out/test/runTest.js",
+        "tests": "node ./out/test/ts_tests/runTest.js",
         "vsce-package": "vsce package -o black-formatter.vsix",
         "vscode:prepublish": "npm run package",
         "watch": "webpack --watch",
@@ -85,6 +85,16 @@
                     "markdownDescription": "%settings.args.description%",
                     "scope": "resource",
                     "type": "array"
+                },
+                "black-formatter.cwd": {
+                    "default": "${workspaceFolder}",
+                    "markdownDescription": "%settings.cwd.description%",
+                    "scope": "resource",
+                    "type": "string",
+                    "examples": [
+                        "${workspaceFolder}/src",
+                        "${fileDirname}"
+                    ]
                 },
                 "black-formatter.importStrategy": {
                     "default": "useBundled",
@@ -157,24 +167,32 @@
         ]
     },
     "dependencies": {
+        "@vscode/python-extension": "^1.0.5",
         "fs-extra": "^11.1.1",
         "vscode-languageclient": "^8.1.0"
     },
     "devDependencies": {
-        "@types/fs-extra": "^11.0.2",
+        "@types/chai": "^4.3.9",
+        "@types/fs-extra": "^11.0.3",
         "@types/glob": "^8.1.0",
+        "@types/mocha": "^10.0.3",
         "@types/node": "16.x",
+        "@types/sinon": "^10.0.20",
         "@types/vscode": "^1.74.0",
-        "@typescript-eslint/eslint-plugin": "^6.7.4",
-        "@typescript-eslint/parser": "^6.7.4",
-        "@vscode/test-electron": "^2.3.4",
-        "@vscode/vsce": "^2.21.1",
-        "eslint": "^8.50.0",
+        "@typescript-eslint/eslint-plugin": "^6.9.1",
+        "@typescript-eslint/parser": "^6.9.1",
+        "@vscode/test-electron": "^2.3.6",
+        "@vscode/vsce": "^2.22.0",
+        "chai": "^4.3.10",
+        "eslint": "^8.52.0",
         "glob": "^10.3.10",
+        "mocha": "^10.2.0",
         "prettier": "^3.0.3",
-        "ts-loader": "^9.4.4",
+        "sinon": "^17.0.0",
+        "ts-loader": "^9.5.0",
+        "typemoq": "^2.1.0",
         "typescript": "^5.2.2",
-        "webpack": "^5.88.2",
+        "webpack": "^5.89.0",
         "webpack-cli": "^5.1.4"
     }
 }
