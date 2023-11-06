@@ -12,7 +12,7 @@ import re
 import sys
 import sysconfig
 import traceback
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence
 
 
 # **********************************************************
