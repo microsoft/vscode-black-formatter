@@ -111,10 +111,10 @@ def range_formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit]
     return _formatting_helper(document)
 
 
-def is_python(code: str) -> bool:
+def is_python(code: str, file_path: str) -> bool:
     """Ensures that the code provided is python."""
     try:
-        ast.parse(code)
+        ast.parse(code, file_path)
     except SyntaxError:
         log_error(f"Syntax error in code: {traceback.format_exc()}")
         return False
@@ -155,7 +155,7 @@ def _formatting_helper(document: workspace.Document) -> list[lsp.TextEdit] | Non
     return None
 
 
-def _get_filename_for_black(document: workspace.Document) -> Union[str, None]:
+def _get_filename_for_black(document: workspace.Document) -> str:
     """Gets or generates a file name to use with black when formatting."""
     if document.uri.startswith("vscode-notebook-cell") and document.path.endswith(
         ".ipynb"
@@ -383,8 +383,10 @@ def _run_tool_on_document(
         log_warning(f"Skipping standard library file: {document.path}")
         return None
 
-    if not is_python(document.source):
-        log_warning(f"Skipping non python code: {document.path}")
+    if not is_python(document.source, document.path):
+        log_warning(
+            f"Skipping non python code or code with syntax errors: {document.path}"
+        )
         return None
 
     # deep copy here to prevent accidentally updating global settings.
