@@ -54,6 +54,11 @@ There are several settings you can configure to customize the behavior of this e
       <td>Arguments passed to Black to format Python files. Each argument should be provided as a separate string in the array. E.g <code>"black-formatter.args" = ["--config", "&lt;file&gt;"]</code></td>
     </tr>
     <tr>
+      <td>black-formatter.cwd</td>
+      <td><code>[]</code></td>
+      <td>Sets the current working directory used to format Python files with Black. By default, it uses the root directory of the workspace <code>${workspaceFolder}</code>. You can set it to <code>${fileDirname}</code> to use the parent folder of the file being formatted as the working directory for Black.</td>
+    </tr>
+    <tr>
       <td>black-formatter.path</td>
       <td><code>[]</code></td>
       <td>Path or command to be used by the extension to format Python files with Black. Accepts an array of a single or multiple strings. If passing a command, each argument should be provided as a separate string in the array. If set to <code>["black"]</code>, it will use the version of Black available in the <code>PATH</code> environment variable. Note: Using this option may slowdown formatting. <br> Examples: <br> <code>["~/global_env/black"]</code> <br> <code>["conda", "run", "-n", "lint_env", "python", "-m", "black"]</code></td>
