@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import * as fsapi from 'fs-extra';
-import { Disposable, env, l10n, LanguageStatusSeverity, LogOutputChannel, WorkspaceFolder } from 'vscode';
+import { Disposable, env, l10n, LanguageStatusSeverity, LogOutputChannel, Uri, WorkspaceFolder } from 'vscode';
 import { State } from 'vscode-languageclient';
 import {
     LanguageClient,
@@ -28,7 +28,7 @@ async function createServer(
     initializationOptions: IInitOptions,
 ): Promise<LanguageClient> {
     const command = settings.interpreter[0];
-    const cwd = settings.cwd;
+    const cwd = settings.cwd === '${fileDirname}' ? Uri.parse(settings.workspace).fsPath : settings.cwd;
 
     // Set debugger path needed for debugging python code.
     const newEnv = { ...process.env };
