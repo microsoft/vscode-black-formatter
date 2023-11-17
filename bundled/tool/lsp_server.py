@@ -89,6 +89,11 @@ TOOL_ARGS = []
 # Minimum version of black supported.
 MIN_VERSION = "22.3.0"
 
+# Minimum version of black that supports the `--line-ranges` CLI option.
+LINE_RANGES_MIN_VERSION = "23.11.0"
+
+SUPPORTS_LINE_RANGES_SETTINGS_KEY = "supportsLineRanges"
+
 # **********************************************************
 # Formatting features start here
 # **********************************************************
@@ -104,11 +109,20 @@ def formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit] | Non
 
 @LSP_SERVER.feature(lsp.TEXT_DOCUMENT_RANGE_FORMATTING)
 def range_formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit] | None:
-    """LSP handler for textDocument/formatting request."""
+    """LSP handler for textDocument/rangeFormatting request."""
 
-    log_warning("Black does not support range formatting. Formatting entire document.")
     document = LSP_SERVER.workspace.get_text_document(params.text_document.uri)
-    return _formatting_helper(document)
+    supports_line_ranges = _get_settings_by_document(document).get(
+        SUPPORTS_LINE_RANGES_SETTINGS_KEY
+    )
+
+    if supports_line_ranges:
+        return _formatting_helper(document, range_=params.range)
+    else:
+        log_warning(
+            "Black version earlier than 23.11.0 does not support range formatting. Formatting entire document."
+        )
+        return _formatting_helper(document)
 
 
 def is_python(code: str, file_path: str) -> bool:
@@ -121,9 +135,13 @@ def is_python(code: str, file_path: str) -> bool:
     return True
 
 
-def _formatting_helper(document: workspace.Document) -> list[lsp.TextEdit] | None:
+def _formatting_helper(
+    document: workspace.Document, range_: Optional[lsp.Range] = None
+) -> list[lsp.TextEdit] | None:
     extra_args = _get_args_by_file_extension(document)
     extra_args += ["--stdin-filename", _get_filename_for_black(document)]
+    if range_:
+        extra_args += [f"--line-ranges={range_.start.line+1}-{range_.end.line+1}"]
     result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
     if result and result.stdout:
         if LSP_SERVER.lsp.trace == lsp.TraceValues.Verbose:
@@ -226,8 +244,6 @@ def initialize(params: lsp.InitializeParams) -> None:
     paths = "\r\n   ".join(sys.path)
     log_to_output(f"sys.path used to run Server:\r\n   {paths}")
 
-    _log_version_info()
-
 
 @LSP_SERVER.feature(lsp.EXIT)
 def on_exit(_params: Optional[Any] = None) -> None:
@@ -241,12 +257,13 @@ def on_shutdown(_params: Optional[Any] = None) -> None:
     jsonrpc.shutdown_json_rpc()
 
 
-def _log_version_info() -> None:
-    for value in WORKSPACE_SETTINGS.values():
+def _update_workspace_settings_with_version_info(
+    workspace_settings: dict[str, Any]
+) -> None:
+    for settings in workspace_settings.values():
         try:
             from packaging.version import parse as parse_version
 
-            settings = copy.deepcopy(value)
             result = _run_tool(["--version"], settings)
             code_workspace = settings["workspaceFS"]
             log_to_output(
@@ -269,6 +286,7 @@ def _log_version_info() -> None:
 
             version = parse_version(actual_version)
             min_version = parse_version(MIN_VERSION)
+            line_ranges_min_version = parse_version(LINE_RANGES_MIN_VERSION)
 
             if version < min_version:
                 log_error(
@@ -281,6 +299,10 @@ def _log_version_info() -> None:
                     f"SUPPORTED {TOOL_MODULE}>={min_version}\r\n"
                     f"FOUND {TOOL_MODULE}=={actual_version}\r\n"
                 )
+
+            settings[SUPPORTS_LINE_RANGES_SETTINGS_KEY] = (
+                version >= line_ranges_min_version
+            )
         except:  # pylint: disable=bare-except
             log_to_output(
                 f"Error while detecting black version:\r\n{traceback.format_exc()}"
@@ -317,6 +339,8 @@ def _update_workspace_settings(settings):
             **setting,
             "workspaceFS": key,
         }
+
+    _update_workspace_settings_with_version_info(WORKSPACE_SETTINGS)
 
 
 def _get_settings_by_path(file_path: pathlib.Path):
