@@ -94,21 +94,23 @@ MIN_VERSION = "22.3.0"
 # **********************************************************
 
 
-@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_FORMATTING)
+@LSP_SERVER.feature(
+    lsp.TEXT_DOCUMENT_FORMATTING, lsp.DocumentFormattingOptions(work_done_progress=True)
+)
 def formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit] | None:
     """LSP handler for textDocument/formatting request."""
 
     document = LSP_SERVER.workspace.get_text_document(params.text_document.uri)
-    return _formatting_helper(document)
+    return _formatting_helper(document, token=params.work_done_token)
 
 
-@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_RANGE_FORMATTING)
+@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_RANGE_FORMATTING, lsp.DocumentRangeFormattingOptions(work_done_progress=True))
 def range_formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit] | None:
     """LSP handler for textDocument/formatting request."""
 
     log_warning("Black does not support range formatting. Formatting entire document.")
     document = LSP_SERVER.workspace.get_text_document(params.text_document.uri)
-    return _formatting_helper(document)
+    return _formatting_helper(document, token=params.work_done_token)
 
 
 def is_python(code: str, file_path: str) -> bool:
@@ -121,10 +123,23 @@ def is_python(code: str, file_path: str) -> bool:
     return True
 
 
-def _formatting_helper(document: workspace.Document) -> list[lsp.TextEdit] | None:
+def _formatting_helper(
+    document: workspace.Document, token: Optional[lsp.ProgressToken] = None
+) -> list[lsp.TextEdit] | None:
+    if token:
+        file_name = pathlib.Path(document.path).name
+        LSP_SERVER.progress.begin(
+            token,
+            lsp.WorkDoneProgressBegin(
+                title="Formatting with Black", message=f"Formatting {file_name}"
+            ),
+        )
+
     extra_args = _get_args_by_file_extension(document)
     extra_args += ["--stdin-filename", _get_filename_for_black(document)]
+
     result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
+
     if result and result.stdout:
         if LSP_SERVER.lsp.trace == lsp.TraceValues.Verbose:
             log_to_output(
@@ -151,7 +166,16 @@ def _formatting_helper(document: workspace.Document) -> list[lsp.TextEdit] | Non
             if edits:
                 # NOTE: If you provide [] array, VS Code will clear the file of all contents.
                 # To indicate no changes to file return None.
+                if token:
+                    LSP_SERVER.progress.end(
+                        token,
+                        lsp.WorkDoneProgressEnd(message=f"Done Formatting {file_name}"),
+                    )
                 return edits
+    if token:
+        LSP_SERVER.progress.end(
+            token, lsp.WorkDoneProgressEnd(message=f"Done Formatting {file_name}")
+        )
     return None
 
 

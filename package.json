@@ -29,7 +29,7 @@
         "black"
     ],
     "engines": {
-        "vscode": "^1.74.0"
+        "vscode": "^1.84.0"
     },
     "categories": [
         "Programming Languages",
@@ -169,16 +169,16 @@
     "dependencies": {
         "@vscode/python-extension": "^1.0.5",
         "fs-extra": "^11.1.1",
-        "vscode-languageclient": "^8.1.0"
+        "vscode-languageclient": "^9.0.1"
     },
     "devDependencies": {
         "@types/chai": "^4.3.9",
         "@types/fs-extra": "^11.0.3",
         "@types/glob": "^8.1.0",
         "@types/mocha": "^10.0.3",
-        "@types/node": "16.x",
+        "@types/node": "18.x",
         "@types/sinon": "^10.0.20",
-        "@types/vscode": "^1.74.0",
+        "@types/vscode": "^1.84.0",
         "@typescript-eslint/eslint-plugin": "^6.9.1",
         "@typescript-eslint/parser": "^6.9.1",
         "@vscode/test-electron": "^2.3.6",
