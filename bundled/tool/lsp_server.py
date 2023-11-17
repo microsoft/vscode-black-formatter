@@ -12,7 +12,7 @@ import re
 import sys
 import sysconfig
 import traceback
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 
 # **********************************************************
@@ -90,9 +90,10 @@ TOOL_ARGS = []
 MIN_VERSION = "22.3.0"
 
 # Minimum version of black that supports the `--line-ranges` CLI option.
-LINE_RANGES_MIN_VERSION = "23.11.0"
+LINE_RANGES_MIN_VERSION = (23, 11, 0)
 
-SUPPORTS_LINE_RANGES_SETTINGS_KEY = "supportsLineRanges"
+# Versions of black found by workspace
+VERSION_LOOKUP: Dict[str, Tuple[int, int, int]] = {}
 
 # **********************************************************
 # Formatting features start here
@@ -107,17 +108,47 @@ def formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit] | Non
     return _formatting_helper(document)
 
 
-@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_RANGE_FORMATTING)
-def range_formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit] | None:
+@LSP_SERVER.feature(
+    lsp.TEXT_DOCUMENT_RANGE_FORMATTING,
+    lsp.DocumentRangeFormattingOptions(ranges_support=True),
+)
+def range_formatting(
+    params: lsp.DocumentRangeFormattingParams,
+) -> list[lsp.TextEdit] | None:
     """LSP handler for textDocument/rangeFormatting request."""
-
     document = LSP_SERVER.workspace.get_text_document(params.text_document.uri)
-    supports_line_ranges = _get_settings_by_document(document).get(
-        SUPPORTS_LINE_RANGES_SETTINGS_KEY
-    )
+    settings = _get_settings_by_document(document)
+    version = VERSION_LOOKUP[settings["workspaceFS"]]
 
-    if supports_line_ranges:
-        return _formatting_helper(document, range_=params.range)
+    if version >= LINE_RANGES_MIN_VERSION:
+        return _formatting_helper(
+            document,
+            args=[
+                "--line-ranges",
+                f"{params.range.start.line + 1}-{params.range.end.line + 1}",
+            ],
+        )
+    else:
+        log_warning(
+            "Black version earlier than 23.11.0 does not support range formatting. Formatting entire document."
+        )
+        return _formatting_helper(document)
+
+
+@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_RANGES_FORMATTING)
+def ranges_formatting(
+    params: lsp.DocumentRangesFormattingParams,
+) -> list[lsp.TextEdit] | None:
+    """LSP handler for textDocument/rangesFormatting request."""
+    document = LSP_SERVER.workspace.get_text_document(params.text_document.uri)
+    settings = _get_settings_by_document(document)
+    version = VERSION_LOOKUP[settings["workspaceFS"]]
+
+    if version >= LINE_RANGES_MIN_VERSION:
+        args = []
+        for r in params.ranges:
+            args += ["--line-ranges", f"{r.start.line + 1}-{r.end.line + 1}"]
+        return _formatting_helper(document, args=args)
     else:
         log_warning(
             "Black version earlier than 23.11.0 does not support range formatting. Formatting entire document."
@@ -136,12 +167,11 @@ def is_python(code: str, file_path: str) -> bool:
 
 
 def _formatting_helper(
-    document: workspace.Document, range_: Optional[lsp.Range] = None
+    document: workspace.Document, args: Sequence[str] = None
 ) -> list[lsp.TextEdit] | None:
-    extra_args = _get_args_by_file_extension(document)
+    args = [] if args is None else args
+    extra_args = args + _get_args_by_file_extension(document)
     extra_args += ["--stdin-filename", _get_filename_for_black(document)]
-    if range_:
-        extra_args += [f"--line-ranges={range_.start.line+1}-{range_.end.line+1}"]
     result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
     if result and result.stdout:
         if LSP_SERVER.lsp.trace == lsp.TraceValues.Verbose:
@@ -286,7 +316,11 @@ def _update_workspace_settings_with_version_info(
 
             version = parse_version(actual_version)
             min_version = parse_version(MIN_VERSION)
-            line_ranges_min_version = parse_version(LINE_RANGES_MIN_VERSION)
+            VERSION_LOOKUP[code_workspace] = (
+                version.major,
+                version.minor,
+                version.micro,
+            )
 
             if version < min_version:
                 log_error(
@@ -300,9 +334,6 @@ def _update_workspace_settings_with_version_info(
                     f"FOUND {TOOL_MODULE}=={actual_version}\r\n"
                 )
 
-            settings[SUPPORTS_LINE_RANGES_SETTINGS_KEY] = (
-                version >= line_ranges_min_version
-            )
         except:  # pylint: disable=bare-except
             log_to_output(
                 f"Error while detecting black version:\r\n{traceback.format_exc()}"
