@@ -146,21 +146,19 @@ def lint(session: nox.Session) -> None:
     # check import sorting using isort
     session.install("isort")
     session.run("isort", "--profile", "black", "--check", "./bundled/tool")
+    session.run("isort", "--profile", "black", "--check", "./src/test/python_tests")
+    session.run("isort", "--profile", "black", "--check", "noxfile.py")
+
+    # check formatting using black
+    session.install("black")
+    session.run("black", "--check", "./bundled/tool")
     session.run(
-        "isort",
-        "--profile",
         "black",
         "--check",
         "./src/test/python_tests",
         "--exclude",
         "test_data",
     )
-    session.run("isort", "--profile", "black", "--check", "noxfile.py")
-
-    # check formatting using black
-    session.install("black")
-    session.run("black", "--check", "./bundled/tool")
-    session.run("black", "--check", "./src/test/python_tests")
     session.run("black", "--check", "noxfile.py")
 
     # check typescript code
