@@ -104,7 +104,10 @@ def formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit] | Non
     return _formatting_helper(document, token=params.work_done_token)
 
 
-@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_RANGE_FORMATTING, lsp.DocumentRangeFormattingOptions(work_done_progress=True))
+@LSP_SERVER.feature(
+    lsp.TEXT_DOCUMENT_RANGE_FORMATTING,
+    lsp.DocumentRangeFormattingOptions(work_done_progress=True),
+)
 def range_formatting(params: lsp.DocumentFormattingParams) -> list[lsp.TextEdit] | None:
     """LSP handler for textDocument/formatting request."""
 
@@ -126,8 +129,8 @@ def is_python(code: str, file_path: str) -> bool:
 def _formatting_helper(
     document: workspace.Document, token: Optional[lsp.ProgressToken] = None
 ) -> list[lsp.TextEdit] | None:
+    file_name = pathlib.Path(document.path).name
     if token:
-        file_name = pathlib.Path(document.path).name
         LSP_SERVER.progress.begin(
             token,
             lsp.WorkDoneProgressBegin(
