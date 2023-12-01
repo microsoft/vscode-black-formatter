@@ -1,6 +1,6 @@
 # Formatter extension for Visual Studio Code using the Black formatter
 
-A Visual Studio Code extension with support for the Black formatter. The extension ships with `black=23.10.1`.
+A Visual Studio Code extension with support for the Black formatter. The extension ships with `black=23.11.0`.
 
 > Note: The minimum version of Black this extension supports is `22.3.0`.
 
