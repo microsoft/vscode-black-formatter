@@ -143,6 +143,20 @@ class LspSession(MethodDispatcher):
         fut = self._send_request("textDocument/formatting", params=formatting_params)
         return fut.result()
 
+    def text_document_range_formatting(self, range_formatting_params):
+        """Sends text document references request to LSP server."""
+        fut = self._send_request(
+            "textDocument/rangeFormatting", params=range_formatting_params
+        )
+        return fut.result()
+
+    def text_document_ranges_formatting(self, ranges_formatting_params):
+        """Sends text document references request to LSP server."""
+        fut = self._send_request(
+            "textDocument/rangesFormatting", params=ranges_formatting_params
+        )
+        return fut.result()
+
     def set_notification_callback(self, notification_name, callback):
         """Set custom LS notification handler."""
         self._notification_callbacks[notification_name] = callback

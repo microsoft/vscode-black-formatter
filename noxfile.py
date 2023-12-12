@@ -152,7 +152,13 @@ def lint(session: nox.Session) -> None:
     # check formatting using black
     session.install("black")
     session.run("black", "--check", "./bundled/tool")
-    session.run("black", "--check", "./src/test/python_tests")
+    session.run(
+        "black",
+        "--check",
+        "./src/test/python_tests",
+        "--exclude",
+        "test_data",
+    )
     session.run("black", "--check", "noxfile.py")
 
     # check typescript code
