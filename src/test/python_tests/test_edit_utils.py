@@ -7,8 +7,11 @@ Test for TextEdit utils.
 import os
 import pathlib
 import sys
+from typing import List
 
+import pytest
 from hamcrest import assert_that, is_
+from lsprotocol import types as lsp
 
 # From: src\test\python_tests\test_edit_utils.py
 # To: bundled\tool\lsp_edit_utils.py
@@ -27,7 +30,7 @@ def test_large_edits():
     formatted = FORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
     unformatted = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
 
-    edits = get_text_edits(unformatted, formatted, 4000)
+    edits = get_text_edits(unformatted, formatted, lsp.PositionEncodingKind.Utf16, 4000)
 
     actual = utils.apply_text_edits(unformatted, edits)
     assert_that(actual, is_(formatted))
@@ -41,7 +44,64 @@ def test_with_levenshtein():
     unformatted = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
 
     with utils.install_packages(["Levenshtein"]):
-        edits = get_text_edits(unformatted, formatted, 4000)
+        edits = get_text_edits(
+            unformatted, formatted, lsp.PositionEncodingKind.Utf16, 4000
+        )
 
     actual = utils.apply_text_edits(unformatted, edits)
     assert_that(actual, is_(formatted))
+
+
+@pytest.mark.parametrize(
+    "encoding,expected",
+    [
+        (
+            lsp.PositionEncodingKind.Utf8,
+            [
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(0, 4), lsp.Position(0, 5)),
+                    new_text='"',
+                ),
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(0, 9), lsp.Position(0, 10)),
+                    new_text='"',
+                ),
+            ],
+        ),
+        (
+            lsp.PositionEncodingKind.Utf16,
+            [
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(0, 4), lsp.Position(0, 5)),
+                    new_text='"',
+                ),
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(0, 7), lsp.Position(0, 8)),
+                    new_text='"',
+                ),
+            ],
+        ),
+        (
+            lsp.PositionEncodingKind.Utf32,
+            [
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(0, 4), lsp.Position(0, 5)),
+                    new_text='"',
+                ),
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(0, 6), lsp.Position(0, 7)),
+                    new_text='"',
+                ),
+            ],
+        ),
+    ],
+)
+def test_with_emojis(encoding: lsp.PositionEncodingKind, expected: List[lsp.TextEdit]):
+    FORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample6" / "sample.py"
+    UNFORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample6" / "sample.unformatted"
+
+    formatted = FORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
+    unformatted = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
+    actual = get_text_edits(unformatted, formatted, encoding, 4000)
+
+    assert_that(actual, is_(expected))

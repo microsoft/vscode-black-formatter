@@ -22,17 +22,35 @@ def _get_diff(old_text: str, new_text: str):
 
 
 def get_text_edits(
-    old_text: str, new_text: str, timeout: Optional[int] = None
+    old_text: str,
+    new_text: str,
+    position_encoding: lsp.PositionEncodingKind,
+    timeout: Optional[int] = None,
 ) -> List[lsp.TextEdit]:
     """Return a list of text edits to transform old_text into new_text."""
 
-    offsets = [0]
+    def code_units(c: str) -> int:
+        if position_encoding == lsp.PositionEncodingKind.Utf16:
+            return len(c.encode("utf-16-le")) // 2
+        elif position_encoding == lsp.PositionEncodingKind.Utf8:
+            return len(c.encode("utf-8"))
+        return len(c.encode("utf-32-le")) // 4
+
+    line_offsets = [0]
+    code_unit_offsets = []
+
     for line in old_text.splitlines(True):
-        offsets.append(offsets[-1] + len(line))
+        line_offsets.append(line_offsets[-1] + len(line))
+        col_offset = [0]
+        for c in line:
+            col_offset.append(col_offset[-1] + code_units(c))
+        code_unit_offsets.append(col_offset)
+    code_unit_offsets.append([0])
 
     def from_offset(offset: int) -> lsp.Position:
-        line = bisect.bisect_right(offsets, offset) - 1
-        character = offset - offsets[line]
+        line = bisect.bisect_right(line_offsets, offset) - 1
+        col = offset - line_offsets[line]
+        character = code_unit_offsets[line][col]
         return lsp.Position(line=line, character=character)
 
     sequences = []

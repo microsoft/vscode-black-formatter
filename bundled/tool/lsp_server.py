@@ -195,7 +195,9 @@ def _formatting_helper(
 
         # If code is already formatted, then no need to send any edits.
         if new_source != document.source:
-            edits = edit_utils.get_text_edits(document.source, new_source)
+            edits = edit_utils.get_text_edits(
+                document.source, new_source, lsp.PositionEncodingKind.Utf16
+            )
             if edits:
                 # NOTE: If you provide [] array, VS Code will clear the file of all contents.
                 # To indicate no changes to file return None.

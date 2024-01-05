@@ -22,5 +22,5 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "python.testing.cwd": "${workspaceFolder}",
-    "editor.formatOnSave": true,
+    "editor.formatOnSave": true
 }
