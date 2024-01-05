@@ -62,6 +62,7 @@ update_environ_path()
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
 import lsp_edit_utils as edit_utils
+import lsp_io
 import lsp_jsonrpc as jsonrpc
 import lsp_utils as utils
 import lsprotocol.types as lsp
@@ -659,4 +660,10 @@ def log_always(message: str) -> None:
 # Start the server.
 # *****************************************************
 if __name__ == "__main__":
-    LSP_SERVER.start_io()
+    args = lsp_io.parse_args()
+    if args.pipe:
+        with lsp_io.use_pipe(args.pipe) as (rpipe, wpipe):
+            LSP_SERVER.start_io(rpipe, wpipe)
+    else:
+        # default is always the stdio option.
+        LSP_SERVER.start_io()

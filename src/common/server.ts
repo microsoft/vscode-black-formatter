@@ -9,6 +9,7 @@ import {
     LanguageClientOptions,
     RevealOutputChannelOn,
     ServerOptions,
+    TransportKind,
 } from 'vscode-languageclient/node';
 import { DEBUG_SERVER_SCRIPT_PATH, SERVER_SCRIPT_PATH } from './constants';
 import { traceError, traceInfo, traceVerbose } from './logging';
@@ -56,6 +57,7 @@ async function createServer(
         command,
         args,
         options: { cwd, env: newEnv },
+        transport: TransportKind.pipe,
     };
 
     // Options to control the language client
