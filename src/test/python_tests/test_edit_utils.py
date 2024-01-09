@@ -105,3 +105,58 @@ def test_with_emojis(encoding: lsp.PositionEncodingKind, expected: List[lsp.Text
     actual = get_text_edits(unformatted, formatted, encoding, 4000)
 
     assert_that(actual, is_(expected))
+
+
+@pytest.mark.parametrize(
+    "encoding,expected",
+    [
+        (
+            lsp.PositionEncodingKind.Utf8,
+            [
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(1, 179), lsp.Position(1, 179)),
+                    new_text="\n   ",
+                ),
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(1, 354), lsp.Position(1, 354)),
+                    new_text=",",
+                ),
+            ],
+        ),
+        (
+            lsp.PositionEncodingKind.Utf16,
+            [
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(1, 93), lsp.Position(1, 93)),
+                    new_text="\n   ",
+                ),
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(1, 182), lsp.Position(1, 182)),
+                    new_text=",",
+                ),
+            ],
+        ),
+        (
+            lsp.PositionEncodingKind.Utf32,
+            [
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(1, 50), lsp.Position(1, 50)),
+                    new_text="\n   ",
+                ),
+                lsp.TextEdit(
+                    range=lsp.Range(lsp.Position(1, 96), lsp.Position(1, 96)),
+                    new_text=",",
+                ),
+            ],
+        ),
+    ],
+)
+def test_with_emojis2(encoding: lsp.PositionEncodingKind, expected: List[lsp.TextEdit]):
+    FORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample7" / "sample.py"
+    UNFORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample7" / "sample.unformatted"
+
+    formatted = FORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
+    unformatted = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
+    actual = get_text_edits(unformatted, formatted, encoding, 4000)
+
+    assert_that(actual, is_(expected))
