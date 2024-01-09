@@ -23,35 +23,6 @@ from lsp_edit_utils import get_text_edits
 from .lsp_test_client import constants, utils
 
 
-def test_large_edits():
-    FORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample3" / "sample.py"
-    UNFORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample3" / "sample.unformatted"
-
-    formatted = FORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
-    unformatted = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
-
-    edits = get_text_edits(unformatted, formatted, lsp.PositionEncodingKind.Utf32, 4000)
-
-    actual = utils.apply_text_edits(unformatted, edits)
-    assert_that(actual, is_(formatted))
-
-
-def test_with_levenshtein():
-    FORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample3" / "sample.py"
-    UNFORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample3" / "sample.unformatted"
-
-    formatted = FORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
-    unformatted = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
-
-    with utils.install_packages(["Levenshtein"]):
-        edits = get_text_edits(
-            unformatted, formatted, lsp.PositionEncodingKind.Utf32, 4000
-        )
-
-    actual = utils.apply_text_edits(unformatted, edits)
-    assert_that(actual, is_(formatted))
-
-
 @pytest.mark.parametrize(
     "encoding,expected",
     [
@@ -160,3 +131,42 @@ def test_with_emojis2(encoding: lsp.PositionEncodingKind, expected: List[lsp.Tex
     actual = get_text_edits(unformatted, formatted, encoding, 4000)
 
     assert_that(actual, is_(expected))
+
+
+def test_large_edits():
+    FORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample3" / "sample.py"
+    UNFORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample3" / "sample.unformatted"
+
+    formatted = FORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
+    unformatted = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
+
+    edits = get_text_edits(unformatted, formatted, lsp.PositionEncodingKind.Utf32, 4000)
+
+    actual = utils.apply_text_edits(unformatted, edits)
+    assert_that(actual, is_(formatted))
+
+
+def has_levenshtein():
+    try:
+        import Levenshtein  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
+
+
+@pytest.mark.skipif(not has_levenshtein(), reason="Levenshtein is not installed")
+def test_with_levenshtein():
+    FORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample3" / "sample.py"
+    UNFORMATTED_TEST_FILE_PATH = constants.TEST_DATA / "sample3" / "sample.unformatted"
+
+    formatted = FORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
+    unformatted = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
+
+    with utils.install_packages(["Levenshtein"]):
+        edits = get_text_edits(
+            unformatted, formatted, lsp.PositionEncodingKind.Utf32, 4000
+        )
+
+    actual = utils.apply_text_edits(unformatted, edits)
+    assert_that(actual, is_(formatted))
