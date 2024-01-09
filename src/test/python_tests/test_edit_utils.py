@@ -30,7 +30,7 @@ def test_large_edits():
     formatted = FORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
     unformatted = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
 
-    edits = get_text_edits(unformatted, formatted, lsp.PositionEncodingKind.Utf16, 4000)
+    edits = get_text_edits(unformatted, formatted, lsp.PositionEncodingKind.Utf32, 4000)
 
     actual = utils.apply_text_edits(unformatted, edits)
     assert_that(actual, is_(formatted))
@@ -45,7 +45,7 @@ def test_with_levenshtein():
 
     with utils.install_packages(["Levenshtein"]):
         edits = get_text_edits(
-            unformatted, formatted, lsp.PositionEncodingKind.Utf16, 4000
+            unformatted, formatted, lsp.PositionEncodingKind.Utf32, 4000
         )
 
     actual = utils.apply_text_edits(unformatted, edits)

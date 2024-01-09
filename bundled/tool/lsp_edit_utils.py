@@ -44,7 +44,7 @@ def get_text_edits(
         for c in line:
             col_offset.append(col_offset[-1] + code_units(c))
         code_unit_offsets.append(col_offset)
-        line_offsets.append(line_offsets[-1] + col_offset[-1])
+        line_offsets.append(line_offsets[-1] + len(line))
     code_unit_offsets.append([0])
 
     def from_offset(offset: int) -> lsp.Position:
