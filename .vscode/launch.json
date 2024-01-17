@@ -48,7 +48,8 @@
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}",
                 "--extensionTestsPath=${workspaceFolder}/out/test/ts_tests/index",
-                "--timeout=600000"
+                "--timeout=600000",
+                "${workspaceFolder}/src/test/ts_tests/test_data/project"
             ],
             "outFiles": ["${workspaceFolder}/out/**/*.js", "${workspaceFolder}/dist/**/*.js"],
             "env": {

@@ -8,11 +8,14 @@ import { EXTENSION_ROOT_DIR } from '../../../../common/constants';
 import { assert } from 'chai';
 
 const TEST_PROJECT_DIR = path.join(EXTENSION_ROOT_DIR, 'src', 'test', 'ts_tests', 'test_data', 'project');
-const TIMEOUT = 100000;
+const TIMEOUT = 360000;
 
-suite('Smoke Tests', () => {
+suite('Smoke Tests', function () {
+    this.timeout(TIMEOUT);
+
     let disposables: vscode.Disposable[] = [];
-    suiteSetup(async () => {
+    suiteSetup(async function () {
+        this.timeout(TIMEOUT);
         const pythonExt = vscode.extensions.getExtension('ms-python.python');
         if (!pythonExt) {
             await vscode.commands.executeCommand('workbench.extensions.installExtension', 'ms-python.python');
@@ -36,15 +39,13 @@ suite('Smoke Tests', () => {
         await pythonExt?.activate();
     }
 
-    async function ensureBlackExt() {
+    async function ensureBlackExt(): Promise<void> {
         const extension = vscode.extensions.getExtension('ms-python.black-formatter');
         assert.ok(extension, 'Extension not found');
         await extension?.activate();
     }
 
-    test('Extension loads', async function () {
-        this.timeout(TIMEOUT);
-
+    test('Extension loads', async () => {
         await vscode.workspace.openTextDocument(path.join(TEST_PROJECT_DIR, 'myscript.py'));
 
         await ensurePythonExt();
@@ -62,9 +63,7 @@ suite('Smoke Tests', () => {
         }
     });
 
-    test('Black formats a file', async function () {
-        this.timeout(TIMEOUT);
-
+    test('Black formats a file', async () => {
         await ensurePythonExt();
 
         const unformatted = await fsapi.readFile(path.join(TEST_PROJECT_DIR, 'myscript.unformatted'), {
@@ -80,9 +79,33 @@ suite('Smoke Tests', () => {
 
         const editor = vscode.window.activeTextEditor;
         assert.ok(editor, 'No active editor');
-
         assert.ok(editor?.document.uri.fsPath.endsWith('myscript.py'), 'Active editor is not myscript.py');
-        await vscode.workspace.saveAll();
+
+        const formatReady = new Promise<void>((resolve) => {
+            const disposable = vscode.workspace.onDidChangeTextDocument((e) => {
+                if (e.document.uri.fsPath.includes('Black')) {
+                    const text = e.document.getText();
+                    if (text.includes('textDocument/didOpen')) {
+                        disposable.dispose();
+                        resolve();
+                    }
+                }
+            });
+        });
+        await formatReady;
+
+        const formatDone = new Promise<void>((resolve) => {
+            const disposable = vscode.workspace.onDidSaveTextDocument((e) => {
+                if (e.uri.fsPath.endsWith('myscript.py')) {
+                    disposable.dispose();
+                    resolve();
+                }
+            });
+        });
+
+        await vscode.commands.executeCommand('workbench.action.files.save');
+        await formatDone;
+
         const actualText = editor?.document.getText();
         assert.equal(actualText, formatted);
     });

@@ -1,3 +1,7 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import * as path from 'path';
 
 import { runTests } from '@vscode/test-electron';
@@ -16,12 +20,11 @@ async function main() {
         const extensionTestsPath = path.resolve(__dirname, './index');
 
         // Download VS Code, unzip it and run the integration test
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         await runTests({
             extensionDevelopmentPath,
             extensionTestsPath,
             extensionTestsEnv: { SMOKE_TESTS: 'true' },
-            timeout: 60000,
+            timeout: 360000,
             launchArgs: [TEST_PROJECT_DIR],
         });
     } catch (err) {
