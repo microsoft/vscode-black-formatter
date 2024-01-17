@@ -34,7 +34,7 @@ from .lsp_test_client import constants, utils
                     new_text='"',
                 ),
                 lsp.TextEdit(
-                    range=lsp.Range(lsp.Position(0, 9), lsp.Position(0, 10)),
+                    range=lsp.Range(lsp.Position(0, 8), lsp.Position(0, 9)),
                     new_text='"',
                 ),
             ],
@@ -85,11 +85,11 @@ def test_with_emojis(encoding: lsp.PositionEncodingKind, expected: List[lsp.Text
             lsp.PositionEncodingKind.Utf8,
             [
                 lsp.TextEdit(
-                    range=lsp.Range(lsp.Position(1, 179), lsp.Position(1, 179)),
+                    range=lsp.Range(lsp.Position(1, 136), lsp.Position(1, 136)),
                     new_text="\n   ",
                 ),
                 lsp.TextEdit(
-                    range=lsp.Range(lsp.Position(1, 354), lsp.Position(1, 354)),
+                    range=lsp.Range(lsp.Position(1, 268), lsp.Position(1, 268)),
                     new_text=",",
                 ),
             ],

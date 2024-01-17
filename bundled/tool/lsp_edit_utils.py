@@ -7,6 +7,7 @@ import difflib
 from threading import Thread
 from typing import List, Optional
 
+from pygls.workspace.position_codec import PositionCodec
 from lsprotocol import types as lsp
 
 DIFF_TIMEOUT = 1  # 1 second
@@ -29,28 +30,16 @@ def get_text_edits(
 ) -> List[lsp.TextEdit]:
     """Return a list of text edits to transform old_text into new_text."""
 
-    def code_units(c: str) -> int:
-        if position_encoding == lsp.PositionEncodingKind.Utf16:
-            return len(c.encode("utf-16-le")) // 2
-        elif position_encoding == lsp.PositionEncodingKind.Utf8:
-            return len(c.encode("utf-8"))
-        return len(c.encode("utf-32-le")) // 4
+    lines = old_text.splitlines(True)
+    codec = PositionCodec(position_encoding)
 
     line_offsets = [0]
-    code_unit_offsets = []
-
-    for line in old_text.splitlines(True):
-        col_offset = [0]
-        for c in line:
-            col_offset.append(col_offset[-1] + code_units(c))
-        code_unit_offsets.append(col_offset)
+    for line in lines:
         line_offsets.append(line_offsets[-1] + len(line))
-    code_unit_offsets.append([0])
 
     def from_offset(offset: int) -> lsp.Position:
         line = bisect.bisect_right(line_offsets, offset) - 1
-        col = offset - line_offsets[line]
-        character = code_unit_offsets[line][col]
+        character = offset - line_offsets[line]
         return lsp.Position(line=line, character=character)
 
     sequences = []
@@ -64,7 +53,13 @@ def get_text_edits(
     if sequences:
         edits = [
             lsp.TextEdit(
-                range=lsp.Range(start=from_offset(old_start), end=from_offset(old_end)),
+                range=codec.range_to_client_units(
+                    lines=lines,
+                    range=lsp.Range(
+                        start=from_offset(old_start),
+                        end=from_offset(old_end),
+                    ),
+                ),
                 new_text=new_text[new_start:new_end],
             )
             for opcode, old_start, old_end, new_start, new_end in sequences
