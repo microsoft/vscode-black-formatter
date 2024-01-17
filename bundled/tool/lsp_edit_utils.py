@@ -7,8 +7,8 @@ import difflib
 from threading import Thread
 from typing import List, Optional
 
-from pygls.workspace.position_codec import PositionCodec
 from lsprotocol import types as lsp
+from pygls.workspace.position_codec import PositionCodec
 
 DIFF_TIMEOUT = 1  # 1 second
 
