@@ -168,7 +168,7 @@
     },
     "dependencies": {
         "@vscode/python-extension": "^1.0.5",
-        "fs-extra": "^11.1.1",
+        "fs-extra": "^11.2.0",
         "vscode-languageclient": "^9.0.1"
     },
     "devDependencies": {
@@ -177,21 +177,21 @@
         "@types/glob": "^8.1.0",
         "@types/mocha": "^10.0.6",
         "@types/node": "16.x",
-        "@types/sinon": "^17.0.2",
+        "@types/sinon": "^17.0.3",
         "@types/vscode": "^1.74.0",
-        "@typescript-eslint/eslint-plugin": "^6.13.1",
-        "@typescript-eslint/parser": "^6.13.1",
+        "@typescript-eslint/eslint-plugin": "^6.19.1",
+        "@typescript-eslint/parser": "^6.19.1",
         "@vscode/test-electron": "^2.3.8",
         "@vscode/vsce": "^2.22.0",
         "chai": "^4.3.10",
-        "eslint": "^8.54.0",
+        "eslint": "^8.56.0",
         "glob": "^10.3.10",
         "mocha": "^10.2.0",
-        "prettier": "^3.1.0",
+        "prettier": "^3.2.4",
         "sinon": "^17.0.1",
         "ts-loader": "^9.5.1",
         "typemoq": "^2.1.0",
-        "typescript": "^5.3.2",
+        "typescript": "^5.3.3",
         "webpack": "^5.89.0",
         "webpack-cli": "^5.1.4"
     }

@@ -17,7 +17,7 @@ runs:
 
     # Minimum supported version is Python 3.8
     - name: Use Python 3.8
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: 3.8
 
