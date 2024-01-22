@@ -60,7 +60,7 @@ jobs:
 
       # Install bundled libs using 3.8 even though you test it on other versions.
       - name: Use Python 3.8
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.8'
 
@@ -76,7 +76,7 @@ jobs:
       # Now that the bundle is installed to target using python 3.8
       # switch back the python we want to test with
       - name: Use Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
 
