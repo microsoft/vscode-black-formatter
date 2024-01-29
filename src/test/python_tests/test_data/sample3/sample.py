@@ -1025,12 +1025,14 @@ class TextDocumentPositionParams:
 
 @attrs.define
 class WorkDoneProgressParams:
+
     work_done_token: Optional[ProgressToken] = attrs.field(default=None)
     """An optional token that a server can use to report work done progress."""
 
 
 @attrs.define
 class PartialResultParams:
+
     partial_result_token: Optional[ProgressToken] = attrs.field(default=None)
     """An optional token that a server can use to report partial results (e.g. streaming) to
     the client."""
@@ -1038,6 +1040,7 @@ class PartialResultParams:
 
 @attrs.define
 class ImplementationParams:
+
     text_document: "TextDocumentIdentifier" = attrs.field()
     """The text document."""
 
@@ -1083,6 +1086,7 @@ class TextDocumentRegistrationOptions:
 
 @attrs.define
 class WorkDoneProgressOptions:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -1091,6 +1095,7 @@ class WorkDoneProgressOptions:
 
 @attrs.define
 class ImplementationOptions:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -1112,6 +1117,7 @@ class StaticRegistrationOptions:
 
 @attrs.define
 class ImplementationRegistrationOptions:
+
     document_selector: Optional[Union[DocumentSelector, None]] = attrs.field(
         default=None
     )
@@ -1133,6 +1139,7 @@ class ImplementationRegistrationOptions:
 
 @attrs.define
 class TypeDefinitionParams:
+
     text_document: "TextDocumentIdentifier" = attrs.field()
     """The text document."""
 
@@ -1149,6 +1156,7 @@ class TypeDefinitionParams:
 
 @attrs.define
 class TypeDefinitionOptions:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -1157,6 +1165,7 @@ class TypeDefinitionOptions:
 
 @attrs.define
 class TypeDefinitionRegistrationOptions:
+
     document_selector: Optional[Union[DocumentSelector, None]] = attrs.field(
         default=None
     )
@@ -1231,6 +1240,7 @@ class ColorInformation:
 
 @attrs.define
 class DocumentColorOptions:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -1239,6 +1249,7 @@ class DocumentColorOptions:
 
 @attrs.define
 class DocumentColorRegistrationOptions:
+
     document_selector: Optional[Union[DocumentSelector, None]] = attrs.field(
         default=None
     )
@@ -1281,6 +1292,7 @@ class ColorPresentationParams:
 
 @attrs.define
 class ColorPresentation:
+
     label: str = attrs.field(validator=attrs.validators.instance_of(str))
     """The label of this color presentation. It will be shown on the color
     picker header. By default this is also the text that is inserted when selecting
@@ -1354,6 +1366,7 @@ class FoldingRange:
 
 @attrs.define
 class FoldingRangeOptions:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -1362,6 +1375,7 @@ class FoldingRangeOptions:
 
 @attrs.define
 class FoldingRangeRegistrationOptions:
+
     document_selector: Optional[Union[DocumentSelector, None]] = attrs.field(
         default=None
     )
@@ -1383,6 +1397,7 @@ class FoldingRangeRegistrationOptions:
 
 @attrs.define
 class DeclarationParams:
+
     text_document: "TextDocumentIdentifier" = attrs.field()
     """The text document."""
 
@@ -1399,6 +1414,7 @@ class DeclarationParams:
 
 @attrs.define
 class DeclarationOptions:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -1407,6 +1423,7 @@ class DeclarationOptions:
 
 @attrs.define
 class DeclarationRegistrationOptions:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -1458,6 +1475,7 @@ class SelectionRange:
 
 @attrs.define
 class SelectionRangeOptions:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -1466,6 +1484,7 @@ class SelectionRangeOptions:
 
 @attrs.define
 class SelectionRangeRegistrationOptions:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -1487,12 +1506,14 @@ class SelectionRangeRegistrationOptions:
 
 @attrs.define
 class WorkDoneProgressCreateParams:
+
     token: ProgressToken = attrs.field()
     """The token to be used to report progress."""
 
 
 @attrs.define
 class WorkDoneProgressCancelParams:
+
     token: ProgressToken = attrs.field()
     """The token to be used to report progress."""
 
@@ -1770,9 +1791,9 @@ class SemanticTokensRegistrationOptions:
     """Server supports providing semantic tokens for a specific range
     of a document."""
 
-    full: Optional[
-        Union[bool, "SemanticTokensRegistrationOptionsFullType1"]
-    ] = attrs.field(default=None)
+    full: Optional[Union[bool, "SemanticTokensRegistrationOptionsFullType1"]] = (
+        attrs.field(default=None)
+    )
     """Server supports providing semantic tokens for a full document."""
 
     work_done_progress: Optional[bool] = attrs.field(
@@ -1902,6 +1923,7 @@ class ShowDocumentResult:
 
 @attrs.define
 class LinkedEditingRangeParams:
+
     text_document: "TextDocumentIdentifier" = attrs.field()
     """The text document."""
 
@@ -1935,6 +1957,7 @@ class LinkedEditingRanges:
 
 @attrs.define
 class LinkedEditingRangeOptions:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -1943,6 +1966,7 @@ class LinkedEditingRangeOptions:
 
 @attrs.define
 class LinkedEditingRangeRegistrationOptions:
+
     document_selector: Optional[Union[DocumentSelector, None]] = attrs.field(
         default=None
     )
@@ -2060,6 +2084,7 @@ class DeleteFilesParams:
 
 @attrs.define
 class MonikerParams:
+
     text_document: "TextDocumentIdentifier" = attrs.field()
     """The text document."""
 
@@ -2098,6 +2123,7 @@ class Moniker:
 
 @attrs.define
 class MonikerOptions:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -2106,6 +2132,7 @@ class MonikerOptions:
 
 @attrs.define
 class MonikerRegistrationOptions:
+
     document_selector: Optional[Union[DocumentSelector, None]] = attrs.field(
         default=None
     )
@@ -2814,11 +2841,13 @@ class InlineCompletionRegistrationOptions:
 
 @attrs.define
 class RegistrationParams:
+
     registrations: List["Registration"] = attrs.field()
 
 
 @attrs.define
 class UnregistrationParams:
+
     unregisterations: List["Unregistration"] = attrs.field()
 
 
@@ -2893,6 +2922,7 @@ class _InitializeParams:
 
 @attrs.define
 class WorkspaceFoldersInitializeParams:
+
     workspace_folders: Optional[Union[List[WorkspaceFolder], None]] = attrs.field(
         default=None
     )
@@ -2908,6 +2938,7 @@ class WorkspaceFoldersInitializeParams:
 
 @attrs.define
 class InitializeParams:
+
     capabilities: "ClientCapabilities" = attrs.field()
     """The capabilities provided by the client (editor or tool)"""
 
@@ -3013,6 +3044,7 @@ class InitializeError:
 
 @attrs.define
 class InitializedParams:
+
     pass
 
 
@@ -3026,6 +3058,7 @@ class DidChangeConfigurationParams:
 
 @attrs.define
 class DidChangeConfigurationRegistrationOptions:
+
     section: Optional[Union[str, List[str]]] = attrs.field(default=None)
 
 
@@ -3042,6 +3075,7 @@ class ShowMessageParams:
 
 @attrs.define
 class ShowMessageRequestParams:
+
     type: MessageType = attrs.field()
     """The message type. See {@link MessageType}"""
 
@@ -3054,6 +3088,7 @@ class ShowMessageRequestParams:
 
 @attrs.define
 class MessageActionItem:
+
     title: str = attrs.field(validator=attrs.validators.instance_of(str))
     """A short title like 'Retry', 'Open Log' etc."""
 
@@ -3604,9 +3639,9 @@ class CompletionRegistrationOptions:
     """The server provides support to resolve additional
     information for a completion item."""
 
-    completion_item: Optional[
-        "CompletionRegistrationOptionsCompletionItemType"
-    ] = attrs.field(default=None)
+    completion_item: Optional["CompletionRegistrationOptionsCompletionItemType"] = (
+        attrs.field(default=None)
+    )
     """The server supports the following `CompletionItem` specific
     capabilities.
     
@@ -4786,6 +4821,7 @@ class RenameRegistrationOptions:
 
 @attrs.define
 class PrepareRenameParams:
+
     text_document: "TextDocumentIdentifier" = attrs.field()
     """The text document."""
 
@@ -4881,6 +4917,7 @@ class ApplyWorkspaceEditResult:
 
 @attrs.define
 class WorkDoneProgressBegin:
+
     title: str = attrs.field(validator=attrs.validators.instance_of(str))
     """Mandatory title of the progress operation. Used to briefly inform about
     the kind of operation being performed.
@@ -4920,6 +4957,7 @@ class WorkDoneProgressBegin:
 
 @attrs.define
 class WorkDoneProgressReport:
+
     kind: str = attrs.field(
         validator=attrs.validators.in_(["report"]), default="report"
     )
@@ -4956,6 +4994,7 @@ class WorkDoneProgressReport:
 
 @attrs.define
 class WorkDoneProgressEnd:
+
     kind: str = attrs.field(validator=attrs.validators.in_(["end"]), default="end")
 
     message: Optional[str] = attrs.field(
@@ -4968,11 +5007,13 @@ class WorkDoneProgressEnd:
 
 @attrs.define
 class SetTraceParams:
+
     value: TraceValues = attrs.field()
 
 
 @attrs.define
 class LogTraceParams:
+
     message: str = attrs.field(validator=attrs.validators.instance_of(str))
 
     verbose: Optional[str] = attrs.field(
@@ -4983,12 +5024,14 @@ class LogTraceParams:
 
 @attrs.define
 class CancelParams:
+
     id: Union[int, str] = attrs.field()
     """The request id to cancel."""
 
 
 @attrs.define
 class ProgressParams:
+
     token: ProgressToken = attrs.field()
     """The progress token provided by the client or server."""
 
@@ -5062,6 +5105,7 @@ class WorkspaceFoldersChangeEvent:
 
 @attrs.define
 class ConfigurationItem:
+
     scope_uri: Optional[str] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(str)),
         default=None,
@@ -5726,9 +5770,9 @@ class NotebookDocumentChangeEventCellsTypeTextContentType:
 
 @attrs.define
 class NotebookDocumentChangeEventCellsType:
-    structure: Optional[
-        "NotebookDocumentChangeEventCellsTypeStructureType"
-    ] = attrs.field(default=None)
+    structure: Optional["NotebookDocumentChangeEventCellsTypeStructureType"] = (
+        attrs.field(default=None)
+    )
     """Changes to the cell structure to add or
     remove cells."""
 
@@ -5927,14 +5971,14 @@ class ServerCapabilities:
     )
     """The server provides find references support."""
 
-    document_highlight_provider: Optional[
-        Union[bool, DocumentHighlightOptions]
-    ] = attrs.field(default=None)
+    document_highlight_provider: Optional[Union[bool, DocumentHighlightOptions]] = (
+        attrs.field(default=None)
+    )
     """The server provides document highlight support."""
 
-    document_symbol_provider: Optional[
-        Union[bool, DocumentSymbolOptions]
-    ] = attrs.field(default=None)
+    document_symbol_provider: Optional[Union[bool, DocumentSymbolOptions]] = (
+        attrs.field(default=None)
+    )
     """The server provides document symbol support."""
 
     code_action_provider: Optional[Union[bool, CodeActionOptions]] = attrs.field(
@@ -5955,14 +5999,14 @@ class ServerCapabilities:
     ] = attrs.field(default=None)
     """The server provides color provider support."""
 
-    workspace_symbol_provider: Optional[
-        Union[bool, WorkspaceSymbolOptions]
-    ] = attrs.field(default=None)
+    workspace_symbol_provider: Optional[Union[bool, WorkspaceSymbolOptions]] = (
+        attrs.field(default=None)
+    )
     """The server provides workspace symbol support."""
 
-    document_formatting_provider: Optional[
-        Union[bool, DocumentFormattingOptions]
-    ] = attrs.field(default=None)
+    document_formatting_provider: Optional[Union[bool, DocumentFormattingOptions]] = (
+        attrs.field(default=None)
+    )
     """The server provides document formatting."""
 
     document_range_formatting_provider: Optional[
@@ -5970,9 +6014,9 @@ class ServerCapabilities:
     ] = attrs.field(default=None)
     """The server provides document range formatting."""
 
-    document_on_type_formatting_provider: Optional[
-        DocumentOnTypeFormattingOptions
-    ] = attrs.field(default=None)
+    document_on_type_formatting_provider: Optional[DocumentOnTypeFormattingOptions] = (
+        attrs.field(default=None)
+    )
     """The server provides document formatting on typing."""
 
     rename_provider: Optional[Union[bool, RenameOptions]] = attrs.field(default=None)
@@ -6059,9 +6103,9 @@ class ServerCapabilities:
     @since 3.17.0"""
     # Since: 3.17.0
 
-    inline_completion_provider: Optional[
-        Union[bool, InlineCompletionOptions]
-    ] = attrs.field(default=None)
+    inline_completion_provider: Optional[Union[bool, InlineCompletionOptions]] = (
+        attrs.field(default=None)
+    )
     """Inline completion options used during static registration.
     
     @since 3.18.0
@@ -6100,6 +6144,7 @@ class FileEvent:
 
 @attrs.define
 class FileSystemWatcher:
+
     glob_pattern: GlobPattern = attrs.field()
     """The glob pattern to watch. See {@link GlobPattern glob pattern} for more detail.
     
@@ -6639,6 +6684,7 @@ class ClientCapabilities:
 
 @attrs.define
 class TextDocumentSyncOptions:
+
     open_close: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -6694,9 +6740,9 @@ class NotebookDocumentSyncOptionsNotebookSelectorType2CellsType:
 
 @attrs.define
 class NotebookDocumentSyncOptionsNotebookSelectorType2:
-    cells: List[
-        "NotebookDocumentSyncOptionsNotebookSelectorType2CellsType"
-    ] = attrs.field()
+    cells: List["NotebookDocumentSyncOptionsNotebookSelectorType2CellsType"] = (
+        attrs.field()
+    )
     """The cells of the matching notebook to be synced."""
 
     notebook: Optional[Union[str, NotebookDocumentFilter]] = attrs.field(default=None)
@@ -6808,6 +6854,7 @@ class NotebookDocumentSyncRegistrationOptions:
 
 @attrs.define
 class WorkspaceFoldersServerCapabilities:
+
     supported: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -6938,6 +6985,7 @@ class FileOperationPatternOptions:
 
 @attrs.define
 class ExecutionSummary:
+
     execution_order: int = attrs.field(validator=validators.uinteger_validator)
     """A strict monotonically increasing value
     indicating the execution order of a cell
@@ -6968,14 +7016,14 @@ class WorkspaceClientCapabilities:
     )
     """Capabilities specific to `WorkspaceEdit`s."""
 
-    did_change_configuration: Optional[
-        "DidChangeConfigurationClientCapabilities"
-    ] = attrs.field(default=None)
+    did_change_configuration: Optional["DidChangeConfigurationClientCapabilities"] = (
+        attrs.field(default=None)
+    )
     """Capabilities specific to the `workspace/didChangeConfiguration` notification."""
 
-    did_change_watched_files: Optional[
-        "DidChangeWatchedFilesClientCapabilities"
-    ] = attrs.field(default=None)
+    did_change_watched_files: Optional["DidChangeWatchedFilesClientCapabilities"] = (
+        attrs.field(default=None)
+    )
     """Capabilities specific to the `workspace/didChangeWatchedFiles` notification."""
 
     symbol: Optional["WorkspaceSymbolClientCapabilities"] = attrs.field(default=None)
@@ -7004,9 +7052,9 @@ class WorkspaceClientCapabilities:
     @since 3.6.0"""
     # Since: 3.6.0
 
-    semantic_tokens: Optional[
-        "SemanticTokensWorkspaceClientCapabilities"
-    ] = attrs.field(default=None)
+    semantic_tokens: Optional["SemanticTokensWorkspaceClientCapabilities"] = (
+        attrs.field(default=None)
+    )
     """Capabilities specific to the semantic token requests scoped to the
     workspace.
     
@@ -7150,14 +7198,14 @@ class TextDocumentClientCapabilities:
     )
     """Capabilities specific to the `textDocument/formatting` request."""
 
-    range_formatting: Optional[
-        "DocumentRangeFormattingClientCapabilities"
-    ] = attrs.field(default=None)
+    range_formatting: Optional["DocumentRangeFormattingClientCapabilities"] = (
+        attrs.field(default=None)
+    )
     """Capabilities specific to the `textDocument/rangeFormatting` request."""
 
-    on_type_formatting: Optional[
-        "DocumentOnTypeFormattingClientCapabilities"
-    ] = attrs.field(default=None)
+    on_type_formatting: Optional["DocumentOnTypeFormattingClientCapabilities"] = (
+        attrs.field(default=None)
+    )
     """Capabilities specific to the `textDocument/onTypeFormatting` request."""
 
     rename: Optional["RenameClientCapabilities"] = attrs.field(default=None)
@@ -7200,9 +7248,9 @@ class TextDocumentClientCapabilities:
     @since 3.16.0"""
     # Since: 3.16.0
 
-    linked_editing_range: Optional[
-        "LinkedEditingRangeClientCapabilities"
-    ] = attrs.field(default=None)
+    linked_editing_range: Optional["LinkedEditingRangeClientCapabilities"] = (
+        attrs.field(default=None)
+    )
     """Capabilities specific to the `textDocument/linkedEditingRange` request.
     
     @since 3.16.0"""
@@ -7268,6 +7316,7 @@ class NotebookDocumentClientCapabilities:
 
 @attrs.define
 class WindowClientCapabilities:
+
     work_done_progress: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -7399,6 +7448,7 @@ class WorkspaceEditClientCapabilitiesChangeAnnotationSupportType:
 
 @attrs.define
 class WorkspaceEditClientCapabilities:
+
     document_changes: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -7446,6 +7496,7 @@ class WorkspaceEditClientCapabilities:
 
 @attrs.define
 class DidChangeConfigurationClientCapabilities:
+
     dynamic_registration: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -7455,6 +7506,7 @@ class DidChangeConfigurationClientCapabilities:
 
 @attrs.define
 class DidChangeWatchedFilesClientCapabilities:
+
     dynamic_registration: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -7510,23 +7562,23 @@ class WorkspaceSymbolClientCapabilities:
     )
     """Symbol request supports dynamic registration."""
 
-    symbol_kind: Optional[
-        "WorkspaceSymbolClientCapabilitiesSymbolKindType"
-    ] = attrs.field(default=None)
+    symbol_kind: Optional["WorkspaceSymbolClientCapabilitiesSymbolKindType"] = (
+        attrs.field(default=None)
+    )
     """Specific capabilities for the `SymbolKind` in the `workspace/symbol` request."""
 
-    tag_support: Optional[
-        "WorkspaceSymbolClientCapabilitiesTagSupportType"
-    ] = attrs.field(default=None)
+    tag_support: Optional["WorkspaceSymbolClientCapabilitiesTagSupportType"] = (
+        attrs.field(default=None)
+    )
     """The client supports tags on `SymbolInformation`.
     Clients supporting tags have to handle unknown tags gracefully.
     
     @since 3.16.0"""
     # Since: 3.16.0
 
-    resolve_support: Optional[
-        "WorkspaceSymbolClientCapabilitiesResolveSupportType"
-    ] = attrs.field(default=None)
+    resolve_support: Optional["WorkspaceSymbolClientCapabilitiesResolveSupportType"] = (
+        attrs.field(default=None)
+    )
     """The client support partial workspace symbols. The client will send the
     request `workspaceSymbol/resolve` to the server to resolve additional
     properties.
@@ -7731,6 +7783,7 @@ class FoldingRangeWorkspaceClientCapabilities:
 
 @attrs.define
 class TextDocumentSyncClientCapabilities:
+
     dynamic_registration: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -7899,9 +7952,9 @@ class CompletionClientCapabilities:
     )
     """Whether completion supports dynamic registration."""
 
-    completion_item: Optional[
-        "CompletionClientCapabilitiesCompletionItemType"
-    ] = attrs.field(default=None)
+    completion_item: Optional["CompletionClientCapabilitiesCompletionItemType"] = (
+        attrs.field(default=None)
+    )
     """The client supports the following `CompletionItem` specific
     capabilities."""
 
@@ -7924,9 +7977,9 @@ class CompletionClientCapabilities:
     """The client supports to send additional context information for a
     `textDocument/completion` request."""
 
-    completion_list: Optional[
-        "CompletionClientCapabilitiesCompletionListType"
-    ] = attrs.field(default=None)
+    completion_list: Optional["CompletionClientCapabilitiesCompletionListType"] = (
+        attrs.field(default=None)
+    )
     """The client supports the following `CompletionList` specific
     capabilities.
     
@@ -7936,6 +7989,7 @@ class CompletionClientCapabilities:
 
 @attrs.define
 class HoverClientCapabilities:
+
     dynamic_registration: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -8148,9 +8202,9 @@ class DocumentSymbolClientCapabilities:
     )
     """Whether document symbol supports dynamic registration."""
 
-    symbol_kind: Optional[
-        "DocumentSymbolClientCapabilitiesSymbolKindType"
-    ] = attrs.field(default=None)
+    symbol_kind: Optional["DocumentSymbolClientCapabilitiesSymbolKindType"] = (
+        attrs.field(default=None)
+    )
     """Specific capabilities for the `SymbolKind` in the
     `textDocument/documentSymbol` request."""
 
@@ -8160,9 +8214,9 @@ class DocumentSymbolClientCapabilities:
     )
     """The client supports hierarchical document symbols."""
 
-    tag_support: Optional[
-        "DocumentSymbolClientCapabilitiesTagSupportType"
-    ] = attrs.field(default=None)
+    tag_support: Optional["DocumentSymbolClientCapabilitiesTagSupportType"] = (
+        attrs.field(default=None)
+    )
     """The client supports tags on `SymbolInformation`. Tags are supported on
     `DocumentSymbol` if `hierarchicalDocumentSymbolSupport` is set to true.
     Clients supporting tags have to handle unknown tags gracefully.
@@ -8192,9 +8246,9 @@ class CodeActionClientCapabilitiesCodeActionLiteralSupportTypeCodeActionKindType
 
 @attrs.define
 class CodeActionClientCapabilitiesCodeActionLiteralSupportType:
-    code_action_kind: "CodeActionClientCapabilitiesCodeActionLiteralSupportTypeCodeActionKindType" = (
-        attrs.field()
-    )
+    code_action_kind: (
+        "CodeActionClientCapabilitiesCodeActionLiteralSupportTypeCodeActionKindType"
+    ) = attrs.field()
     """The code action kind is support with the following value
     set."""
 
@@ -8254,9 +8308,9 @@ class CodeActionClientCapabilities:
     @since 3.16.0"""
     # Since: 3.16.0
 
-    resolve_support: Optional[
-        "CodeActionClientCapabilitiesResolveSupportType"
-    ] = attrs.field(default=None)
+    resolve_support: Optional["CodeActionClientCapabilitiesResolveSupportType"] = (
+        attrs.field(default=None)
+    )
     """Whether the client supports resolving additional code action
     properties via a separate `codeAction/resolve` request.
     
@@ -8310,6 +8364,7 @@ class DocumentLinkClientCapabilities:
 
 @attrs.define
 class DocumentColorClientCapabilities:
+
     dynamic_registration: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -8365,6 +8420,7 @@ class DocumentOnTypeFormattingClientCapabilities:
 
 @attrs.define
 class RenameClientCapabilities:
+
     dynamic_registration: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -8381,9 +8437,9 @@ class RenameClientCapabilities:
     @since 3.12.0"""
     # Since: 3.12.0
 
-    prepare_support_default_behavior: Optional[
-        PrepareSupportDefaultBehavior
-    ] = attrs.field(default=None)
+    prepare_support_default_behavior: Optional[PrepareSupportDefaultBehavior] = (
+        attrs.field(default=None)
+    )
     """Client supports the default behavior result.
     
     The value indicates the default behavior used by the
@@ -8430,6 +8486,7 @@ class FoldingRangeClientCapabilitiesFoldingRangeType:
 
 @attrs.define
 class FoldingRangeClientCapabilities:
+
     dynamic_registration: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -8462,9 +8519,9 @@ class FoldingRangeClientCapabilities:
     @since 3.17.0"""
     # Since: 3.17.0
 
-    folding_range: Optional[
-        "FoldingRangeClientCapabilitiesFoldingRangeType"
-    ] = attrs.field(default=None)
+    folding_range: Optional["FoldingRangeClientCapabilitiesFoldingRangeType"] = (
+        attrs.field(default=None)
+    )
     """Specific options for the folding range.
     
     @since 3.17.0"""
@@ -8473,6 +8530,7 @@ class FoldingRangeClientCapabilities:
 
 @attrs.define
 class SelectionRangeClientCapabilities:
+
     dynamic_registration: Optional[bool] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(bool)),
         default=None,
@@ -8498,9 +8556,9 @@ class PublishDiagnosticsClientCapabilities:
     )
     """Whether the clients accepts diagnostics with related information."""
 
-    tag_support: Optional[
-        "PublishDiagnosticsClientCapabilitiesTagSupportType"
-    ] = attrs.field(default=None)
+    tag_support: Optional["PublishDiagnosticsClientCapabilitiesTagSupportType"] = (
+        attrs.field(default=None)
+    )
     """Client supports the tag property to provide meta data about a diagnostic.
     Clients supporting tags have to handle unknown tags gracefully.
     
@@ -8734,9 +8792,9 @@ class InlayHintClientCapabilities:
     )
     """Whether inlay hints support dynamic registration."""
 
-    resolve_support: Optional[
-        "InlayHintClientCapabilitiesResolveSupportType"
-    ] = attrs.field(default=None)
+    resolve_support: Optional["InlayHintClientCapabilitiesResolveSupportType"] = (
+        attrs.field(default=None)
+    )
     """Indicates which properties a client can resolve lazily on an inlay
     hint."""
 
@@ -9938,6 +9996,7 @@ class TextDocumentHoverResponse:
 
 @attrs.define
 class TextDocumentSignatureHelpRequest:
+
     id: Union[int, str] = attrs.field()
     """The request id."""
     params: SignatureHelpParams = attrs.field()
@@ -10505,6 +10564,7 @@ class NotebookDocumentDidOpenNotification:
 
 @attrs.define
 class NotebookDocumentDidChangeNotification:
+
     params: DidChangeNotebookDocumentParams = attrs.field()
     method: str = attrs.field(
         validator=attrs.validators.in_(["notebookDocument/didChange"]),
@@ -10741,6 +10801,7 @@ class TextDocumentPublishDiagnosticsNotification:
 
 @attrs.define
 class SetTraceNotification:
+
     params: SetTraceParams = attrs.field()
     method: str = attrs.field(
         validator=attrs.validators.in_(["$/setTrace"]),
@@ -10752,6 +10813,7 @@ class SetTraceNotification:
 
 @attrs.define
 class LogTraceNotification:
+
     params: LogTraceParams = attrs.field()
     method: str = attrs.field(
         validator=attrs.validators.in_(["$/logTrace"]),
@@ -10763,6 +10825,7 @@ class LogTraceNotification:
 
 @attrs.define
 class CancelRequestNotification:
+
     params: CancelParams = attrs.field()
     method: str = attrs.field(
         validator=attrs.validators.in_(["$/cancelRequest"]),
@@ -10774,6 +10837,7 @@ class CancelRequestNotification:
 
 @attrs.define
 class ProgressNotification:
+
     params: ProgressParams = attrs.field()
     method: str = attrs.field(
         validator=attrs.validators.in_(["$/progress"]),
