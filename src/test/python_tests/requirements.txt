@@ -13,11 +13,9 @@ attrs==23.2.0 \
 cattrs==23.2.3 \
     --hash=sha256:0341994d94971052e9ee70662542699a3162ea1e0c62f7ce1b4a57f563685108 \
     --hash=sha256:a934090d95abaa9e911dac357e3a8699e0b4b14f8529bcc7d2b1ad9d51672b9f
-    # via lsprotocol
-colorama==0.4.6 \
-    --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
-    --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
-    # via pytest
+    # via
+    #   lsprotocol
+    #   pygls
 exceptiongroup==1.2.0 \
     --hash=sha256:4bfd3996ac73b41e9b9628b04e079f193850720ea5945fc96a08633c66912f14 \
     --hash=sha256:91f5c769735f051a4290d52edd0858999b57e5876e9f85937691bd4c9fa3ed68
@@ -28,9 +26,9 @@ iniconfig==2.0.0 \
     --hash=sha256:2d91e135bf72d31a410b17c16da610a82cb55f6b0477d1a902134b24a455b8b3 \
     --hash=sha256:b6a85871a79d2e3b22d2d1b94ac2824226a63c6b741c88f7ae975f18b6778374
     # via pytest
-lsprotocol==2023.0.0 \
-    --hash=sha256:c9d92e12a3f4ed9317d3068226592860aab5357d93cf5b2451dc244eee8f35f2 \
-    --hash=sha256:e85fc87ee26c816adca9eb497bb3db1a7c79c477a11563626e712eaccf926a05
+lsprotocol==2023.0.1 \
+    --hash=sha256:c75223c9e4af2f24272b14c6375787438279369236cd568f596d4951052a60f2 \
+    --hash=sha256:cc5c15130d2403c18b734304339e51242d3018a05c4f7d0f198ad6e0cd21861d
     # via pygls
 packaging==23.2 \
     --hash=sha256:048fb0e9405036518eaaf48a55953c750c11e1a1b68e0dd1a9d62ed0c092cfc5 \
@@ -40,22 +38,22 @@ pluggy==1.3.0 \
     --hash=sha256:cf61ae8f126ac6f7c451172cf30e3e43d3ca77615509771b3a984a0730651e12 \
     --hash=sha256:d89c696a773f8bd377d18e5ecda92b7a3793cbe66c87060a6fb58c7b6e1061f7
     # via pytest
-pygls==1.2.1 \
-    --hash=sha256:04f9b9c115b622dcc346fb390289066565343d60245a424eca77cb429b911ed8 \
-    --hash=sha256:7dcfcf12b6f15beb606afa46de2ed348b65a279c340ef2242a9a35c22eeafe94
-    # via -r ./src/test/python_tests/requirements.in
+pygls==1.3.0 \
+    --hash=sha256:1b44ace89c9382437a717534f490eadc6fda7c0c6c16ac1eaaf5568e345e4fb8 \
+    --hash=sha256:d4a01414b6ed4e34e7e8fd29b77d3e88c29615df7d0bbff49bf019e15ec04b8f
+    # via -r requirements.in
 pyhamcrest==2.1.0 \
     --hash=sha256:c6acbec0923d0cb7e72c22af1926f3e7c97b8e8d69fc7498eabacaf7c975bd9c \
     --hash=sha256:f6913d2f392e30e0375b3ecbd7aee79e5d1faa25d345c8f4ff597665dcac2587
-    # via -r ./src/test/python_tests/requirements.in
+    # via -r requirements.in
 pytest==7.4.4 \
     --hash=sha256:2cf0005922c6ace4a3e2ec8b4080eb0d9753fdc93107415332f50ce9e7994280 \
     --hash=sha256:b090cdf5ed60bf4c45261be03239c2c1c22df034fbffe691abe93cd80cea01d8
-    # via -r ./src/test/python_tests/requirements.in
+    # via -r requirements.in
 python-jsonrpc-server==0.4.0 \
     --hash=sha256:62c543e541f101ec5b57dc654efc212d2c2e3ea47ff6f54b2e7dcb36ecf20595 \
     --hash=sha256:e5a908ff182e620aac07db5f57887eeb0afe33993008f57dc1b85b594cea250c
-    # via -r ./src/test/python_tests/requirements.in
+    # via -r requirements.in
 tomli==2.0.1 \
     --hash=sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc \
     --hash=sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f
