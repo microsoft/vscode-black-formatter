@@ -297,7 +297,7 @@ def _update_workspace_settings_with_version_info(
         try:
             from packaging.version import parse as parse_version
 
-            result = _run_tool(["--version"], settings)
+            result = _run_tool(["--version"], copy.deepcopy(settings))
             code_workspace = settings["workspaceFS"]
             log_to_output(
                 f"Version info for formatter running for {code_workspace}:\r\n{result.stdout}"
