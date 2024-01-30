@@ -1,0 +1,37 @@
+name: Update Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseType:
+        description: 'Version Type'
+        required: true
+        type: choice
+        default: 'pre-release'
+        options:
+          - pre-release
+          - release
+          - hotfix
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Update Version and Create PR
+        run: python ./.github/workflows/update_version.py
+        env:
+          RELEASE_TYPE: ${{ inputs.releaseType }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
