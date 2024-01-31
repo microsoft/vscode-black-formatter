@@ -5,6 +5,13 @@ import random
 import subprocess
 
 
+def has_changes() -> bool:
+    """Returns True if there are changes in the working tree."""
+    print("Detecting changes")
+    result = subprocess.run(["git", "diff", "--exit-code"], check=False)
+    return result.returncode != 0
+
+
 def main():
     random_name = "".join(random.choice("1234567890") for _ in range(9))
     branch_name = f"version-updater/pkg-{random_name}"
@@ -15,10 +22,7 @@ def main():
     print("Update packages")
     subprocess.run(["nox", "--session", "update_packages"], check=True)
 
-    print("Detecting changes")
-    result = subprocess.run(["git", "diff", "--exit-code"], check=True)
-
-    if result.returncode == 0:
+    if not has_changes():
         print("No changes detected, exiting")
         return
 
