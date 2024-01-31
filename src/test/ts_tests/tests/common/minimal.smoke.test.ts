@@ -44,7 +44,7 @@ suite('Smoke Tests', function () {
         }
     }
 
-    test('Extension loads', async () => {
+    test('Ensure Black Formatter Extension loads', async () => {
         await vscode.workspace.openTextDocument(path.join(TEST_PROJECT_DIR, 'myscript.py'));
 
         await ensurePythonExt(true);
@@ -61,7 +61,7 @@ suite('Smoke Tests', function () {
         }
     });
 
-    test('Black formats a file', async () => {
+    test('Ensure Black Formatter formats a file on save', async () => {
         await ensurePythonExt(true);
 
         const unformatted = await fsapi.readFile(path.join(TEST_PROJECT_DIR, 'myscript.unformatted'), {
