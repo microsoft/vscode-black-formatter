@@ -111,13 +111,16 @@ export async function restartServer(
             switch (e.newState) {
                 case State.Stopped:
                     traceVerbose(`Server State: Stopped`);
+                    console.log('Server stopped');
                     break;
                 case State.Starting:
                     traceVerbose(`Server State: Starting`);
+                    console.log('Server state starting');
                     unregisterEmptyFormatter();
                     break;
                 case State.Running:
                     traceVerbose(`Server State: Running`);
+                    console.log('Server state running');
                     updateStatus(undefined, LanguageStatusSeverity.Information, false);
                     break;
             }
