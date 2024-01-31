@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import * as cp from 'child_process';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import * as fsapi from 'fs-extra';
@@ -62,6 +61,7 @@ suite('Smoke Tests', function () {
     });
 
     test('Ensure Black Formatter formats a file on save', async () => {
+        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
         await ensurePythonExt(true);
 
         const unformatted = await fsapi.readFile(path.join(TEST_PROJECT_DIR, 'myscript.unformatted'), {
@@ -70,38 +70,15 @@ suite('Smoke Tests', function () {
         const formatted = await fsapi.readFile(path.join(TEST_PROJECT_DIR, 'myscript.formatted'), { encoding: 'utf8' });
         await fsapi.writeFile(path.join(TEST_PROJECT_DIR, 'myscript.py'), unformatted, { encoding: 'utf8' });
 
+        await ensureBlackExt(true);
+
         const doc = await vscode.workspace.openTextDocument(path.join(TEST_PROJECT_DIR, 'myscript.py'));
         await vscode.window.showTextDocument(doc);
-
-        await ensureBlackExt(true);
 
         const editor = vscode.window.activeTextEditor;
         assert.ok(editor, 'No active editor');
         assert.ok(editor?.document.uri.fsPath.endsWith('myscript.py'), 'Active editor is not myscript.py');
 
-        vscode.workspace.workspaceFolders?.forEach((f) => console.log(`Loaded workspace: ${f.uri.fsPath}`));
-
-        console.log('Waiting for Black formatter to load...');
-        const formatReady = new Promise<void>((resolve, reject) => {
-            disposables.push(
-                vscode.workspace.onDidChangeTextDocument((e) => {
-                    if (e.document.uri.fsPath.includes('Black')) {
-                        const text = e.document.getText();
-                        console.log(text);
-                        if (text.includes('FOUND black==') || text.includes('initialized')) {
-                            console.log('Waiting for Black formatter to finished loading');
-                            resolve();
-                        } else if (text.includes('Python interpreter missing')) {
-                            console.log('Waiting for Black formatter failed to load');
-                            reject();
-                        }
-                    }
-                }),
-            );
-        });
-        await formatReady;
-
-        console.log('Waiting for Black formatter to format...');
         const formatDone = new Promise<void>((resolve) => {
             const disposable = vscode.workspace.onDidSaveTextDocument((e) => {
                 if (e.uri.fsPath.endsWith('myscript.py')) {
@@ -111,10 +88,8 @@ suite('Smoke Tests', function () {
             });
         });
 
-        console.log('Triggering save to start format-on-save...');
         await vscode.commands.executeCommand('workbench.action.files.save');
         await formatDone;
-        console.log('Formatting done');
 
         const actualText = editor?.document.getText();
         assert.equal(actualText, formatted);

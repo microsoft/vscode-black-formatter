@@ -25,21 +25,16 @@ async function getPythonExtensionAPI(): Promise<PythonExtension | undefined> {
 
 export async function initializePython(disposables: Disposable[]): Promise<void> {
     try {
-        console.log('Initializing python extension.');
         const api = await getPythonExtensionAPI();
-        console.log('Python extension initialized.');
         if (api) {
             disposables.push(
                 api.environments.onDidChangeActiveEnvironmentPath((e) => {
-                    console.log('Python interpreter changed.');
                     onDidChangePythonInterpreterEvent.fire({ path: [e.path], resource: e.resource?.uri });
                 }),
             );
 
             traceLog('Waiting for interpreter from python extension.');
-            console.log('Waiting for interpreter from python extension.');
             onDidChangePythonInterpreterEvent.fire(await getInterpreterDetails());
-            console.log('Python interpreter resolved.');
         }
     } catch (error) {
         traceError('Error initializing python: ', error);
@@ -52,16 +47,13 @@ export async function resolveInterpreter(interpreter: string[]): Promise<Resolve
 }
 
 export async function getInterpreterDetails(resource?: Uri): Promise<IInterpreterDetails> {
-    console.log('Resolving python interpreter.');
     const api = await getPythonExtensionAPI();
     const environment = await api?.environments.resolveEnvironment(
         api?.environments.getActiveEnvironmentPath(resource),
     );
     if (environment?.executable.uri && checkVersion(environment)) {
-        console.log(`Python interpreter: ${environment?.executable.uri.fsPath}`);
         return { path: [environment?.executable.uri.fsPath], resource };
     }
-    console.log('Python interpreter not found.');
     return { path: undefined, resource };
 }
 

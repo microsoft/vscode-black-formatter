@@ -12,23 +12,18 @@ const TEST_PROJECT_DIR = path.join(EXTENSION_ROOT_DIR, 'src', 'test', 'ts_tests'
 
 async function main() {
     try {
-        console.log('Downloading VS Code...');
         const vscodeExecutablePath = await downloadAndUnzipVSCode('stable');
-        console.log('Finished downloading VS Code.');
 
         const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
         const command = path.relative(EXTENSION_ROOT_DIR, cli);
-        console.log('Installing Python extension...', [command, ...args, '--install-extension', 'ms-python.python']);
         cp.spawnSync(command, [...args, '--install-extension', 'ms-python.python'], {
             encoding: 'utf-8',
             stdio: 'inherit',
         });
-        console.log('Finished installing Python extension.');
 
         const extensionDevelopmentPath = EXTENSION_ROOT_DIR;
         const extensionTestsPath = path.resolve(__dirname, './index');
 
-        console.log('Running tests...');
         await runTests({
             extensionDevelopmentPath,
             extensionTestsPath,

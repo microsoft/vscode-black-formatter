@@ -47,18 +47,11 @@ async function createServer(
     // Set notification type
     newEnv.LS_SHOW_NOTIFICATION = settings.showNotifications;
 
-    if (await fsapi.pathExists(SERVER_SCRIPT_PATH)) {
-        console.log('Server script exists');
-    } else {
-        console.log('Server script does not exists');
-    }
-
     const args =
         newEnv.USE_DEBUGPY === 'False' || !isDebugScript
             ? settings.interpreter.slice(1).concat([SERVER_SCRIPT_PATH])
             : settings.interpreter.slice(1).concat([DEBUG_SERVER_SCRIPT_PATH]);
     traceInfo(`Server run command: ${[command, ...args].join(' ')}`);
-    console.log(`Server run command: ${[command, ...args].join(' ')}`);
 
     const serverOptions: ServerOptions = {
         command,
@@ -111,29 +104,23 @@ export async function restartServer(
             switch (e.newState) {
                 case State.Stopped:
                     traceVerbose(`Server State: Stopped`);
-                    console.log('Server stopped');
                     break;
                 case State.Starting:
                     traceVerbose(`Server State: Starting`);
-                    console.log('Server state starting');
                     unregisterEmptyFormatter();
                     break;
                 case State.Running:
                     traceVerbose(`Server State: Running`);
-                    console.log('Server state running');
                     updateStatus(undefined, LanguageStatusSeverity.Information, false);
                     break;
             }
         }),
     );
     try {
-        console.log('Server: Start requested.');
         await newLSClient.start();
     } catch (ex) {
         updateStatus(l10n.t('Server failed to start.'), LanguageStatusSeverity.Error);
         traceError(`Server: Start failed: ${ex}`);
-        console.log('Server: Start Failed');
-        console.log(ex);
     }
     await newLSClient.setTrace(getLSClientTraceLevel(outputChannel.logLevel, env.logLevel));
     return newLSClient;
