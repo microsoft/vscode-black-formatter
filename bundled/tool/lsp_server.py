@@ -277,6 +277,8 @@ def initialize(params: lsp.InitializeParams) -> None:
     paths = "\r\n   ".join(sys.path)
     log_to_output(f"sys.path used to run Server:\r\n   {paths}")
 
+    _update_workspace_settings_with_version_info(WORKSPACE_SETTINGS)
+
 
 @LSP_SERVER.feature(lsp.EXIT)
 def on_exit(_params: Optional[Any] = None) -> None:
@@ -373,8 +375,6 @@ def _update_workspace_settings(settings):
             **setting,
             "workspaceFS": key,
         }
-
-    _update_workspace_settings_with_version_info(WORKSPACE_SETTINGS)
 
 
 def _get_settings_by_path(file_path: pathlib.Path):
