@@ -80,18 +80,26 @@ suite('Smoke Tests', function () {
         assert.ok(editor?.document.uri.fsPath.endsWith('myscript.py'), 'Active editor is not myscript.py');
 
         const formatDone = new Promise<void>((resolve) => {
-            const disposable = vscode.workspace.onDidSaveTextDocument((e) => {
-                if (e.uri.fsPath.endsWith('myscript.py')) {
-                    disposable.dispose();
-                    resolve();
-                }
-            });
+            const watcher = vscode.workspace.createFileSystemWatcher(
+                new vscode.RelativePattern(TEST_PROJECT_DIR, 'myscript.py'),
+                true, // We don't need create events
+                false, // We need change events
+                true, // We don't need delete events
+            );
+            disposables.push(
+                watcher,
+                watcher.onDidChange((e) => {
+                    if (e.fsPath.endsWith('myscript.py')) {
+                        resolve();
+                    }
+                }),
+            );
         });
 
         await vscode.commands.executeCommand('workbench.action.files.save');
         await formatDone;
 
-        const actualText = editor?.document.getText();
+        const actualText = await fsapi.readFile(path.join(TEST_PROJECT_DIR, 'myscript.py'), { encoding: 'utf8' });
         assert.equal(actualText, formatted);
     });
 });
