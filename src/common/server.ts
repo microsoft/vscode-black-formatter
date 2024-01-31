@@ -47,11 +47,18 @@ async function createServer(
     // Set notification type
     newEnv.LS_SHOW_NOTIFICATION = settings.showNotifications;
 
+    if (await fsapi.pathExists(SERVER_SCRIPT_PATH)) {
+        console.log('Server script exists');
+    } else {
+        console.log('Server script does not exists');
+    }
+
     const args =
         newEnv.USE_DEBUGPY === 'False' || !isDebugScript
             ? settings.interpreter.slice(1).concat([SERVER_SCRIPT_PATH])
             : settings.interpreter.slice(1).concat([DEBUG_SERVER_SCRIPT_PATH]);
     traceInfo(`Server run command: ${[command, ...args].join(' ')}`);
+    console.log(`Server run command: ${[command, ...args].join(' ')}`);
 
     const serverOptions: ServerOptions = {
         command,
