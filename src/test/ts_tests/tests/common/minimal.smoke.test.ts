@@ -73,7 +73,7 @@ suite('Smoke Tests', function () {
         const doc = await vscode.workspace.openTextDocument(path.join(TEST_PROJECT_DIR, 'myscript.py'));
         await vscode.window.showTextDocument(doc);
 
-        await ensureBlackExt();
+        await ensureBlackExt(true);
 
         const editor = vscode.window.activeTextEditor;
         assert.ok(editor, 'No active editor');
