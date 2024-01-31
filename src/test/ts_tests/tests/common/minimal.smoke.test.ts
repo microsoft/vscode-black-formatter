@@ -79,15 +79,18 @@ suite('Smoke Tests', function () {
         assert.ok(editor, 'No active editor');
         assert.ok(editor?.document.uri.fsPath.endsWith('myscript.py'), 'Active editor is not myscript.py');
 
+        console.log('Waiting for Black formatter to load...');
         const formatReady = new Promise<void>((resolve, reject) => {
             const disposable = vscode.workspace.onDidChangeTextDocument((e) => {
                 if (e.document.uri.fsPath.includes('Black')) {
                     const text = e.document.getText();
                     if (text.includes('FOUND black==')) {
+                        console.log('Waiting for Black formatter to finished loading');
                         disposable.dispose();
                         resolve();
                     }
                     if (text.includes('Python interpreter missing')) {
+                        console.log('Waiting for Black formatter failed to load');
                         disposable.dispose();
                         reject();
                     }
@@ -96,6 +99,7 @@ suite('Smoke Tests', function () {
         });
         await formatReady;
 
+        console.log('Waiting for Black formatter to format...');
         const formatDone = new Promise<void>((resolve) => {
             const disposable = vscode.workspace.onDidSaveTextDocument((e) => {
                 if (e.uri.fsPath.endsWith('myscript.py')) {
@@ -105,8 +109,10 @@ suite('Smoke Tests', function () {
             });
         });
 
+        console.log('Triggering save to start format-on-save...');
         await vscode.commands.executeCommand('workbench.action.files.save');
         await formatDone;
+        console.log('Formatting done');
 
         const actualText = editor?.document.getText();
         assert.equal(actualText, formatted);
