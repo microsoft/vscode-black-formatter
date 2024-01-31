@@ -124,10 +124,13 @@ export async function restartServer(
         }),
     );
     try {
+        console.log('Server: Start requested.');
         await newLSClient.start();
     } catch (ex) {
         updateStatus(l10n.t('Server failed to start.'), LanguageStatusSeverity.Error);
         traceError(`Server: Start failed: ${ex}`);
+        console.log('Server: Start Failed');
+        console.log(ex);
     }
     await newLSClient.setTrace(getLSClientTraceLevel(outputChannel.logLevel, env.logLevel));
     return newLSClient;
