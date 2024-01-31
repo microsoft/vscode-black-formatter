@@ -112,10 +112,19 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ${{ env.special-working-directory-relative }}/package-lock.json
 
-      - name: Use Python 3.x
+      - name: Use Python 3.8
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.8'
+
+      - name: Update pip, install wheel and nox
+        run: python -m pip install -U pip wheel nox
+        shell: bash
+
+        # This will install libraries to a target directory.
+      - name: Install bundled python libraries
+        run: python -m nox --session install_bundled_libs
+        shell: bash
 
       - name: Install Node dependencies
         run: npm ci
