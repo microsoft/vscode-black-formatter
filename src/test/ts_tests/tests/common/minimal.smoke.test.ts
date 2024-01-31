@@ -79,13 +79,17 @@ suite('Smoke Tests', function () {
         assert.ok(editor, 'No active editor');
         assert.ok(editor?.document.uri.fsPath.endsWith('myscript.py'), 'Active editor is not myscript.py');
 
-        const formatReady = new Promise<void>((resolve) => {
+        const formatReady = new Promise<void>((resolve, reject) => {
             const disposable = vscode.workspace.onDidChangeTextDocument((e) => {
                 if (e.document.uri.fsPath.includes('Black')) {
                     const text = e.document.getText();
                     if (text.includes('FOUND black==')) {
                         disposable.dispose();
                         resolve();
+                    }
+                    if (text.includes('Python interpreter missing')) {
+                        disposable.dispose();
+                        reject();
                     }
                 }
             });
