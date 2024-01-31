@@ -52,13 +52,16 @@ export async function resolveInterpreter(interpreter: string[]): Promise<Resolve
 }
 
 export async function getInterpreterDetails(resource?: Uri): Promise<IInterpreterDetails> {
+    console.log('Resolving python interpreter.');
     const api = await getPythonExtensionAPI();
     const environment = await api?.environments.resolveEnvironment(
         api?.environments.getActiveEnvironmentPath(resource),
     );
     if (environment?.executable.uri && checkVersion(environment)) {
+        console.log(`Python interpreter: ${environment?.executable.uri.fsPath}`);
         return { path: [environment?.executable.uri.fsPath], resource };
     }
+    console.log('Python interpreter not found.');
     return { path: undefined, resource };
 }
 
