@@ -18,7 +18,7 @@ async function main() {
 
         const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
         console.log('Installing Python extension...', [cli, ...args, '--install-extension', 'ms-python.python']);
-        cp.spawnSync(cli, [...args, '--install-extension', 'ms-python.python'], {
+        cp.spawnSync(`"${cli}"`, [...args, '--install-extension', 'ms-python.python'], {
             encoding: 'utf-8',
             stdio: 'inherit',
         });

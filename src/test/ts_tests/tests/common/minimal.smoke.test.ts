@@ -84,6 +84,7 @@ suite('Smoke Tests', function () {
             const disposable = vscode.workspace.onDidChangeTextDocument((e) => {
                 if (e.document.uri.fsPath.includes('Black')) {
                     const text = e.document.getText();
+                    console.log(text);
                     if (text.includes('FOUND black==')) {
                         console.log('Waiting for Black formatter to finished loading');
                         disposable.dispose();
