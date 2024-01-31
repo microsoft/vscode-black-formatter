@@ -79,24 +79,25 @@ suite('Smoke Tests', function () {
         assert.ok(editor, 'No active editor');
         assert.ok(editor?.document.uri.fsPath.endsWith('myscript.py'), 'Active editor is not myscript.py');
 
+        vscode.workspace.workspaceFolders?.forEach((f) => console.log(`Loaded workspace: ${f.uri.fsPath}`));
+
         console.log('Waiting for Black formatter to load...');
         const formatReady = new Promise<void>((resolve, reject) => {
-            const disposable = vscode.workspace.onDidChangeTextDocument((e) => {
-                if (e.document.uri.fsPath.includes('Black')) {
-                    const text = e.document.getText();
-                    console.log(text);
-                    if (text.includes('FOUND black==')) {
-                        console.log('Waiting for Black formatter to finished loading');
-                        disposable.dispose();
-                        resolve();
+            disposables.push(
+                vscode.workspace.onDidChangeTextDocument((e) => {
+                    if (e.document.uri.fsPath.includes('Black')) {
+                        const text = e.document.getText();
+                        console.log(text);
+                        if (text.includes('FOUND black==') || text.includes('initialized')) {
+                            console.log('Waiting for Black formatter to finished loading');
+                            resolve();
+                        } else if (text.includes('Python interpreter missing')) {
+                            console.log('Waiting for Black formatter failed to load');
+                            reject();
+                        }
                     }
-                    if (text.includes('Python interpreter missing')) {
-                        console.log('Waiting for Black formatter failed to load');
-                        disposable.dispose();
-                        reject();
-                    }
-                }
-            });
+                }),
+            );
         });
         await formatReady;
 

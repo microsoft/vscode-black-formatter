@@ -112,6 +112,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ${{ env.special-working-directory-relative }}/package-lock.json
 
+      - name: Use Python 3.x
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
       - name: Install Node dependencies
         run: npm ci
         shell: bash
