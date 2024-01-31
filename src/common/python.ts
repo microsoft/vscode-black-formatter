@@ -25,17 +25,21 @@ async function getPythonExtensionAPI(): Promise<PythonExtension | undefined> {
 
 export async function initializePython(disposables: Disposable[]): Promise<void> {
     try {
+        console.log('Initializing python extension.');
         const api = await getPythonExtensionAPI();
-
+        console.log('Python extension initialized.');
         if (api) {
             disposables.push(
                 api.environments.onDidChangeActiveEnvironmentPath((e) => {
+                    console.log('Python interpreter changed.');
                     onDidChangePythonInterpreterEvent.fire({ path: [e.path], resource: e.resource?.uri });
                 }),
             );
 
             traceLog('Waiting for interpreter from python extension.');
+            console.log('Waiting for interpreter from python extension.');
             onDidChangePythonInterpreterEvent.fire(await getInterpreterDetails());
+            console.log('Python interpreter resolved.');
         }
     } catch (error) {
         traceError('Error initializing python: ', error);

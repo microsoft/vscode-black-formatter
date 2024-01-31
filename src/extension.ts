@@ -40,6 +40,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     traceVerbose(`Configuration: ${JSON.stringify(serverInfo)}`);
 
     const runServer = async () => {
+        console.log('Preparing to start server');
         const projectRoot = await getProjectRoot();
         const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
         if (workspaceSetting.interpreter.length === 0) {
@@ -51,6 +52,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 'Please use Python 3.8 or greater.',
             );
         } else {
+            console.log('Starting server');
             lsClient = await restartServer(workspaceSetting, serverId, serverName, outputChannel, lsClient);
         }
     };
