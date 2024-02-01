@@ -34,12 +34,6 @@ def main():
         check=True,
     )
 
-    print("Creating a PR")
-    subprocess.run(
-        ["gh", "pr", "create", "--fill", "--base", "main", "--head", branch_name],
-        check=True,
-    )
-
 
 if __name__ == "__main__":
     main()
