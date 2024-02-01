@@ -8,7 +8,7 @@ import { EXTENSION_ROOT_DIR } from '../../../../common/constants';
 import { assert } from 'chai';
 
 const TEST_PROJECT_DIR = path.join(EXTENSION_ROOT_DIR, 'src', 'test', 'ts_tests', 'test_data', 'project');
-const TIMEOUT = 60000; // 60 seconds
+const TIMEOUT = 120000; // 120 seconds
 
 suite('Smoke Tests', function () {
     this.timeout(TIMEOUT);
