@@ -6,8 +6,10 @@ import pathlib
 import os
 import random
 import subprocess
+import sys
 
 from datetime import datetime
+
 
 def get_next_odd_number(number: int) -> int:
     """Returns the next odd number."""
@@ -23,7 +25,7 @@ def main():
     package_json = pathlib.Path("package.json")
     package = json.loads(package_json.read_text(encoding="utf-8"))
     version = package["version"].split(".")
-    release_type = os.getenv("RELEASE_TYPE", None)
+    release_type = os.getenv("RELEASE_TYPE", sys.argv[-1])
     if release_type == "release":
         version[0] = str(datetime.now().year)
         version[1] = str(get_next_even_number(int(version[1])))
@@ -53,10 +55,6 @@ def main():
 
     print("Running npm install")
     subprocess.run(["npm", "install"], check=True, shell=True)
-
-    print("Git Config")
-    subprocess.run(["git", "config", "user.email", os.getenv("UPDATER_AUTHOR")], check=True) 
-    subprocess.run(["git", "config", "user.name",  os.getenv("UPDATER_EMAIL")], check=True)
 
     print("Committing changes")
     subprocess.run(["git", "add", "package.json"], check=True)
