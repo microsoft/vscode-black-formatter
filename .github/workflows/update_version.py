@@ -27,8 +27,14 @@ def main():
     version = package["version"].split(".")
     release_type = os.getenv("RELEASE_TYPE", sys.argv[-1])
     if release_type == "release":
-        version[0] = str(datetime.now().year)
-        version[1] = str(get_next_even_number(int(version[1])))
+        year = str(datetime.now().year)
+        if year == version[0]:
+            # If year is the same only update minor
+            version[1] = str(get_next_even_number(int(version[1])))
+        else:
+            # If new year, update major and reset minor
+            version[0] = year
+            version[1] = "0"
         version[2] = "0"
     elif release_type == "pre-release":
         # For pre-release we don't bump major
