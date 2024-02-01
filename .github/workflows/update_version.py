@@ -69,10 +69,22 @@ def main():
         ["git", "commit", "-m", f"Update extension version to {package['version']}"],
         check=True,
     )
+    subprocess.run(["git", "push", "origin", branch_name], check=True)
 
     print("Creating a PR")
     subprocess.run(
-        ["gh", "pr", "create", "--fill", "--base", "main", "--head", branch_name],
+        [
+            "gh",
+            "pr",
+            "create",
+            "--fill",
+            "--title",
+            f"Update extension to {package['version']}",
+            "--base",
+            "main",
+            "--head",
+            branch_name,
+        ],
         check=True,
     )
 
