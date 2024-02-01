@@ -7,6 +7,7 @@ import os
 import random
 import subprocess
 
+from datetime import datetime
 
 def get_next_odd_number(number: int) -> int:
     """Returns the next odd number."""
@@ -24,12 +25,15 @@ def main():
     version = package["version"].split(".")
     release_type = os.getenv("RELEASE_TYPE", None)
     if release_type == "release":
+        version[0] = str(datetime.now().year)
         version[1] = str(get_next_even_number(int(version[1])))
         version[2] = "0"
     elif release_type == "pre-release":
+        # For pre-release we don't bump major
         version[1] = str(get_next_odd_number(int(version[2])))
         version[2] = "0-dev"
     elif release_type == "hotfix":
+        # For hotfix we don't bump major or minor
         version[2] = str(int(version[2]) + 1)
     else:
         print("Unknown release type, skipping version update.")
