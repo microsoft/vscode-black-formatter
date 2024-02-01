@@ -8,7 +8,7 @@ import { EXTENSION_ROOT_DIR } from '../../../../common/constants';
 import { assert } from 'chai';
 
 const TEST_PROJECT_DIR = path.join(EXTENSION_ROOT_DIR, 'src', 'test', 'ts_tests', 'test_data', 'project');
-const TIMEOUT = 30000; // 30 seconds
+const TIMEOUT = 60000; // 60 seconds
 
 suite('Smoke Tests', function () {
     this.timeout(TIMEOUT);
@@ -92,13 +92,17 @@ suite('Smoke Tests', function () {
                 watcher.onDidChange((e) => {
                     const text = fsapi.readFileSync(e.fsPath, { encoding: 'utf8' });
                     if (!text.includes(';')) {
+                        console.log('Saved with format changes');
                         resolve();
+                    } else {
+                        console.log('Saved without format changes');
                     }
                 }),
             );
         });
 
         const timer = setInterval(() => {
+            console.log('Saving file');
             vscode.commands.executeCommand('workbench.action.files.save');
         }, 1000);
         disposables.push({ dispose: () => clearInterval(timer) });

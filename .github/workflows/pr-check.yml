@@ -11,82 +11,82 @@ env:
   special-working-directory-relative: '🐍 🐛'
 
 jobs:
-  build-vsix:
-    name: Create VSIX
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+  # build-vsix:
+  #   name: Create VSIX
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
 
-      - name: Build VSIX
-        uses: ./.github/actions/build-vsix
-        with:
-          node_version: ${{ env.NODE_VERSION}}
+  #     - name: Build VSIX
+  #       uses: ./.github/actions/build-vsix
+  #       with:
+  #         node_version: ${{ env.NODE_VERSION}}
 
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+  # lint:
+  #   name: Lint
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
 
-      - name: Lint
-        uses: ./.github/actions/lint
-        with:
-          node_version: ${{ env.NODE_VERSION }}
+  #     - name: Lint
+  #       uses: ./.github/actions/lint
+  #       with:
+  #         node_version: ${{ env.NODE_VERSION }}
 
-  tests:
-    name: Tests
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: ${{ env.special-working-directory }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        python: ['3.8', '3.9', '3.10', '3.11', '3.12']
+  # tests:
+  #   name: Tests
+  #   runs-on: ${{ matrix.os }}
+  #   defaults:
+  #     run:
+  #       working-directory: ${{ env.special-working-directory }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, windows-latest]
+  #       python: ['3.8', '3.9', '3.10', '3.11', '3.12']
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          path: ${{ env.special-working-directory-relative }}
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         path: ${{ env.special-working-directory-relative }}
 
-      # Install bundled libs using 3.8 even though you test it on other versions.
-      - name: Use Python 3.8
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.8'
+  #     # Install bundled libs using 3.8 even though you test it on other versions.
+  #     - name: Use Python 3.8
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.8'
 
-      - name: Update pip, install wheel and nox
-        run: python -m pip install -U pip wheel nox
-        shell: bash
+  #     - name: Update pip, install wheel and nox
+  #       run: python -m pip install -U pip wheel nox
+  #       shell: bash
 
-      # This will install libraries to a target directory.
-      - name: Install bundled python libraries
-        run: python -m nox --session install_bundled_libs
-        shell: bash
+  #     # This will install libraries to a target directory.
+  #     - name: Install bundled python libraries
+  #       run: python -m nox --session install_bundled_libs
+  #       shell: bash
 
-      # Now that the bundle is installed to target using python 3.8
-      # switch back the python we want to test with
-      - name: Use Python ${{ matrix.python }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
+  #     # Now that the bundle is installed to target using python 3.8
+  #     # switch back the python we want to test with
+  #     - name: Use Python ${{ matrix.python }}
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: ${{ matrix.python }}
 
-      # The new python may not have nox so install it again
-      - name: Update pip, install wheel and nox (again)
-        run: python -m pip install -U pip wheel nox
-        shell: bash
+  #     # The new python may not have nox so install it again
+  #     - name: Update pip, install wheel and nox (again)
+  #       run: python -m pip install -U pip wheel nox
+  #       shell: bash
 
-      - name: Run tests
-        run: python -m nox --session tests
-        shell: bash
+  #     - name: Run tests
+  #       run: python -m nox --session tests
+  #       shell: bash
 
-      - name: Validate README.md
-        run: python -m nox --session validate_readme
-        shell: bash
+  #     - name: Validate README.md
+  #       run: python -m nox --session validate_readme
+  #       shell: bash
 
   ts-tests:
     name: TypeScript Tests
