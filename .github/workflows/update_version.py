@@ -54,6 +54,10 @@ def main():
     print("Running npm install")
     subprocess.run(["npm", "install"], check=True, shell=True)
 
+    print("Git Config")
+    subprocess.run(["git", "config", "user.email", os.getenv("UPDATER_AUTHOR")], check=True) 
+    subprocess.run(["git", "config", "user.name",  os.getenv("UPDATER_EMAIL")], check=True)
+
     print("Committing changes")
     subprocess.run(["git", "add", "package.json"], check=True)
     subprocess.run(["git", "add", "package-lock.json"], check=True)
