@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import os
 import random
 import subprocess
 
@@ -27,21 +26,11 @@ def main():
         print("No changes detected, exiting")
         return
 
-    print("Git Config")
-    subprocess.run(["git", "config", "user.email", os.getenv("UPDATER_AUTHOR")], check=True) 
-    subprocess.run(["git", "config", "user.name",  os.getenv("UPDATER_EMAIL")], check=True)
-
     print("Committing changes")
     subprocess.run(["git", "add", "--all", "."], check=True)
 
     subprocess.run(
         ["git", "commit", "-m", "Update extension dependencies"],
-        check=True,
-    )
-
-    print("Creating a PR")
-    subprocess.run(
-        ["gh", "pr", "create", "--fill", "--base", "main", "--head", branch_name],
         check=True,
     )
 
