@@ -26,7 +26,6 @@ async function getPythonExtensionAPI(): Promise<PythonExtension | undefined> {
 export async function initializePython(disposables: Disposable[]): Promise<void> {
     try {
         const api = await getPythonExtensionAPI();
-
         if (api) {
             disposables.push(
                 api.environments.onDidChangeActiveEnvironmentPath((e) => {

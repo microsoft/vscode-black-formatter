@@ -9,12 +9,8 @@
             "name": "Debug Extension Only",
             "type": "extensionHost",
             "request": "launch",
-            "args": [
-                "--extensionDevelopmentPath=${workspaceFolder}"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/dist/**/*.js"
-            ],
+            "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+            "outFiles": ["${workspaceFolder}/dist/**/*.js"],
             "preLaunchTask": "npm: watch",
             "presentation": {
                 "hidden": false,
@@ -42,10 +38,22 @@
                 "--extensionDevelopmentPath=${workspaceFolder}",
                 "--extensionTestsPath=${workspaceFolder}/out/test/ts_tests/index"
             ],
-            "outFiles": [
-                "${workspaceFolder}/out/**/*.js",
-                "${workspaceFolder}/dist/**/*.js"
+            "outFiles": ["${workspaceFolder}/out/**/*.js", "${workspaceFolder}/dist/**/*.js"],
+            "preLaunchTask": "tasks: watch-tests"
+        },
+        {
+            "name": "TS Smoke Tests",
+            "type": "extensionHost",
+            "request": "launch",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "--extensionTestsPath=${workspaceFolder}/out/test/ts_tests/index",
+                "${workspaceFolder}/src/test/ts_tests/test_data/project"
             ],
+            "outFiles": ["${workspaceFolder}/out/**/*.js", "${workspaceFolder}/dist/**/*.js"],
+            "env": {
+                "SMOKE_TESTS": "true"
+            },
             "preLaunchTask": "tasks: watch-tests"
         },
         {
@@ -53,9 +61,7 @@
             "type": "python",
             "request": "launch",
             "console": "integratedTerminal",
-            "purpose": [
-                "debug-test"
-            ],
+            "purpose": ["debug-test"],
             "justMyCode": true,
             "presentation": {
                 "hidden": true,
@@ -67,12 +73,8 @@
             "name": "Debug Extension (hidden)",
             "type": "extensionHost",
             "request": "launch",
-            "args": [
-                "--extensionDevelopmentPath=${workspaceFolder}"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/dist/**/*.js"
-            ],
+            "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+            "outFiles": ["${workspaceFolder}/dist/**/*.js"],
             "env": {
                 "USE_DEBUGPY": "True"
             },
@@ -101,10 +103,7 @@
     "compounds": [
         {
             "name": "Debug Extension and Python",
-            "configurations": [
-                "Python debug server (hidden)",
-                "Debug Extension (hidden)"
-            ],
+            "configurations": ["Python debug server (hidden)", "Debug Extension (hidden)"],
             "stopAll": true,
             "preLaunchTask": "npm: watch",
             "presentation": {
