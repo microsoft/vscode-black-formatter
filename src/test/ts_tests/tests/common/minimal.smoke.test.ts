@@ -93,16 +93,18 @@ suite('Smoke Tests', function () {
                     const text = fsapi.readFileSync(e.fsPath, { encoding: 'utf8' });
                     if (!text.includes(';')) {
                         resolve();
-                    } else {
-                        vscode.commands.executeCommand('workbench.action.files.save');
                     }
                 }),
             );
         });
 
+        const timer = setInterval(() => {
+            vscode.commands.executeCommand('workbench.action.files.save');
+        }, 1000);
+        disposables.push({ dispose: () => clearInterval(timer) });
+
         await vscode.commands.executeCommand('workbench.action.files.save');
         await formatDone;
-
         const actualText = await fsapi.readFile(scriptPath, { encoding: 'utf8' });
         assert.equal(actualText, formatted);
 
