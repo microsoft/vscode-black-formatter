@@ -1,2 +1,2 @@
-import sys
-print(sys.executable)
+import os;import sys
+print(os.fspath(sys.executable))
