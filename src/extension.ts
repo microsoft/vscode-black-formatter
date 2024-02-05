@@ -29,8 +29,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const serverName = `${serverInfo.name} Formatter`;
     const serverId = `${serverInfo.module}-formatter`;
 
-    const settings: ISettings[] = await getExtensionSettings(serverId);
-
     // Setup logging
     const outputChannel = createOutputChannel(serverName);
     context.subscriptions.push(outputChannel, registerLogger(outputChannel));
