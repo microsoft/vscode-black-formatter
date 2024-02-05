@@ -60,7 +60,9 @@ function resolveVariables(
 
     return modifiedValue.map((s) => {
         for (const [key, value] of substitutions) {
-            s = s?.replace(key, value);
+            if (typeof s === 'string') {
+                s = s?.replace(key, value);
+            }
         }
         return s;
     });
@@ -69,7 +71,7 @@ function resolveVariables(
 function getCwd(config: WorkspaceConfiguration, workspace: WorkspaceFolder): string {
     const cwd = config.get<string>('cwd', workspace.uri.fsPath);
     if (typeof cwd !== 'string') {
-        traceLog(`cwd is not a string: `, cwd);
+        traceLog(`cwd is not a string ${typeof cwd}`);
         return process.cwd();
     }
     return resolveVariables([cwd], workspace)[0];
