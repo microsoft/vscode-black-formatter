@@ -83,7 +83,7 @@ There are several settings you can configure to customize the behavior of this e
     <tr>
       <td>black-formatter.serverTransport</td>
       <td><code>stdio</code></td>
-      <td> Selects the transport protocol to be used by the Black server. When set to <code>stdio</code>, the extension will use the standard input/output streams to communicate with the Black server. When set to <code>pipe</code>, the extension will use a named pipe (on windows) and Unix Domain Socket (on linux/mac) to communicate with the Black server. The <code>stdio</code> transport protocol is the default and recommended option for most users.</td>
+      <td> Selects the transport protocol to be used by the Black server. When set to <code>stdio</code>, the extension will use the standard input/output streams to communicate with the Black server. When set to <code>pipe</code>, the extension will use a named pipe (on Windows) and Unix Domain Socket (on Linux/Mac) to communicate with the Black server. The <code>stdio</code> transport protocol is the default and recommended option for most users.</td>
     </tr>
   </tbody>
 </table>
