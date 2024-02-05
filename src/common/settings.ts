@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ConfigurationChangeEvent, ConfigurationScope, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
+import { ConfigurationChangeEvent, ConfigurationScope, Uri, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
 import { getInterpreterDetails } from './python';
 import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
 import { traceInfo, traceLog, traceWarn } from './logging';
 import { EXTENSION_ID } from './constants';
+import { TransportKind } from 'vscode-languageclient/node';
 
 export interface ISettings {
     cwd: string;
@@ -15,6 +16,12 @@ export interface ISettings {
     interpreter: string[];
     importStrategy: string;
     showNotifications: string;
+}
+
+export function getServerTransport(namespace: string, uri: Uri): TransportKind {
+    const config = getConfiguration(namespace, uri);
+    const value = config.get<string>('serverTransport', 'stdio');
+    return value === 'pipe' ? TransportKind.pipe : TransportKind.stdio;
 }
 
 export function getExtensionSettings(namespace: string, includeInterpreter?: boolean): Promise<ISettings[]> {
@@ -152,6 +159,7 @@ export function checkIfConfigurationChanged(e: ConfigurationChangeEvent, namespa
         `${namespace}.interpreter`,
         `${namespace}.importStrategy`,
         `${namespace}.showNotifications`,
+        `${namespace}.serverTransport`,
     ];
     const changed = settings.map((s) => e.affectsConfiguration(s));
     return changed.includes(true);
