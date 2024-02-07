@@ -263,9 +263,12 @@ def initialize(params: lsp.InitializeParams) -> None:
     """LSP handler for initialize request."""
     log_to_output(f"CWD Server: {os.getcwd()}")
 
-    GLOBAL_SETTINGS.update(**params.initialization_options.get("globalSettings", {}))
+    init_opts = params.initialization_options
+    if init_opts is None:
+        init_opts = {}
+    GLOBAL_SETTINGS.update(**init_opts.get("globalSettings", {}))
 
-    settings = params.initialization_options["settings"]
+    settings = init_opts.get("settings", {})
     _update_workspace_settings(settings)
     log_to_output(
         f"Settings used to run Server:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
