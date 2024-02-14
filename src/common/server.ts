@@ -14,7 +14,7 @@ import {
 import { DEBUG_SERVER_SCRIPT_PATH, SERVER_SCRIPT_PATH } from './constants';
 import { traceError, traceInfo, traceVerbose } from './logging';
 import { getDebuggerPath } from './python';
-import { getExtensionSettings, getGlobalSettings, ISettings } from './settings';
+import { getExtensionSettings, getGlobalSettings, getServerTransport, ISettings } from './settings';
 import { getDocumentSelector, getLSClientTraceLevel } from './utilities';
 import { updateStatus } from './status';
 import { unregisterEmptyFormatter } from './nullFormatter';
@@ -29,7 +29,8 @@ async function createServer(
     initializationOptions: IInitOptions,
 ): Promise<LanguageClient> {
     const command = settings.interpreter[0];
-    const cwd = settings.cwd === '${fileDirname}' ? Uri.parse(settings.workspace).fsPath : settings.cwd;
+    const workspaceUri = Uri.parse(settings.workspace);
+    const cwd = settings.cwd === '${fileDirname}' ? workspaceUri.fsPath : settings.cwd;
 
     // Set debugger path needed for debugging python code.
     const newEnv = { ...process.env };
@@ -57,7 +58,7 @@ async function createServer(
         command,
         args,
         options: { cwd, env: newEnv },
-        transport: TransportKind.pipe,
+        transport: getServerTransport(serverId, workspaceUri),
     };
 
     // Options to control the language client

@@ -155,6 +155,20 @@
                     ],
                     "scope": "machine",
                     "type": "string"
+                },
+                "black-formatter.serverTransport": {
+                    "default": "stdio",
+                    "enum": [
+                        "stdio",
+                        "pipe"
+                    ],
+                    "markdownDescription": "%settings.serverTransport.description%",
+                    "markdownEnumDescriptions": [
+                        "%settings.serverTransport.stdio.description%",
+                        "%settings.serverTransport.pipe.description%"
+                    ],
+                    "scope": "window",
+                    "type": "string"
                 }
             }
         },
