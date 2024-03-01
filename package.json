@@ -199,7 +199,7 @@
         "@vscode/test-electron": "^2.3.9",
         "@vscode/vsce": "^2.23.0",
         "chai": "^4.3.10",
-        "eslint": "^8.56.0",
+        "eslint": "^8.57.0",
         "glob": "^10.3.10",
         "mocha": "^10.2.0",
         "prettier": "^3.2.4",
