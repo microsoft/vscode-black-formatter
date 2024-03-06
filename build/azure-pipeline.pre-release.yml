@@ -63,4 +63,8 @@ extends:
       - script: npm run package
         displayName: Build extension
 
+    tsa:
+      configFile: $(Build.SourcesDirectory)/tsaoptions.json
+      enabled: true
+
     publishExtension: ${{ parameters.publishExtension }}
