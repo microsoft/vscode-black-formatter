@@ -135,6 +135,9 @@ export async function getWorkspaceSettings(
         importStrategy: config.get<string>('importStrategy', 'useBundled'),
         showNotifications: config.get<string>('showNotifications', 'off'),
     };
+    traceInfo(
+        `Workspace settings for ${workspace.uri.fsPath} (client side): ${JSON.stringify(workspaceSetting, null, 4)}`,
+    );
     return workspaceSetting;
 }
 
@@ -163,6 +166,7 @@ export async function getGlobalSettings(namespace: string, includeInterpreter?: 
         importStrategy: getGlobalValue<string>(config, 'importStrategy') ?? 'useBundled',
         showNotifications: getGlobalValue<string>(config, 'showNotifications') ?? 'off',
     };
+    traceInfo(`Global settings (client side): ${JSON.stringify(setting, null, 4)}`);
     return setting;
 }
 
