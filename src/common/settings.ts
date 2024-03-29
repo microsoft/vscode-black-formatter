@@ -4,9 +4,10 @@
 import { ConfigurationChangeEvent, ConfigurationScope, Uri, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
 import { getInterpreterDetails } from './python';
 import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
-import { traceInfo, traceLog, traceWarn } from './logging';
+import { traceError, traceInfo, traceLog, traceWarn } from './logging';
 import { EXTENSION_ID } from './constants';
 import { TransportKind } from 'vscode-languageclient/node';
+import { trace } from 'console';
 
 export interface ISettings {
     cwd: string;
@@ -30,10 +31,23 @@ export function getExtensionSettings(namespace: string, includeInterpreter?: boo
 
 function resolveVariables(
     value: string[],
+    key: string,
     workspace?: WorkspaceFolder,
     interpreter?: string[],
     env?: NodeJS.ProcessEnv,
 ): string[] {
+    for (const v of value) {
+        if (typeof v !== 'string') {
+            traceError(`Value [${v}] must be "string" for \`black-formatter.${key}\`: ${value}`);
+            throw new Error(`Value [${v}] must be "string" for \`black-formatter.${key}\`: ${value}`);
+        }
+        if (v.startsWith('--') && v.includes(' ')) {
+            traceError(
+                `Settings should be in the form ["--line-length=88"] or ["--line-length", "88"] but not ["--line-length 88"]`,
+            );
+        }
+    }
+
     const substitutions = new Map<string, string>();
     const home = process.env.HOME || process.env.USERPROFILE;
     if (home) {
@@ -75,7 +89,7 @@ function resolveVariables(
 
 function getCwd(config: WorkspaceConfiguration, workspace: WorkspaceFolder): string {
     const cwd = config.get<string>('cwd', workspace.uri.fsPath);
-    return resolveVariables([cwd], workspace)[0];
+    return resolveVariables([cwd], 'cwd', workspace)[0];
 }
 
 export function getInterpreterFromSetting(namespace: string, scope?: ConfigurationScope) {
@@ -115,12 +129,15 @@ export async function getWorkspaceSettings(
     const workspaceSetting = {
         cwd: getCwd(config, workspace),
         workspace: workspace.uri.toString(),
-        args: resolveVariables(config.get<string[]>('args', []), workspace),
-        path: resolveVariables(config.get<string[]>('path', []), workspace, interpreter),
-        interpreter: resolveVariables(interpreter, workspace),
+        args: resolveVariables(config.get<string[]>('args', []), 'args', workspace),
+        path: resolveVariables(config.get<string[]>('path', []), 'path', workspace, interpreter),
+        interpreter: resolveVariables(interpreter, 'interpreter', workspace),
         importStrategy: config.get<string>('importStrategy', 'useBundled'),
         showNotifications: config.get<string>('showNotifications', 'off'),
     };
+    traceInfo(
+        `Workspace settings for ${workspace.uri.fsPath} (client side): ${JSON.stringify(workspaceSetting, null, 4)}`,
+    );
     return workspaceSetting;
 }
 
@@ -149,6 +166,7 @@ export async function getGlobalSettings(namespace: string, includeInterpreter?: 
         importStrategy: getGlobalValue<string>(config, 'importStrategy') ?? 'useBundled',
         showNotifications: getGlobalValue<string>(config, 'showNotifications') ?? 'off',
     };
+    traceInfo(`Global settings (client side): ${JSON.stringify(setting, null, 4)}`);
     return setting;
 }
 

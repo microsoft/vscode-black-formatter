@@ -268,10 +268,10 @@ def initialize(params: lsp.InitializeParams) -> None:
     settings = params.initialization_options["settings"]
     _update_workspace_settings(settings)
     log_to_output(
-        f"Settings used to run Server:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
+        f"Settings received on server:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
     )
     log_to_output(
-        f"Global settings:\r\n{json.dumps(GLOBAL_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
+        f"Global settings received on server:\r\n{json.dumps(GLOBAL_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
     )
 
     paths = "\r\n   ".join(sys.path)
