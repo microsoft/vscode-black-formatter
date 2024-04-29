@@ -60,7 +60,6 @@ update_environ_path()
 # **********************************************************
 # Imports needed for the language server goes below this.
 # **********************************************************
-# pylint: disable=wrong-import-position,import-error
 import lsp_edit_utils as edit_utils
 import lsp_io
 import lsp_jsonrpc as jsonrpc
@@ -280,7 +279,7 @@ def diagnostics(params: lsp.DocumentDiagnosticParams) -> lsp.DocumentDiagnosticR
 def _check_document(document: workspace.Document) -> lsp.DocumentDiagnosticReport:
     """Runs black in check mode to get diagnostics."""
     extra_args = ["--check"] + _get_args_by_file_extension(document)
-    extra_args += [ "--stdin-filename", _get_filename_for_black(document)]
+    extra_args += ["--stdin-filename", _get_filename_for_black(document)]
     result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
     diagnostics = []
     if result and result.stderr and "would reformat" in result.stderr:
@@ -291,7 +290,7 @@ def _check_document(document: workspace.Document) -> lsp.DocumentDiagnosticRepor
                     start=lsp.Position(line=0, character=0),
                     end=lsp.Position(line=0, character=0),
                 ),
-                message=f"Black would reformat this file.",
+                message="Black would reformat this file.",
                 severity=lsp.DiagnosticSeverity.Warning,
                 source=TOOL_DISPLAY,
                 code="black",
@@ -389,7 +388,7 @@ def _update_workspace_settings_with_version_info(
                     f"FOUND {TOOL_MODULE}=={actual_version}\r\n"
                 )
 
-        except:  # pylint: disable=bare-except
+        except Exception:
             log_to_output(
                 f"Error while detecting black version:\r\n{traceback.format_exc()}"
             )
