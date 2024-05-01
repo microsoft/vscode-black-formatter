@@ -246,10 +246,11 @@ def _update_readme() -> None:
 
 @nox.session()
 def update_packages(session: nox.Session) -> None:
-    """Update pip and npm packages."""
+    """Update python packages. (--all, -a: for python and npm packages)"""
     session.install("wheel", "pip-tools")
+    if "--all" in session.posargs or "-a" in session.posargs:
+        _update_npm_packages(session)
     _update_pip_packages(session)
-    _update_npm_packages(session)
     _update_readme()
 
 
