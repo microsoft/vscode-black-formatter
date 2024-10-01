@@ -4,15 +4,15 @@
 #
 #    pip-compile --generate-hashes ./src/test/python_tests/requirements.in
 #
-attrs==23.2.0 \
-    --hash=sha256:935dc3b529c262f6cf76e50877d35a4bd3c1de194fd41f47a2b7ae8f19971f30 \
-    --hash=sha256:99b87a485a5820b23b879f04c2305b44b951b502fd64be915879d77a7e8fc6f1
+attrs==24.2.0 \
+    --hash=sha256:5cfb1b9148b5b086569baec03f20d7b6bf3bcacc9a42bebf87ffaaca362f6346 \
+    --hash=sha256:81921eb96de3191c8258c199618104dd27ac608d9366f5e35d011eae1867ede2
     # via
     #   cattrs
     #   lsprotocol
-cattrs==23.2.3 \
-    --hash=sha256:0341994d94971052e9ee70662542699a3162ea1e0c62f7ce1b4a57f563685108 \
-    --hash=sha256:a934090d95abaa9e911dac357e3a8699e0b4b14f8529bcc7d2b1ad9d51672b9f
+cattrs==24.1.2 \
+    --hash=sha256:67c7495b760168d931a10233f979b28dc04daf853b30752246f4f8471c6d68d0 \
+    --hash=sha256:8028cfe1ff5382df59dd36474a86e02d817b06eaf8af84555441bac915d2ef85
     # via
     #   lsprotocol
     #   pygls
@@ -50,9 +50,9 @@ pyhamcrest==2.1.0 \
     --hash=sha256:c6acbec0923d0cb7e72c22af1926f3e7c97b8e8d69fc7498eabacaf7c975bd9c \
     --hash=sha256:f6913d2f392e30e0375b3ecbd7aee79e5d1faa25d345c8f4ff597665dcac2587
     # via -r ./src/test/python_tests/requirements.in
-pytest==8.3.2 \
-    --hash=sha256:4ba08f9ae7dcf84ded419494d229b48d0903ea6407b030eaec46df5e6a73bba5 \
-    --hash=sha256:c132345d12ce551242c87269de812483f5bcc87cdbb4722e48487ba194f9fdce
+pytest==8.3.3 \
+    --hash=sha256:70b98107bd648308a7952b06e6ca9a50bc660be218d53c257cc1fc94fda10181 \
+    --hash=sha256:a6853c7375b2663155079443d2e45de913a911a11d669df02a50814944db57b2
     # via -r ./src/test/python_tests/requirements.in
 python-jsonrpc-server==0.4.0 \
     --hash=sha256:62c543e541f101ec5b57dc654efc212d2c2e3ea47ff6f54b2e7dcb36ecf20595 \
