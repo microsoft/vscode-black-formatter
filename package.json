@@ -2,7 +2,7 @@
     "name": "black-formatter",
     "displayName": "Black Formatter",
     "description": "%extension.description%",
-    "version": "2024.3.0-dev",
+    "version": "2024.4.0",
     "preview": true,
     "serverInfo": {
         "name": "Black",
