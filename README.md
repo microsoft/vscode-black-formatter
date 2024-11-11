@@ -4,7 +4,7 @@ A Visual Studio Code extension with support for the Black formatter. The extensi
 
 > Note: The minimum version of Black this extension supports is `22.3.0`.
 
-This extension includes support for all [actively supported versions](https://devguide.python.org/#status-of-python-branches) of the Python language (i.e., Python >= 3.8).
+This extension includes support for all [actively supported versions](https://devguide.python.org/#status-of-python-branches) of the Python language.
 
 For more information on the Black formatter, see https://black.readthedocs.io/en/stable/.
 
