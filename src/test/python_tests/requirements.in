@@ -8,3 +8,4 @@ pygls
 pytest
 PyHamcrest
 python-jsonrpc-server
+colorama # required for windows machines
