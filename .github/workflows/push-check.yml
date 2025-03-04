@@ -50,7 +50,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
       - name: Checkout
@@ -58,11 +58,11 @@ jobs:
         with:
           path: ${{ env.special-working-directory-relative }}
 
-      # Install bundled libs using 3.8 even though you test it on other versions.
-      - name: Use Python 3.8
+      # Install bundled libs using 3.9 even though you test it on other versions.
+      - name: Use Python 3.9
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - name: Update pip, install wheel and nox
         run: python -m pip install -U pip wheel nox
@@ -73,7 +73,7 @@ jobs:
         run: python -m nox --session install_bundled_libs
         shell: bash
 
-      # Now that the bundle is installed to target using python 3.8
+      # Now that the bundle is installed to target using python 3.9
       # switch back the python we want to test with
       - name: Use Python ${{ matrix.python }}
         uses: actions/setup-python@v5

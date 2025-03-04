@@ -293,7 +293,7 @@ def on_shutdown(_params: Optional[Any] = None) -> None:
 
 
 def _update_workspace_settings_with_version_info(
-    workspace_settings: dict[str, Any]
+    workspace_settings: dict[str, Any],
 ) -> None:
     for settings in workspace_settings.values():
         try:
