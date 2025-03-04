@@ -1,8 +1,9 @@
 # This file is used to generate requirements.txt.
 # To update requirements.txt, run the following commands.
-# Use Python 3.8 when creating the environment or using pip-tools
-# 1) python -m pip install pip-tools
-# 2) pip-compile --generate-hashes --upgrade ./src/test/python_tests/requirements.in
+# Use `uv` with Python 3.9 when creating the environment.
+#
+# Run following command:
+# uv pip compile --generate-hashes --upgrade -o ./src/test/python_tests/requirements.txt ./src/test/python_tests/requirements.in
 
 pygls
 pytest
