@@ -114,7 +114,6 @@ export function createConfigFileWatcher(onConfigChanged: () => Promise<void>): D
         }
     }
 
-    // Disposable オブジェクトを返す
     return {
         dispose: () => {
             for (const watcher of watchers) {
