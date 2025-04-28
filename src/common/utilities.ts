@@ -84,20 +84,16 @@ export function getInterpreterFromSetting(namespace: string, scope?: Configurati
     return config.get<string[]>('interpreter');
 }
 
-const CONFIG_FILES = ['.black', 'pyproject.toml'];
 export function createConfigFileWatcher(onConfigChanged: () => Promise<void>): Disposable {
     const watchers: FileSystemWatcher[] = [];
-    
+
     const homeDir = process.env.HOME || process.env.USERPROFILE;
     if (homeDir) {
-        for (const configFile of CONFIG_FILES) {
-            watchConfigFile(path.join(homeDir, configFile));
-        }
+        watchConfigFile(path.join(homeDir, '.black'));
     }
 
     function watchConfigFile(filePath: string): void {
         if (fs.existsSync(filePath)) {
-            traceLog(`Watching config file: ${filePath}`);
             const pattern = new RelativePattern(
                 path.dirname(filePath),
                 path.basename(filePath)
