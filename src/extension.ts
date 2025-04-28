@@ -15,13 +15,15 @@ import {
     logLegacySettings,
 } from './common/settings';
 import { loadServerDefaults } from './common/setup';
-import { getInterpreterFromSetting, getProjectRoot } from './common/utilities';
+import { getInterpreterFromSetting, getProjectRoot, createConfigFileWatcher } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import { registerEmptyFormatter } from './common/nullFormatter';
 import { registerLanguageStatusItem, updateStatus } from './common/status';
 import { LS_SERVER_RESTART_DELAY, PYTHON_VERSION } from './common/constants';
 
 let lsClient: LanguageClient | undefined;
+let configWatcherDisposable: vscode.Disposable | undefined;
+
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // This is required to get server name and module. This should be
     // the first thing that we do in this extension.
@@ -69,7 +71,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
     };
 
+    configWatcherDisposable = createConfigFileWatcher(runServer);
+
     context.subscriptions.push(
+        configWatcherDisposable,
         onDidChangePythonInterpreter(async () => {
             await runServer();
         }),
@@ -116,6 +121,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export async function deactivate(): Promise<void> {
+    if (configWatcherDisposable) {
+        configWatcherDisposable.dispose();
+    }
     if (lsClient) {
         await lsClient.stop();
     }

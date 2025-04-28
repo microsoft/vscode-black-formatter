@@ -3,10 +3,11 @@
 
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { ConfigurationScope, env, LogLevel, Uri, WorkspaceFolder } from 'vscode';
+import { ConfigurationScope, env, LogLevel, Uri, WorkspaceFolder, Disposable, RelativePattern,FileSystemWatcher, workspace } from 'vscode';
 import { Trace, TraceValues } from 'vscode-jsonrpc/node';
 import { getConfiguration, getWorkspaceFolders, isVirtualWorkspace } from './vscodeapi';
 import { DocumentSelector } from 'vscode-languageclient';
+import { traceLog, traceInfo } from './logging';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
     switch (logLevel) {
@@ -81,4 +82,44 @@ export function getDocumentSelector(): DocumentSelector {
 export function getInterpreterFromSetting(namespace: string, scope?: ConfigurationScope) {
     const config = getConfiguration(namespace, scope);
     return config.get<string[]>('interpreter');
+}
+
+const CONFIG_FILES = ['.black', 'pyproject.toml'];
+export function createConfigFileWatcher(onConfigChanged: () => Promise<void>): Disposable {
+    const watchers: FileSystemWatcher[] = [];
+    
+    const homeDir = process.env.HOME || process.env.USERPROFILE;
+    if (homeDir) {
+        for (const configFile of CONFIG_FILES) {
+            watchConfigFile(path.join(homeDir, configFile));
+        }
+    }
+
+    function watchConfigFile(filePath: string): void {
+        if (fs.existsSync(filePath)) {
+            traceLog(`Watching config file: ${filePath}`);
+            const pattern = new RelativePattern(
+                path.dirname(filePath),
+                path.basename(filePath)
+            );
+            
+            const watcher = workspace.createFileSystemWatcher(pattern);
+            
+            watcher.onDidChange(async () => {
+                traceInfo(`Config file changed: ${filePath}`);
+                await onConfigChanged();
+            });
+            
+            watchers.push(watcher);
+        }
+    }
+
+    // Disposable オブジェクトを返す
+    return {
+        dispose: () => {
+            for (const watcher of watchers) {
+                watcher.dispose();
+            }
+        }
+    };
 }
