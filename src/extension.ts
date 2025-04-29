@@ -121,9 +121,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export async function deactivate(): Promise<void> {
-    if (configWatcherDisposable) {
-        configWatcherDisposable.dispose();
-    }
     if (lsClient) {
         await lsClient.stop();
     }
