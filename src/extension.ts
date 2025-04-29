@@ -71,10 +71,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
     };
 
-    configWatcherDisposable = createConfigFileWatcher(runServer);
-
     context.subscriptions.push(
-        configWatcherDisposable,
+        await createConfigFileWatcher(runServer),
         onDidChangePythonInterpreter(async () => {
             await runServer();
         }),

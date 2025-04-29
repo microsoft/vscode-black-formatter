@@ -84,37 +84,33 @@ export function getInterpreterFromSetting(namespace: string, scope?: Configurati
     return config.get<string[]>('interpreter');
 }
 
-export function createConfigFileWatcher(onConfigChanged: () => Promise<void>): Disposable {
-    const watchers: FileSystemWatcher[] = [];
+export async function createConfigFileWatcher(onConfigChanged: () => Promise<void>): Promise<Disposable> {
+    const disposables: Disposable[] = [];  
 
     const homeDir = process.env.HOME || process.env.USERPROFILE;
     if (homeDir) {
         watchConfigFile(path.join(homeDir, '.black'));
     }
 
-    function watchConfigFile(filePath: string): void {
-        if (fs.existsSync(filePath)) {
+    async function watchConfigFile(filePath: string): Promise<void> {
+        if (await fs.pathExists(filePath)) {
             const pattern = new RelativePattern(
                 path.dirname(filePath),
                 path.basename(filePath)
             );
             
             const watcher = workspace.createFileSystemWatcher(pattern);
-            
-            watcher.onDidChange(async () => {
+            disposables.push(watcher);
+
+            const changeListener = watcher.onDidChange(async () => {
                 traceInfo(`Config file changed: ${filePath}`);
                 await onConfigChanged();
             });
-            
-            watchers.push(watcher);
+            disposables.push(changeListener); 
         }
     }
 
     return {
-        dispose: () => {
-            for (const watcher of watchers) {
-                watcher.dispose();
-            }
-        }
+        dispose: () => {disposables.forEach((d) => d.dispose()); }
     };
 }
