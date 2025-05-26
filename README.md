@@ -31,6 +31,11 @@ The Black extension for Visual Studio Code provides formatting support for your 
 
 -   **Customize Black**: You can customize the behavior of Black by setting the `black-formatter.args` setting.
 
+-   **Keyboard Shortcuts**: The code formatting is available in Visual Studio Code through the following keyboard shortcuts:
+    - On Windows: Shift + Alt + F
+    - On Mac: Shift + Option + F
+    - On Linux: Ctrl + Shift + I
+
 ### Disabling formatting with Black
 
 If you want to disable Black formatter, you can [disable this extension](https://code.visualstudio.com/docs/editor/extension-marketplace#_disable-an-extension) per workspace in Visual Studio Code.
