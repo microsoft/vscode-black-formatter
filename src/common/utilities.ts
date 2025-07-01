@@ -3,10 +3,11 @@
 
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { ConfigurationScope, env, LogLevel, Uri, WorkspaceFolder } from 'vscode';
+import { ConfigurationScope, env, LogLevel, Uri, WorkspaceFolder, Disposable, RelativePattern,FileSystemWatcher, workspace } from 'vscode';
 import { Trace, TraceValues } from 'vscode-jsonrpc/node';
 import { getConfiguration, getWorkspaceFolders, isVirtualWorkspace } from './vscodeapi';
 import { DocumentSelector } from 'vscode-languageclient';
+import { traceLog, traceInfo } from './logging';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
     switch (logLevel) {
@@ -81,4 +82,35 @@ export function getDocumentSelector(): DocumentSelector {
 export function getInterpreterFromSetting(namespace: string, scope?: ConfigurationScope) {
     const config = getConfiguration(namespace, scope);
     return config.get<string[]>('interpreter');
+}
+
+export async function createConfigFileWatcher(onConfigChanged: () => Promise<void>): Promise<Disposable> {
+    const disposables: Disposable[] = [];  
+
+    const homeDir = process.env.HOME || process.env.USERPROFILE;
+    if (homeDir) {
+        watchConfigFile(path.join(homeDir, '.black'));
+    }
+
+    async function watchConfigFile(filePath: string): Promise<void> {
+        if (await fs.pathExists(filePath)) {
+            const pattern = new RelativePattern(
+                path.dirname(filePath),
+                path.basename(filePath)
+            );
+            
+            const watcher = workspace.createFileSystemWatcher(pattern);
+            disposables.push(watcher);
+
+            const changeListener = watcher.onDidChange(async () => {
+                traceInfo(`Config file changed: ${filePath}`);
+                await onConfigChanged();
+            });
+            disposables.push(changeListener); 
+        }
+    }
+
+    return {
+        dispose: () => {disposables.forEach((d) => d.dispose()); }
+    };
 }
