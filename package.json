@@ -182,7 +182,7 @@
         ]
     },
     "dependencies": {
-        "@vscode/python-extension": "^1.0.5",
+        "@vscode/python-extension": "^1.0.6",
         "fs-extra": "^11.2.0",
         "vscode-languageclient": "^9.0.1"
     },
@@ -191,7 +191,7 @@
         "@types/fs-extra": "^11.0.4",
         "@types/glob": "^8.1.0",
         "@types/mocha": "^10.0.6",
-        "@types/node": "16.x",
+        "@types/node": "^22.5.0",
         "@types/sinon": "^17.0.3",
         "@types/vscode": "^1.74.0",
         "@typescript-eslint/eslint-plugin": "^7.4.0",
