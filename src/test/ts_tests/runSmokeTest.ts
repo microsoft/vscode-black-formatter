@@ -17,9 +17,11 @@ async function main() {
         const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
         const command = path.relative(EXTENSION_ROOT_DIR, cli);
         console.log('Installing Python extension...');
-        console.log(`Command: ${command} ${[...args, '--install-extension', 'ms-python.python'].join(' ')}`);
+        console.log(
+            `Command: ${command} ${[...args, '--verbose', '--install-extension', 'ms-python.python'].join(' ')}`,
+        );
 
-        const installResult = cp.spawnSync(command, [...args, '--install-extension', 'ms-python.python'], {
+        const installResult = cp.spawnSync(command, [...args, '--verbose', '--install-extension', 'ms-python.python'], {
             encoding: 'utf-8',
             stdio: 'inherit',
         });
