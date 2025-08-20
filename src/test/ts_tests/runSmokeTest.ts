@@ -18,12 +18,12 @@ async function main() {
         const command = path.relative(EXTENSION_ROOT_DIR, cli);
         console.log('Installing Python extension...');
         console.log(`Command: ${command} ${[...args, '--install-extension', 'ms-python.python'].join(' ')}`);
-        
+
         const installResult = cp.spawnSync(command, [...args, '--install-extension', 'ms-python.python'], {
             encoding: 'utf-8',
             stdio: 'inherit',
         });
-        
+
         console.log(`Python extension installation exit code: ${installResult.status}`);
         if (installResult.error) {
             console.error('Python extension installation error:', installResult.error);
@@ -34,9 +34,9 @@ async function main() {
         if (installResult.stdout) {
             console.log('Python extension installation stdout:', installResult.stdout);
         }
-        
+
         console.log('Waiting for extension registration...');
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds for extension registration
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds for extension registration
 
         const extensionDevelopmentPath = EXTENSION_ROOT_DIR;
         const extensionTestsPath = path.resolve(__dirname, './index');
