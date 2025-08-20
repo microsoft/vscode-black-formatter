@@ -187,6 +187,7 @@
         "vscode-languageclient": "^9.0.1"
     },
     "devDependencies": {
+        "@eslint/js": "^9.33.0",
         "@types/chai": "^4.3.14",
         "@types/fs-extra": "^11.0.4",
         "@types/glob": "^9.0.0",
@@ -207,6 +208,7 @@
         "ts-loader": "^9.5.2",
         "typemoq": "^2.1.0",
         "typescript": "^5.9.2",
+        "typescript-eslint": "^8.40.0",
         "webpack": "^5.91.0",
         "webpack-cli": "^5.1.4"
     }

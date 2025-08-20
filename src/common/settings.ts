@@ -1,13 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { ConfigurationChangeEvent, ConfigurationScope, Uri, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
+import { ConfigurationChangeEvent, Uri, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
 import { getInterpreterDetails } from './python';
 import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
 import { traceError, traceInfo, traceLog, traceWarn } from './logging';
 import { EXTENSION_ID } from './constants';
 import { TransportKind } from 'vscode-languageclient/node';
-import { trace } from 'console';
 import { getInterpreterFromSetting } from './utilities';
 
 export interface ISettings {

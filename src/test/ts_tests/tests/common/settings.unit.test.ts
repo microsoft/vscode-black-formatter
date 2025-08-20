@@ -18,7 +18,7 @@ suite('Settings Tests', () => {
         let getWorkspaceFoldersStub: sinon.SinonStub;
         let configMock: TypeMoq.IMock<WorkspaceConfiguration>;
         let pythonConfigMock: TypeMoq.IMock<WorkspaceConfiguration>;
-        let workspace1: WorkspaceFolder = {
+        const workspace1: WorkspaceFolder = {
             uri: Uri.file(path.join(EXTENSION_ROOT_DIR, 'src', 'test', 'testWorkspace', 'workspace1')),
             name: 'workspace1',
             index: 0,
@@ -29,7 +29,7 @@ suite('Settings Tests', () => {
             getInterpreterDetailsStub = sinon.stub(python, 'getInterpreterDetails');
             configMock = TypeMoq.Mock.ofType<WorkspaceConfiguration>();
             pythonConfigMock = TypeMoq.Mock.ofType<WorkspaceConfiguration>();
-            getConfigurationStub.callsFake((namespace: string, uri: Uri) => {
+            getConfigurationStub.callsFake((namespace: string) => {
                 if (namespace.startsWith('black-formatter')) {
                     return configMock.object;
                 }
