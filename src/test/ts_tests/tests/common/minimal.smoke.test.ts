@@ -28,18 +28,46 @@ suite('Smoke Tests', function () {
     });
 
     async function ensurePythonExt(activate?: boolean): Promise<void> {
+        console.log('Checking for Python extension...');
+        console.log('Available extensions:', vscode.extensions.all.map(ext => ext.id));
+        
         const pythonExt = vscode.extensions.getExtension('ms-python.python');
+        console.log('Python extension found:', !!pythonExt);
+        console.log('Python extension details:', pythonExt ? {
+            id: pythonExt.id,
+            isActive: pythonExt.isActive,
+            packageJSON: {
+                name: pythonExt.packageJSON?.name,
+                version: pythonExt.packageJSON?.version
+            }
+        } : 'Not found');
+        
         assert.ok(pythonExt, 'Python Extension not found');
         if (activate) {
+            console.log('Activating Python extension...');
             await pythonExt?.activate();
+            console.log('Python extension activated:', pythonExt?.isActive);
         }
     }
 
     async function ensureBlackExt(activate?: boolean): Promise<void> {
+        console.log('Checking for Black Formatter extension...');
         const extension = vscode.extensions.getExtension('ms-python.black-formatter');
+        console.log('Black Formatter extension found:', !!extension);
+        console.log('Black Formatter extension details:', extension ? {
+            id: extension.id,
+            isActive: extension.isActive,
+            packageJSON: {
+                name: extension.packageJSON?.name,
+                version: extension.packageJSON?.version
+            }
+        } : 'Not found');
+        
         assert.ok(extension, 'Black Formatter Extension not found');
         if (activate) {
+            console.log('Activating Black Formatter extension...');
             await extension?.activate();
+            console.log('Black Formatter extension activated:', extension?.isActive);
         }
     }
 
