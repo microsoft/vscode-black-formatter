@@ -15,13 +15,13 @@ export function run(): Promise<void> {
     return new Promise((c, e) => {
         let files = [];
         if (env.SMOKE_TESTS) {
-            files = glob.globSync('**/**.smoke.test.js', { cwd: testsRoot });
+            files = glob.sync('**/**.smoke.test.js', { cwd: testsRoot });
         } else {
-            files = glob.globSync('**/**.unit.test.js', { cwd: testsRoot });
+            files = glob.sync('**/**.unit.test.js', { cwd: testsRoot });
         }
 
         // Add files to the test suite
-        files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
+        files.forEach((f: string) => mocha.addFile(path.resolve(testsRoot, f)));
 
         try {
             // Run the mocha test

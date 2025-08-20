@@ -29,7 +29,7 @@
         "black"
     ],
     "engines": {
-        "vscode": "^1.82.0"
+        "vscode": "^1.95.0"
     },
     "categories": [
         "Programming Languages",
@@ -182,32 +182,32 @@
         ]
     },
     "dependencies": {
-        "@vscode/python-extension": "^1.0.5",
+        "@vscode/python-extension": "^1.0.6",
         "fs-extra": "^11.2.0",
         "vscode-languageclient": "^9.0.1"
     },
     "devDependencies": {
-        "@types/chai": "^4.3.14",
+        "@types/chai": "^4.1.2",
         "@types/fs-extra": "^11.0.4",
-        "@types/glob": "^8.1.0",
-        "@types/mocha": "^10.0.6",
-        "@types/node": "16.x",
+        "@types/glob": "^7.2.0",
+        "@types/mocha": "^9.1.0",
+        "@types/node": "^22.5.0",
         "@types/sinon": "^17.0.3",
-        "@types/vscode": "^1.74.0",
-        "@typescript-eslint/eslint-plugin": "^7.4.0",
-        "@typescript-eslint/parser": "^7.4.0",
-        "@vscode/test-electron": "^2.3.9",
-        "@vscode/vsce": "^2.24.0",
-        "chai": "^4.3.10",
-        "eslint": "^8.57.0",
-        "glob": "^10.3.12",
-        "mocha": "^10.4.0",
-        "prettier": "^3.2.5",
-        "sinon": "^17.0.1",
-        "ts-loader": "^9.5.1",
+        "@types/vscode": "^1.95.0",
+        "@typescript-eslint/eslint-plugin": "^6.21.0",
+        "@typescript-eslint/parser": "^6.21.0",
+        "@vscode/test-electron": "^2.3.8",
+        "@vscode/vsce": "^2.27.0",
+        "chai": "^4.1.2",
+        "eslint": "^8.57.1",
+        "glob": "^7.2.0",
+        "mocha": "^11.1.0",
+        "prettier": "^2.0.2",
+        "sinon": "^18.0.0",
+        "ts-loader": "^9.2.8",
         "typemoq": "^2.1.0",
-        "typescript": "^5.4.3",
-        "webpack": "^5.91.0",
-        "webpack-cli": "^5.1.4"
+        "typescript": "~5.2",
+        "webpack": "^5.76.0",
+        "webpack-cli": "^4.9.2"
     }
 }
