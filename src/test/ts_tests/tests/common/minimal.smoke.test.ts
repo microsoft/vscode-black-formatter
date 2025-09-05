@@ -84,9 +84,41 @@ suite('Smoke Tests', function () {
         }
     }
 
+    async function ensurePythonEnvsExt(activate?: boolean): Promise<void> {
+        console.log('Checking for Python Environments extension...');
+        console.log(
+            'Available extensions:',
+            vscode.extensions.all.map((ext) => ext.id),
+        );
+
+        const pythonEnvsExt = vscode.extensions.getExtension('ms-python.vscode-python-envs');
+        console.log('Python Environments extension found:', !!pythonEnvsExt);
+        console.log(
+            'Python Environments extension details:',
+            pythonEnvsExt
+                ? {
+                      id: pythonEnvsExt.id,
+                      isActive: pythonEnvsExt.isActive,
+                      packageJSON: {
+                          name: pythonEnvsExt.packageJSON?.name,
+                          version: pythonEnvsExt.packageJSON?.version,
+                      },
+                  }
+                : 'Not found',
+        );
+
+        assert.ok(pythonEnvsExt, 'Python Environments Extension not found');
+        if (activate) {
+            console.log('Activating Python Environments extension...');
+            await pythonEnvsExt?.activate();
+            console.log('Python Environments extension activated:', pythonEnvsExt?.isActive);
+        }
+    }
+
     test('Ensure Black Formatter Extension loads', async () => {
         await vscode.workspace.openTextDocument(path.join(TEST_PROJECT_DIR, 'myscript.py'));
 
+        await ensurePythonEnvsExt(true);
         await ensurePythonExt(true);
         await ensureBlackExt(false);
 
@@ -103,6 +135,7 @@ suite('Smoke Tests', function () {
 
     test('Ensure Black Formatter formats a file on save', async () => {
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+        await ensurePythonEnvsExt(true);
         await ensurePythonExt(true);
         const scriptPath = path.join(TEST_PROJECT_DIR, 'myscript.py');
 
