@@ -15,26 +15,34 @@ async function main() {
         const vscodeExecutablePath = await downloadAndUnzipVSCode('stable');
 
         const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
-        const command = path.relative(EXTENSION_ROOT_DIR, cli);
-        console.log('Installing Python extension...');
-        console.log(
-            `Command: ${command} ${[...args, '--verbose', '--install-extension', 'ms-python.python'].join(' ')}`,
-        );
+        const isWin = process.platform === 'win32';
+        const command = cli;
+        console.log('Resolved VSCode CLI absolute path:', command);
+        console.log('CLI args:', args);
+        const fullArgs = [...args, '--verbose', '--install-extension', 'ms-python.python'];
+        console.log('Full command to execute:', `${command} ${fullArgs.join(' ')}`);
 
-        const installResult = cp.spawnSync(command, [...args, '--verbose', '--install-extension', 'ms-python.python'], {
+        const spawnOptions: cp.SpawnSyncOptions = {
             encoding: 'utf-8',
             stdio: 'inherit',
-        });
+            ...(isWin ? { shell: true } : {}),
+        };
 
-        console.log(`Python extension installation exit code: ${installResult.status}`);
-        if (installResult.error) {
-            console.error('Python extension installation error:', installResult.error);
-        }
-        if (installResult.stderr) {
-            console.error('Python extension installation stderr:', installResult.stderr);
-        }
-        if (installResult.stdout) {
-            console.log('Python extension installation stdout:', installResult.stdout);
+        try {
+            const installResult = cp.spawnSync(command, fullArgs, spawnOptions);
+            console.log('spawnSync result:', installResult);
+            console.log(`Python extension installation exit code: ${installResult.status}`);
+            if (installResult.error) {
+                console.error('Python extension installation error:', installResult.error);
+            }
+            if (installResult.stderr) {
+                console.error('Python extension installation stderr:', installResult.stderr);
+            }
+            if (installResult.stdout) {
+                console.log('Python extension installation stdout:', installResult.stdout);
+            }
+        } catch (e) {
+            console.error('Exception thrown during spawnSync:', e);
         }
 
         console.log('Waiting for extension registration...');
