@@ -8,9 +8,7 @@ import { registerLogger, traceError, traceLog, traceVerbose } from './common/log
 import { initializePython, onDidChangePythonInterpreter } from './common/python';
 import {
     checkIfConfigurationChanged,
-    getExtensionSettings,
     getWorkspaceSettings,
-    ISettings,
     logDefaultFormatter,
     logLegacySettings,
 } from './common/settings';
@@ -28,8 +26,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const serverInfo = loadServerDefaults();
     const serverName = `${serverInfo.name} Formatter`;
     const serverId = `${serverInfo.module}-formatter`;
-
-    const settings: ISettings[] = await getExtensionSettings(serverId);
 
     // Setup logging
     const outputChannel = createOutputChannel(serverName);

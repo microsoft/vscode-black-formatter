@@ -15,11 +15,29 @@ async function main() {
         const vscodeExecutablePath = await downloadAndUnzipVSCode('stable');
 
         const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
-        const command = path.relative(EXTENSION_ROOT_DIR, cli);
-        cp.spawnSync(command, [...args, '--install-extension', 'ms-python.python'], {
+        const isWin = process.platform === 'win32';
+        const command = cli;
+        const fullArgs = [...args, '--verbose', '--install-extension', 'ms-python.python'];
+        console.log('Full command to execute:', `${command} ${fullArgs.join(' ')}`);
+        const spawnOptions: cp.SpawnSyncOptions = {
             encoding: 'utf-8',
             stdio: 'inherit',
-        });
+            ...(isWin ? { shell: true } : {}),
+        };
+
+        try {
+            const installResult = cp.spawnSync(command, fullArgs, spawnOptions);
+            console.log('spawnSync result:', installResult);
+            console.log(`Python extension installation exit code: ${installResult.status}`);
+            if (installResult.error) {
+                console.error('Python extension installation error:', installResult.error);
+            }
+            if (installResult.status !== 0) {
+                console.error(`Python extension installation failed with exit code: ${installResult.status}`);
+            }
+        } catch (e) {
+            console.error('Exception thrown during spawnSync:', e);
+        }
 
         const extensionDevelopmentPath = EXTENSION_ROOT_DIR;
         const extensionTestsPath = path.resolve(__dirname, './index');

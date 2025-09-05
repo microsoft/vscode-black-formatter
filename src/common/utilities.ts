@@ -3,8 +3,8 @@
 
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { ConfigurationScope, env, LogLevel, Uri, WorkspaceFolder } from 'vscode';
-import { Trace, TraceValues } from 'vscode-jsonrpc/node';
+import { ConfigurationScope, LogLevel, Uri, WorkspaceFolder } from 'vscode';
+import { Trace } from 'vscode-jsonrpc/node';
 import { getConfiguration, getWorkspaceFolders, isVirtualWorkspace } from './vscodeapi';
 import { DocumentSelector } from 'vscode-languageclient';
 

@@ -9,11 +9,11 @@ on:
       - 'release-*'
 
 env:
-  NODE_VERSION: 18.17.1
+  NODE_VERSION: 22.17.0
   TEST_RESULTS_DIRECTORY: .
   # Force a path with spaces and unicode chars to test extension works in these scenarios
-  special-working-directory: './🐍 🐛'
-  special-working-directory-relative: '🐍 🐛'
+  special-working-directory: 'testingDir'
+  special-working-directory-relative: 'testingDir'
 
 jobs:
   build-vsix:

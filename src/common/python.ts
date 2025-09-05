@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-/* eslint-disable @typescript-eslint/naming-convention */
 import { commands, Disposable, Event, EventEmitter, Uri } from 'vscode';
 import { traceError, traceLog } from './logging';
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
@@ -102,7 +101,7 @@ export async function getDebuggerPath(): Promise<string | undefined> {
     return api?.debug.getDebuggerPackagePath();
 }
 
-export async function runPythonExtensionCommand(command: string, ...rest: any[]) {
+export async function runPythonExtensionCommand(command: string, ...rest: unknown[]) {
     await getPythonExtensionAPI();
     return await commands.executeCommand(command, ...rest);
 }
