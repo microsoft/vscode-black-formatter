@@ -17,11 +17,8 @@ async function main() {
         const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
         const isWin = process.platform === 'win32';
         const command = cli;
-        console.log('Resolved VSCode CLI absolute path:', command);
-        console.log('CLI args:', args);
         const fullArgs = [...args, '--verbose', '--install-extension', 'ms-python.python'];
         console.log('Full command to execute:', `${command} ${fullArgs.join(' ')}`);
-
         const spawnOptions: cp.SpawnSyncOptions = {
             encoding: 'utf-8',
             stdio: 'inherit',
@@ -35,26 +32,15 @@ async function main() {
             if (installResult.error) {
                 console.error('Python extension installation error:', installResult.error);
             }
-            if (installResult.stderr) {
-                console.error('Python extension installation stderr:', installResult.stderr);
-            }
-            if (installResult.stdout) {
-                console.log('Python extension installation stdout:', installResult.stdout);
+            if (installResult.status !== 0) {
+                console.error(`Python extension installation failed with exit code: ${installResult.status}`);
             }
         } catch (e) {
             console.error('Exception thrown during spawnSync:', e);
         }
 
-        console.log('Waiting for extension registration...');
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds for extension registration
-
         const extensionDevelopmentPath = EXTENSION_ROOT_DIR;
         const extensionTestsPath = path.resolve(__dirname, './index');
-
-        console.log('Starting test run...');
-        console.log('Extension development path:', extensionDevelopmentPath);
-        console.log('Extension tests path:', extensionTestsPath);
-        console.log('Test project directory:', TEST_PROJECT_DIR);
 
         await runTests({
             extensionDevelopmentPath,
