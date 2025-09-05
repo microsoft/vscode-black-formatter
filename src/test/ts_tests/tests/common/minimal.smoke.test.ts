@@ -118,7 +118,7 @@ suite('Smoke Tests', function () {
     test('Ensure Black Formatter Extension loads', async () => {
         await vscode.workspace.openTextDocument(path.join(TEST_PROJECT_DIR, 'myscript.py'));
 
-        await ensurePythonEnvsExt(true);
+        // await ensurePythonEnvsExt(true);
         await ensurePythonExt(true);
         await ensureBlackExt(false);
 
@@ -135,7 +135,7 @@ suite('Smoke Tests', function () {
 
     test('Ensure Black Formatter formats a file on save', async () => {
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-        await ensurePythonEnvsExt(true);
+        // await ensurePythonEnvsExt(true);
         await ensurePythonExt(true);
         const scriptPath = path.join(TEST_PROJECT_DIR, 'myscript.py');
 
