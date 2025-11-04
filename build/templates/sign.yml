@@ -109,26 +109,26 @@ steps:
         }
 
   - ${{ if eq(parameters.verifySignature, true) }}:
-    - task: PowerShell@2
-      displayName: Verify VSIX signature
-      inputs:
-        targetType: inline
-        script: |
-          $wd = "${{ parameters.workingDirectory }}"
-          $vsix       = Join-Path $wd "${{ parameters.vsixName }}"
-          $manifest   = Join-Path $wd "${{ parameters.manifestName }}"
-          $signature  = Join-Path $wd "${{ parameters.signatureName }}"
-          Write-Host "Verifying signature:"
-          Write-Host "  packagePath  : $vsix"
-          Write-Host "  manifestPath : $manifest"
-          Write-Host "  signaturePath: $signature"
-          if (!(Test-Path $vsix)) { Write-Error "Missing VSIX: $vsix"; exit 1 }
-          if (!(Test-Path $manifest)) { Write-Error "Missing manifest: $manifest"; exit 1 }
-          if (!(Test-Path $signature)) { Write-Error "Missing signature file: $signature"; exit 1 }
-          npx vsce verify-signature --packagePath "$vsix" --manifestPath "$manifest" --signaturePath "$signature"
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "vsce verify-signature failed with exit code $LASTEXITCODE"
-            exit $LASTEXITCODE
-          } else {
-            Write-Host "vsce verify-signature succeeded ✅"
-          }
+      - task: PowerShell@2
+        displayName: Verify VSIX signature
+        inputs:
+          targetType: inline
+          script: |
+            $wd = "${{ parameters.workingDirectory }}"
+            $vsix       = Join-Path $wd "${{ parameters.vsixName }}"
+            $manifest   = Join-Path $wd "${{ parameters.manifestName }}"
+            $signature  = Join-Path $wd "${{ parameters.signatureName }}"
+            Write-Host "Verifying signature:"
+            Write-Host "  packagePath  : $vsix"
+            Write-Host "  manifestPath : $manifest"
+            Write-Host "  signaturePath: $signature"
+            if (!(Test-Path $vsix)) { Write-Error "Missing VSIX: $vsix"; exit 1 }
+            if (!(Test-Path $manifest)) { Write-Error "Missing manifest: $manifest"; exit 1 }
+            if (!(Test-Path $signature)) { Write-Error "Missing signature file: $signature"; exit 1 }
+            npx vsce verify-signature --packagePath "$vsix" --manifestPath "$manifest" --signaturePath "$signature"
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "vsce verify-signature failed with exit code $LASTEXITCODE"
+              exit $LASTEXITCODE
+            } else {
+              Write-Host "vsce verify-signature succeeded ✅"
+            }

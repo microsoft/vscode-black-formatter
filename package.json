@@ -56,6 +56,7 @@
         "compile": "webpack",
         "compile-tests": "tsc -p . --outDir out",
         "format-check": "prettier --check src/**/*.ts build/**/*.yml .github/**/*.yml",
+        "fix-format": "prettier --write src/**/*.ts build/**/*.yml .github/**/*.yml",
         "lint": "eslint src --ext ts",
         "package": "webpack --mode production --devtool hidden-source-map",
         "pretest": "npm run compile-tests && npm run compile && npm run lint",

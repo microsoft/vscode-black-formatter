@@ -6,7 +6,7 @@
 # steps:
 # - template: build/templates/publish.yml@self
 #   parameters:
-#     azureSubscription: 
+#     azureSubscription:
 #     artifactName: drop
 #     vsixName: black-formatter.vsix
 #     manifestName: extension.manifest

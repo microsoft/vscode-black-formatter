@@ -15,7 +15,7 @@ variables:
     value: VSCode-black-formatter
   - name: VsixName
     value: black-formatter.vsix
-  
+
 parameters:
   - name: publishExtension
     displayName: 🚀 Publish Extension
@@ -30,7 +30,7 @@ extends:
       codeSignValidation:
         enabled: true
       sbom:
-        enabled: false  # Disable global SBOM generation; we'll enable selectively per artifact output
+        enabled: false # Disable global SBOM generation; we'll enable selectively per artifact output
     pool:
       name: AzurePipelines-EO
       os: windows
@@ -107,13 +107,12 @@ extends:
                   verifySignature: true
 
               - ${{ if eq(parameters.publishExtension, true) }}:
-                - template: build/templates/publish.yml@self
-                  parameters:
-                    azureSubscription: PylancePublishPipelineSecureConnectionWithManagedIdentity
-                    vsixName: $(VsixName)
-                    manifestName: extension.manifest
-                    signatureName: extension.signature.p7s
-                    publishFolder: drop
-                    preRelease: false
-                    noVerify: true
-
+                  - template: build/templates/publish.yml@self
+                    parameters:
+                      azureSubscription: PylancePublishPipelineSecureConnectionWithManagedIdentity
+                      vsixName: $(VsixName)
+                      manifestName: extension.manifest
+                      signatureName: extension.signature.p7s
+                      publishFolder: drop
+                      preRelease: false
+                      noVerify: true

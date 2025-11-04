@@ -35,7 +35,7 @@ extends:
       codeSignValidation:
         enabled: true
       sbom:
-        enabled: false  # Disable global SBOM generation; we'll enable selectively per artifact output
+        enabled: false # Disable global SBOM generation; we'll enable selectively per artifact output
     pool:
       name: AzurePipelines-EO
       os: windows
@@ -99,7 +99,7 @@ extends:
                 displayName: Build VSIX
 
               - powershell: New-Item -ItemType Directory -Path "$(Build.StagingDirectory)\drop" -Force | Out-Null; Copy-Item "$(Build.SourcesDirectory)\$(VsixName)" "$(Build.StagingDirectory)\drop\$(VsixName)" -Force; if (!(Test-Path "$(Build.StagingDirectory)\drop\$(VsixName)")) { Write-Error 'VSIX copy failed'; exit 1 }; Get-Item "$(Build.StagingDirectory)\drop\$(VsixName)" | Format-Table Name,Length,LastWriteTime -AutoSize
-                displayName: Copy VSIX into drop 
+                displayName: Copy VSIX into drop
 
               - script: npx vsce generate-manifest -i "$(Build.StagingDirectory)\drop\$(VsixName)" -o "$(Build.StagingDirectory)\drop\extension.manifest"
                 displayName: Generate extension manifest
@@ -112,13 +112,12 @@ extends:
                   verifySignature: true
 
               - ${{ if eq(parameters.publishExtension, true) }}:
-                - template: build/templates/publish.yml@self
-                  parameters:
-                    azureSubscription: PylancePublishPipelineSecureConnectionWithManagedIdentity
-                    vsixName: $(VsixName)
-                    manifestName: extension.manifest
-                    signatureName: extension.signature.p7s
-                    publishFolder: drop
-                    preRelease: true
-                    noVerify: true
-
+                  - template: build/templates/publish.yml@self
+                    parameters:
+                      azureSubscription: PylancePublishPipelineSecureConnectionWithManagedIdentity
+                      vsixName: $(VsixName)
+                      manifestName: extension.manifest
+                      signatureName: extension.signature.p7s
+                      publishFolder: drop
+                      preRelease: true
+                      noVerify: true
