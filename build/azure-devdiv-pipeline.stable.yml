@@ -12,9 +12,9 @@ resources:
       ref: refs/tags/release
 variables:
   - name: TeamName
-    value: VSCode-autopep8
+    value: VSCode-black-formatter
   - name: VsixName
-    value: autopep8.vsix
+    value: black-formatter.vsix
   
 parameters:
   - name: publishExtension
@@ -89,10 +89,10 @@ extends:
               - script: python ./build/update_ext_version.py --release --for-publishing
                 displayName: Update build number
 
-              - script: npm run package
-                displayName: Build extension
+              - script: npm run vsce-package
+                displayName: Build VSIX
 
-               - powershell: |
+              - powershell: |
                   New-Item -ItemType Directory -Path "$(Build.StagingDirectory)\drop" -Force | Out-Null; Copy-Item "$(Build.SourcesDirectory)\$(VsixName)" "$(Build.StagingDirectory)\drop\$(VsixName)" -Force; if (!(Test-Path "$(Build.StagingDirectory)\drop\$(VsixName)")) { Write-Error 'VSIX copy failed'; exit 1 }; Get-Item "$(Build.StagingDirectory)\drop\$(VsixName)" | Format-Table Name,Length,LastWriteTime -AutoSize
                 displayName: Copy VSIX into drop
 
