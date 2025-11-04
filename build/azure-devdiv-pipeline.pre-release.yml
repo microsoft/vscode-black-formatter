@@ -1,0 +1,124 @@
+# Run on a schedule
+trigger: none
+pr: none
+
+schedules:
+  - cron: '0 10 * * 1-5' # 10AM UTC (2AM PDT) MON-FRI (VS Code Pre-release builds at 9PM PDT)
+    displayName: Nightly Pre-Release Schedule
+    always: false # only run if there are source code changes
+    branches:
+      include:
+        - main
+
+resources:
+  repositories:
+    - repository: MicroBuildTemplate
+      type: git
+      name: 1ESPipelineTemplates/MicroBuildTemplate
+      ref: refs/tags/release
+variables:
+  - name: TeamName
+    value: VSCode-black-formatter
+  - name: VsixName
+    value: black-formatter.vsix
+parameters:
+  - name: publishExtension
+    displayName: 🚀 Publish Extension
+    type: boolean
+    default: false
+
+extends:
+  template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
+  parameters:
+    sdl:
+      sourceAnalysisPool: VSEngSS-MicroBuild2022-1ES
+      codeSignValidation:
+        enabled: true
+      sbom:
+        enabled: false  # Disable global SBOM generation; we'll enable selectively per artifact output
+    pool:
+      name: AzurePipelines-EO
+      os: windows
+
+    customBuildTags:
+      - ES365AIMigrationTooling
+    stages:
+      - stage: Build
+        displayName: Build & Package Extension
+        jobs:
+          - job: Build
+            displayName: Build Job
+            pool:
+              name: VSEngSS-MicroBuild2022-1ES # use windows for codesigning to make things easier https://dev.azure.com/devdiv/DevDiv/_wiki/wikis/DevDiv.wiki/650/MicroBuild-Signing
+              os: windows
+            templateContext:
+              mb:
+                signing:
+                  enabled: true
+                  signType: real
+                  signWithProd: true
+              outputs:
+                - output: pipelineArtifact
+                  displayName: 'Publish Drop Artifact'
+                  targetPath: '$(Build.StagingDirectory)\drop'
+                  artifactName: drop
+                  sbomEnabled: true
+            steps:
+              - task: NodeTool@0
+                inputs:
+                  versionSpec: '22.x'
+                  checkLatest: true
+                displayName: Select Node 20 LTS
+
+              - task: UsePythonVersion@0
+                inputs:
+                  versionSpec: '3.13'
+                  addToPath: true
+                  architecture: 'x64'
+                displayName: Select Python version
+
+              - script: npm ci
+                displayName: Install NPM dependencies
+
+              - script: python -m pip install -U pip
+                displayName: Upgrade pip
+
+              - script: python -m pip install wheel
+                displayName: Install wheel
+
+              - script: python -m pip install nox
+                displayName: Install nox
+
+              - script: python -m nox --session install_bundled_libs
+                displayName: Install Python dependencies
+
+              - script: python ./build/update_ext_version.py --for-publishing
+                displayName: Update build number
+
+              - script: npm run vsce-package
+                displayName: Build VSIX
+
+              - powershell: New-Item -ItemType Directory -Path "$(Build.StagingDirectory)\drop" -Force | Out-Null; Copy-Item "$(Build.SourcesDirectory)\$(VsixName)" "$(Build.StagingDirectory)\drop\$(VsixName)" -Force; if (!(Test-Path "$(Build.StagingDirectory)\drop\$(VsixName)")) { Write-Error 'VSIX copy failed'; exit 1 }; Get-Item "$(Build.StagingDirectory)\drop\$(VsixName)" | Format-Table Name,Length,LastWriteTime -AutoSize
+                displayName: Copy VSIX into drop 
+
+              - script: npx vsce generate-manifest -i "$(Build.StagingDirectory)\drop\$(VsixName)" -o "$(Build.StagingDirectory)\drop\extension.manifest"
+                displayName: Generate extension manifest
+
+              - template: build/templates/sign.yml@self
+                parameters:
+                  vsixName: $(VsixName)
+                  workingDirectory: $(Build.StagingDirectory)\drop
+                  signType: real
+                  verifySignature: true
+
+              - ${{ if eq(parameters.publishExtension, true) }}:
+                - template: build/templates/publish.yml@self
+                  parameters:
+                    azureSubscription: PylancePublishPipelineSecureConnectionWithManagedIdentity
+                    vsixName: $(VsixName)
+                    manifestName: extension.manifest
+                    signatureName: extension.signature.p7s
+                    publishFolder: drop
+                    preRelease: true
+                    noVerify: true
+
