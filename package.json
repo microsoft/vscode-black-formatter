@@ -62,6 +62,7 @@
         "tests": "node ./out/test/ts_tests/runTest.js",
         "smoke-tests": "node ./out/test/ts_tests/runSmokeTest.js",
         "vsce-package": "vsce package -o black-formatter.vsix",
+        "vsce-package-pre": "vsce package -o black-formatter.vsix --pre-release",
         "vscode:prepublish": "npm run package",
         "watch": "webpack --watch",
         "watch-tests": "tsc -p . -w --outDir out"

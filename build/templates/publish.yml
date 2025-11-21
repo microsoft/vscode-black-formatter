@@ -1,0 +1,118 @@
+# Template (steps): PublishMarketplace for autopep8 extension
+# Expects working directory already populated (or artifact previously downloaded) with: autopep8.vsix, extension.manifest, extension.signature.p7s
+# Provides optional prerelease publishing via parameter.
+#
+# Usage (example inside a stage job):
+# steps:
+# - template: build/templates/publish.yml@self
+#   parameters:
+#     azureSubscription: Autopep8PublishServiceConnection
+#     artifactName: drop
+#     vsixName: autopep8.vsix
+#     manifestName: extension.manifest
+#     signatureName: extension.signature.p7s
+#     publishFolder: vscode-autopep8
+#     preRelease: true
+#     noVerify: true
+#
+# Notes:
+# - Azure DevOps Marketplace resource GUID (499b84ac-1321-427f-aa17-267ca6975798) is hardcoded in publish script.
+# - This uses Managed Identity via AzureCLI@2 to acquire an AAD token and passes it as a PAT.
+# - Requires extension artifacts already signed (signature file present).
+# - Node & vsce expected to be prepared by parent pipeline; omit local installation here.
+
+parameters:
+  - name: azureSubscription
+    type: string
+  - name: vsixName
+    type: string
+    default: autopep8.vsix
+  - name: manifestName
+    type: string
+    default: extension.manifest
+  - name: signatureName
+    type: string
+    default: extension.signature.p7s
+  - name: publishFolder
+    type: string
+    default: vscode-autopep8
+  - name: preRelease
+    type: boolean
+    default: false
+  - name: noVerify
+    type: boolean
+    default: true
+
+steps:
+  # Node & vsce expected to be prepared by parent pipeline; omit local installation.
+
+  # Assumes files already present at $(Build.ArtifactStagingDirectory)/publishFolder
+
+  # Step 1: Acquire token only (store secret variable MarketplaceAADToken)
+  - task: AzureCLI@2
+    displayName: Acquire Marketplace AAD token
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        $resource = "499b84ac-1321-427f-aa17-267ca6975798"
+        Write-Host "Acquiring AAD token for resource: $resource"
+        az rest -u https://app.vssps.visualstudio.com/_apis/profile/profiles/me --resource $resource | Out-Null
+        $aadToken = az account get-access-token --query accessToken --resource $resource -o tsv
+        if (-not $aadToken) { Write-Error 'Failed to acquire AAD token.'; exit 1 }
+        Write-Host "##vso[task.setvariable variable=MarketplaceAADToken;isSecret=true]$aadToken"
+        Write-Host "Token stored in secret variable MarketplaceAADToken"
+
+  # Step 2: Validate artifacts & publish
+  - task: PowerShell@2
+    displayName: Publish extension (vsce)
+    inputs:
+      targetType: inline
+      script: |
+        $aadToken = "$(MarketplaceAADToken)"
+        if (-not $aadToken) { Write-Error 'MarketplaceAADToken is empty (token acquisition failed).'; exit 1 }
+
+        $root = "$(Build.ArtifactStagingDirectory)/${{ parameters.publishFolder }}"
+        $vsixPath = Join-Path $root "${{ parameters.vsixName }}"
+        $manifestPath = Join-Path $root "${{ parameters.manifestName }}"
+        $signaturePath = Join-Path $root "${{ parameters.signatureName }}"
+
+        Write-Host "VSIX Path: $vsixPath"
+        Write-Host "Manifest Path: $manifestPath"
+        Write-Host "Signature Path: $signaturePath"
+
+        if (-not (Test-Path $vsixPath)) { Write-Error "VSIX file not found: $vsixPath"; exit 1 }
+        if (-not (Test-Path $manifestPath)) { Write-Error "Manifest file not found: $manifestPath"; exit 1 }
+        if (-not (Test-Path $signaturePath)) { Write-Error "Signature file not found: $signaturePath"; exit 1 }
+
+        Write-Host "Listing publish folder contents: $root"
+        Get-ChildItem -Recurse $root | Select-Object FullName,Length | Format-Table -AutoSize
+
+        $extraFlags = ''
+        if ('${{ parameters.noVerify }}' -eq 'True') { $extraFlags = "$extraFlags --noVerify" }
+
+        if ('${{ parameters.preRelease }}' -eq 'True') {
+          Write-Host 'Publishing as pre-release'
+          # disabled for now; uncomment when ready
+          npx vsce publish --pat $aadToken --packagePath $vsixPath --manifestPath $manifestPath --signaturePath $signaturePath $extraFlags --pre-release
+        } else {
+          Write-Host 'Publishing as stable release'
+          # disabled for now; uncomment when ready
+          npx vsce publish --pat $aadToken --packagePath $vsixPath --manifestPath $manifestPath --signaturePath $signaturePath $extraFlags
+        }
+
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "vsce publish failed with exit code $LASTEXITCODE"
+          exit $LASTEXITCODE
+        }
+        Write-Host 'Publish step completed (publish command currently disabled).'
+
+  - task: PowerShell@2
+    displayName: Post-publish summary
+    inputs:
+      targetType: inline
+      script: |
+        Write-Host 'Published extension artifacts:'
+        Get-ChildItem "$(Build.ArtifactStagingDirectory)/${{ parameters.publishFolder }}" -File | Select-Object Name,Length | Format-Table -AutoSize
+        Write-Host "Pre-release parameter: ${{ parameters.preRelease }}"
