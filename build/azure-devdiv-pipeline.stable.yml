@@ -30,7 +30,7 @@ extends:
       codeSignValidation:
         enabled: true
       sbom:
-        enabled: false  # Disable global SBOM generation; we'll enable selectively per artifact output
+        enabled: false # Disable global SBOM generation; we'll enable selectively per artifact output
     pool:
       name: AzurePipelines-EO
       os: windows
@@ -61,7 +61,7 @@ extends:
             steps:
               - task: NodeTool@0
                 inputs:
-                  versionSpec: '22.x'
+                  versionSpec: '22.17.0'
                   checkLatest: true
                 displayName: Select Node 22 LTS
               - task: UsePythonVersion@0
@@ -98,14 +98,14 @@ extends:
                   workingDirectory: $(Build.StagingDirectory)\drop
                   signType: real
                   verifySignature: true
+                  teamName: $(TeamName)
 
               - ${{ if eq(parameters.publishExtension, true) }}:
-                - template: build/templates/publish.yml@self
-                  parameters:
-                    azureSubscription: PylancePublishPipelineSecureConnectionWithManagedIdentity
-                    vsixName: $(VsixName)
-                    manifestName: extension.manifest
-                    signatureName: extension.signature.p7s
-                    publishFolder: drop
-                    preRelease: false                    
-
+                  - template: build/templates/publish.yml@self
+                    parameters:
+                      azureSubscription: PylancePublishPipelineSecureConnectionWithManagedIdentity
+                      vsixName: $(VsixName)
+                      manifestName: extension.manifest
+                      signatureName: extension.signature.p7s
+                      publishFolder: drop
+                      preRelease: false

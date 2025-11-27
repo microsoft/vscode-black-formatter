@@ -5,12 +5,10 @@
 #     vsixName: black-formatter.vsix
 #     workingDirectory: $(Build.SourcesDirectory)
 #     signType: real
-# Note: vsce CLI is invoked via 'npx vsce' (devDependency), no global install required.
-
 parameters:
   - name: vsixName
     type: string
-    default: black-formatter.vsix
+    default: autopep8.vsix
   - name: manifestName
     type: string
     default: extension.manifest
@@ -29,11 +27,11 @@ parameters:
   - name: prepareRoot
     type: boolean
     default: true
-  # vsceVersion parameter removed; rely on pinned devDependency version via npx.
+  - name: teamName
+    type: string
+    default: VSCode-autopep8
 
 steps:
-  # vsce CLI expected to be installed by parent pipeline; no local install here.
-
   - task: NuGetToolInstaller@1
     displayName: Install NuGet
 
@@ -43,7 +41,7 @@ steps:
       command: restore
       restoreSolution: '$(Build.SourcesDirectory)/packages.config'
       restoreDirectory: '$(Build.SourcesDirectory)/packages'
-  
+
   - powershell: |
       New-Item -ItemType Directory -Path "$(Build.StagingDirectory)\drop" -Force | Out-Null; Copy-Item "$(Build.SourcesDirectory)\$(VsixName)" "$(Build.StagingDirectory)\drop\$(VsixName)" -Force; if (!(Test-Path "$(Build.StagingDirectory)\drop\$(VsixName)")) { Write-Error 'VSIX copy failed'; exit 1 }; Get-Item "$(Build.StagingDirectory)\drop\$(VsixName)" | Format-Table Name,Length,LastWriteTime -AutoSize
     displayName: Copy VSIX into drop
@@ -69,15 +67,30 @@ steps:
         $sig = Join-Path $wd $signatureName
         if (!(Test-Path $sig)) { Write-Warning "Signature placeholder missing (will attempt signing anyway)." }
 
-  # Deprecated prepareRoot step removed: we now sign directly in workingDirectory by overriding BaseOutputDirectory.
+  # ✅ Added MicroBuildSigningPlugin for PME enforcement
+  - task: MicroBuildSigningPlugin@4
+    displayName: Enable MicroBuild Signing
+    inputs:
+      signType: ${{ parameters.signType }} # 'real' or 'test'
+      zipSources: false
+      feedSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
+      ConnectedServiceName: 'MicroBuild Signing Task (DevDiv)'
+      ConnectedPMEServiceName: 6cc74545-d7b9-4050-9dfa-ebefcc8961ea
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      TeamName: ${{ parameters.teamName }}
 
   - task: MSBuild@1
     displayName: Run signing (MSBuild)
     inputs:
       solution: '$(Build.SourcesDirectory)/build/sign.proj'
-      msbuildArguments: '/verbosity:detailed /bl:"${{ parameters.workingDirectory }}\\signing.binlog" /p:SignType=${{ parameters.signType }} /p:BaseOutputDirectory=${{ parameters.workingDirectory }} /p:OutDir=${{ parameters.workingDirectory }} /p:IntermediateOutputPath=${{ parameters.workingDirectory }}\\intermediate'
-
-  # No copy-back needed; signing outputs now land directly in workingDirectory.
+      msbuildArguments: >
+        /verbosity:detailed
+        /bl:"${{ parameters.workingDirectory }}\\signing.binlog"
+        /p:SignType=${{ parameters.signType }}
+        /p:BaseOutputDirectory=${{ parameters.workingDirectory }}
+        /p:OutDir=${{ parameters.workingDirectory }}
+        /p:IntermediateOutputPath=${{ parameters.workingDirectory }}\\intermediate
 
   - task: PowerShell@2
     displayName: Post-sign inspection
@@ -132,7 +145,7 @@ steps:
             if (!(Test-Path $vsix)) { Write-Error "Missing VSIX: $vsix"; exit 1 }
             if (!(Test-Path $manifest)) { Write-Error "Missing manifest: $manifest"; exit 1 }
             if (!(Test-Path $signature)) { Write-Error "Missing signature file: $signature"; exit 1 }
-            npx vsce verify-signature --packagePath "$vsix" --manifestPath "$manifest" --signaturePath "$signature"
+            npx @vscode/vsce verify-signature --packagePath "$vsix" --manifestPath "$manifest" --signaturePath "$signature"
             if ($LASTEXITCODE -ne 0) {
               Write-Error "vsce verify-signature failed with exit code $LASTEXITCODE"
               exit $LASTEXITCODE

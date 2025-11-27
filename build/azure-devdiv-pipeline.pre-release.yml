@@ -69,13 +69,13 @@ extends:
               - task: npmAuthenticate@0
                 inputs:
                   workingFile: .npmrc
-              
+
               - script: npm config get registry
                 displayName: Verify NPM Registry
 
               - task: NodeTool@0
                 inputs:
-                  versionSpec: '22.x'
+                  versionSpec: '22.17.0'
                   checkLatest: true
                 displayName: Select Node 22 LTS
 
@@ -113,6 +113,7 @@ extends:
                   workingDirectory: $(Build.StagingDirectory)\drop
                   signType: real
                   verifySignature: true
+                  teamName: $(TeamName)
 
               - ${{ if eq(parameters.publishExtension, true) }}:
                   - template: build/templates/publish.yml@self
@@ -123,4 +124,3 @@ extends:
                       signatureName: extension.signature.p7s
                       publishFolder: drop
                       preRelease: true
-
