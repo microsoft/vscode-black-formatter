@@ -15,7 +15,7 @@ variables:
     value: VSCode-black-formatter
   - name: VsixName
     value: black-formatter.vsix
-  
+
 parameters:
   - name: publishExtension
     displayName: 🚀 Publish Extension
