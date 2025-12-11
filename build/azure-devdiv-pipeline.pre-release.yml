@@ -89,9 +89,6 @@ extends:
               - script: npm ci
                 displayName: Install NPM dependencies
 
-              - script: python -m pip install -U pip
-                displayName: Upgrade pip
-
               - script: python -m pip install wheel
                 displayName: Install wheel
 
