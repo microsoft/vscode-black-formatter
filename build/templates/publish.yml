@@ -39,9 +39,6 @@ parameters:
   - name: preRelease
     type: boolean
     default: false
-  - name: noVerify
-    type: boolean
-    default: true
 
 steps:
   # Node & vsce expected to be prepared by parent pipeline; omit local installation.
@@ -89,17 +86,14 @@ steps:
         Write-Host "Listing publish folder contents: $root"
         Get-ChildItem -Recurse $root | Select-Object FullName,Length | Format-Table -AutoSize
 
-        $extraFlags = ''
-        if ('${{ parameters.noVerify }}' -eq 'True') { $extraFlags = "$extraFlags --noVerify" }
-
         if ('${{ parameters.preRelease }}' -eq 'True') {
           Write-Host 'Publishing as pre-release'
-          # disabled for now; uncomment when ready
-          npx vsce publish --pat $aadToken --packagePath $vsixPath --manifestPath $manifestPath --signaturePath $signaturePath $extraFlags --pre-release
+          Write-Host "Executing: npx vsce publish --pat *** --packagePath $vsixPath --manifestPath $manifestPath --signaturePath $signaturePath --pre-release"
+          npx vsce publish --pat $aadToken --packagePath $vsixPath --manifestPath $manifestPath --signaturePath $signaturePath --pre-release
         } else {
           Write-Host 'Publishing as stable release'
-          # disabled for now; uncomment when ready
-          npx vsce publish --pat $aadToken --packagePath $vsixPath --manifestPath $manifestPath --signaturePath $signaturePath $extraFlags
+          Write-Host "Executing: npx vsce publish --pat *** --packagePath $vsixPath --manifestPath $manifestPath --signaturePath $signaturePath"
+          npx vsce publish --pat $aadToken --packagePath $vsixPath --manifestPath $manifestPath --signaturePath $signaturePath
         }
 
         if ($LASTEXITCODE -ne 0) {
