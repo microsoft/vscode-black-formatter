@@ -41,6 +41,7 @@ steps:
       command: restore
       restoreSolution: '$(Build.SourcesDirectory)/packages.config'
       restoreDirectory: '$(Build.SourcesDirectory)/packages'
+      nugetConfigPath: '$(Build.SourcesDirectory)/build/NuGet.config'
 
   - powershell: |
       New-Item -ItemType Directory -Path "$(Build.StagingDirectory)\drop" -Force | Out-Null; Copy-Item "$(Build.SourcesDirectory)\$(VsixName)" "$(Build.StagingDirectory)\drop\$(VsixName)" -Force; if (!(Test-Path "$(Build.StagingDirectory)\drop\$(VsixName)")) { Write-Error 'VSIX copy failed'; exit 1 }; Get-Item "$(Build.StagingDirectory)\drop\$(VsixName)" | Format-Table Name,Length,LastWriteTime -AutoSize
