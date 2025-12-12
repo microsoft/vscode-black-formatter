@@ -82,7 +82,7 @@ extends:
               - task: PipAuthenticate@1
                 displayName: 'Pip Authenticate'
                 inputs:
-                  artifactFeeds: 'VS-CoreXtFeeds'
+                  artifactFeeds: 'DevDiv/debugpy'
  
               - task: UsePythonVersion@0
                 inputs:
