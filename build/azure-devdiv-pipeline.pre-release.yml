@@ -79,6 +79,23 @@ extends:
                   checkLatest: true
                 displayName: Select Node 22 LTS
 
+              - task: PipAuthenticate@1
+                displayName: 'Pip Authenticate'
+                inputs:
+                  artifactFeeds: 'VS-CoreXtFeeds'
+ 
+              - task: UsePythonVersion@0
+                inputs:
+                  disableDownloadFromRegistry: true
+                displayName: Select Python version
+
+              - task: UsePythonVersion@0
+                inputs:
+                  versionSpec: '3.13' # note Install Python dependencies step below relies on Python 3.9
+                  addToPath: true
+                  architecture: 'x64'
+                displayName: Select Python version
+
               - script: npm ci
                 displayName: Install NPM dependencies
 
