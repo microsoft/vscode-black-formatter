@@ -39,6 +39,7 @@ steps:
     displayName: Restore signing packages
     inputs:
       command: restore
+      feedsToUse: config
       restoreSolution: '$(Build.SourcesDirectory)/packages.config'
       restoreDirectory: '$(Build.SourcesDirectory)/packages'
       nugetConfigPath: '$(Build.SourcesDirectory)/build/NuGet.config'
