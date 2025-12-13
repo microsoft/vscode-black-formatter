@@ -79,6 +79,11 @@ extends:
                   checkLatest: true
                 displayName: Select Node 22 LTS
 
+              - task: PipAuthenticate@1
+                displayName: 'Pip Authenticate'
+                inputs:
+                  artifactFeeds: 'DevDiv/debugpy'
+
               - task: UsePythonVersion@0
                 inputs:
                   versionSpec: '3.9' # note Install Python dependencies step below relies on Python 3.9
