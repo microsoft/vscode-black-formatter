@@ -59,17 +59,7 @@ extends:
                   artifactName: drop
                   sbomEnabled: true
             steps:
-              - task: NodeTool@0
-                inputs:
-                  versionSpec: '22.17.0'
-                  checkLatest: true
-                displayName: Select Node 22 LTS
-              - task: UsePythonVersion@0
-                inputs:
-                  versionSpec: '3.9' # note Install Python dependencies step below relies on Python 3.9
-                  addToPath: true
-                  architecture: 'x64'
-                displayName: Select Python version
+              - template: build/templates/setup.yml@self
 
               - script: npm ci
                 displayName: Install NPM dependencies
