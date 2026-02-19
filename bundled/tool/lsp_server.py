@@ -66,14 +66,17 @@ import lsp_io
 import lsp_jsonrpc as jsonrpc
 import lsp_utils as utils
 import lsprotocol.types as lsp
-from pygls import server, uris, workspace
+from pygls.lsp.server import LanguageServer
+from pygls import uris
+from pygls.workspace import TextDocument
+from urllib.request import url2pathname
 
 WORKSPACE_SETTINGS = {}
 GLOBAL_SETTINGS = {}
 RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
-LSP_SERVER = server.LanguageServer(
+LSP_SERVER = LanguageServer(
     name="black-server", version="v0.1.0", max_workers=MAX_WORKERS
 )
 
@@ -168,14 +171,14 @@ def is_python(code: str, file_path: str) -> bool:
 
 
 def _formatting_helper(
-    document: workspace.Document, args: Sequence[str] = None
+    document: TextDocument, args: Sequence[str] = None
 ) -> list[lsp.TextEdit] | None:
     args = [] if args is None else args
     extra_args = args + _get_args_by_file_extension(document)
     extra_args += ["--stdin-filename", _get_filename_for_black(document)]
     result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
     if result and result.stdout:
-        if LSP_SERVER.lsp.trace == lsp.TraceValues.Verbose:
+        if LSP_SERVER.protocol.trace == lsp.TraceValue.Verbose:
             log_to_output(
                 f"{document.uri} :\r\n"
                 + ("*" * 100)
@@ -206,14 +209,29 @@ def _formatting_helper(
     return None
 
 
-def _get_filename_for_black(document: workspace.Document) -> str:
+def _get_document_path(document: TextDocument) -> str:
+    """Returns a filesystem-compatible path for the document.
+
+    In pygls 2.0, TextDocument.path for non-file URIs (e.g. vscode-notebook-cell)
+    is a URL-encoded path like '/C:/Users/...' which is not a valid Windows path.
+    This helper converts it to a proper filesystem path.
+    """
+    if uris.to_fs_path(document.uri) is not None:
+        return uris.to_fs_path(document.uri)
+    # For non-file URIs, document.path is from urlparse which gives a URL-style path.
+    # url2pathname converts '/C:/Users/...' to 'C:\Users\...' on Windows.
+    return url2pathname(document.path)
+
+
+def _get_filename_for_black(document: TextDocument) -> str:
     """Gets or generates a file name to use with black when formatting."""
-    if document.uri.startswith("vscode-notebook-cell") and document.path.endswith(
+    doc_path = _get_document_path(document)
+    if document.uri.startswith("vscode-notebook-cell") and doc_path.endswith(
         ".ipynb"
     ):
         # Treat the cell like a python file
-        return document.path[:-6] + ".py"
-    return document.path
+        return doc_path[:-6] + ".py"
+    return doc_path
 
 
 def _get_line_endings(lines: list[str]) -> str:
@@ -226,7 +244,7 @@ def _get_line_endings(lines: list[str]) -> str:
         return None
 
 
-def _match_line_endings(document: workspace.Document, text: str) -> str:
+def _match_line_endings(document: TextDocument, text: str) -> str:
     """Ensures that the edited text line endings matches the document line endings."""
     expected = _get_line_endings(document.source.splitlines(keepends=True))
     actual = _get_line_endings(text.splitlines(keepends=True))
@@ -235,12 +253,12 @@ def _match_line_endings(document: workspace.Document, text: str) -> str:
     return text.replace(actual, expected)
 
 
-def _get_args_by_file_extension(document: workspace.Document) -> List[str]:
+def _get_args_by_file_extension(document: TextDocument) -> List[str]:
     """Returns arguments used by black based on file extensions."""
     if document.uri.startswith("vscode-notebook-cell"):
         return []
 
-    p = document.path.lower()
+    p = _get_document_path(document).lower()
     if p.endswith(".py"):
         return []
     elif p.endswith(".pyi"):
@@ -390,9 +408,9 @@ def _get_settings_by_path(file_path: pathlib.Path):
     return setting_values[0]
 
 
-def _get_document_key(document: workspace.Document):
+def _get_document_key(document: TextDocument):
     if WORKSPACE_SETTINGS:
-        document_workspace = pathlib.Path(document.path)
+        document_workspace = pathlib.Path(_get_document_path(document))
         workspaces = {s["workspaceFS"] for s in WORKSPACE_SETTINGS.values()}
 
         # Find workspace settings for the given file.
@@ -405,14 +423,14 @@ def _get_document_key(document: workspace.Document):
     return None
 
 
-def _get_settings_by_document(document: workspace.Document | None):
+def _get_settings_by_document(document: TextDocument | None):
     if document is None or document.path is None:
         return list(WORKSPACE_SETTINGS.values())[0]
 
     key = _get_document_key(document)
     if key is None:
         # This is either a non-workspace file or there is no workspace.
-        key = utils.normalize_path(pathlib.Path(document.path).parent)
+        key = utils.normalize_path(pathlib.Path(_get_document_path(document)).parent)
         return {
             "cwd": key,
             "workspaceFS": key,
@@ -426,14 +444,14 @@ def _get_settings_by_document(document: workspace.Document | None):
 # *****************************************************
 # Internal execution APIs.
 # *****************************************************
-def get_cwd(settings: Dict[str, Any], document: Optional[workspace.Document]) -> str:
+def get_cwd(settings: Dict[str, Any], document: Optional[TextDocument]) -> str:
     """Returns cwd for the given settings and document."""
     if settings["cwd"] == "${workspaceFolder}":
         return settings["workspaceFS"]
 
     if settings["cwd"] == "${fileDirname}":
         if document is not None:
-            return os.fspath(pathlib.Path(document.path).parent)
+            return os.fspath(pathlib.Path(_get_document_path(document)).parent)
         return settings["workspaceFS"]
 
     return settings["cwd"]
@@ -441,7 +459,7 @@ def get_cwd(settings: Dict[str, Any], document: Optional[workspace.Document]) ->
 
 # pylint: disable=too-many-branches
 def _run_tool_on_document(
-    document: workspace.Document,
+    document: TextDocument,
     use_stdin: bool = False,
     extra_args: Sequence[str] = [],
 ) -> utils.RunResult | None:
@@ -450,13 +468,13 @@ def _run_tool_on_document(
     if use_stdin is true then contents of the document is passed to the
     tool via stdin.
     """
-    if utils.is_stdlib_file(document.path):
-        log_warning(f"Skipping standard library file: {document.path}")
+    if utils.is_stdlib_file(_get_document_path(document)):
+        log_warning(f"Skipping standard library file: {_get_document_path(document)}")
         return None
 
-    if not is_python(document.source, document.path):
+    if not is_python(document.source, _get_document_path(document)):
         log_warning(
-            f"Skipping non python code or code with syntax errors: {document.path}"
+            f"Skipping non python code or code with syntax errors: {_get_document_path(document)}"
         )
         return None
 
@@ -610,7 +628,7 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         if result.stderr:
             log_to_output(result.stderr)
 
-    if LSP_SERVER.lsp.trace == lsp.TraceValues.Verbose:
+    if LSP_SERVER.protocol.trace == lsp.TraceValue.Verbose:
         log_to_output(f"\r\n{result.stdout}\r\n")
 
     return result
@@ -634,28 +652,28 @@ def log_to_output(
     message: str, msg_type: lsp.MessageType = lsp.MessageType.Log
 ) -> None:
     """Logs messages to Output > Black Formatter channel only."""
-    LSP_SERVER.show_message_log(message, msg_type)
+    LSP_SERVER.window_log_message(lsp.LogMessageParams(type=msg_type, message=message))
 
 
 def log_error(message: str) -> None:
     """Logs messages with notification on error."""
-    LSP_SERVER.show_message_log(message, lsp.MessageType.Error)
+    LSP_SERVER.window_log_message(lsp.LogMessageParams(type=lsp.MessageType.Error, message=message))
     if os.getenv("LS_SHOW_NOTIFICATION", "off") in ["onError", "onWarning", "always"]:
-        LSP_SERVER.show_message(message, lsp.MessageType.Error)
+        LSP_SERVER.window_show_message(lsp.ShowMessageParams(type=lsp.MessageType.Error, message=message))
 
 
 def log_warning(message: str) -> None:
     """Logs messages with notification on warning."""
-    LSP_SERVER.show_message_log(message, lsp.MessageType.Warning)
+    LSP_SERVER.window_log_message(lsp.LogMessageParams(type=lsp.MessageType.Warning, message=message))
     if os.getenv("LS_SHOW_NOTIFICATION", "off") in ["onWarning", "always"]:
-        LSP_SERVER.show_message(message, lsp.MessageType.Warning)
+        LSP_SERVER.window_show_message(lsp.ShowMessageParams(type=lsp.MessageType.Warning, message=message))
 
 
 def log_always(message: str) -> None:
     """Logs messages with notification."""
-    LSP_SERVER.show_message_log(message, lsp.MessageType.Info)
+    LSP_SERVER.window_log_message(lsp.LogMessageParams(type=lsp.MessageType.Info, message=message))
     if os.getenv("LS_SHOW_NOTIFICATION", "off") in ["always"]:
-        LSP_SERVER.show_message(message, lsp.MessageType.Info)
+        LSP_SERVER.window_show_message(lsp.ShowMessageParams(type=lsp.MessageType.Info, message=message))
 
 
 # *****************************************************

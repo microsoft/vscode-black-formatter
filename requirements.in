@@ -5,6 +5,6 @@
 # Run following command:
 # uv pip compile --generate-hashes --upgrade -o ./requirements.txt ./requirements.in
 
-pygls
+pygls>=2.0
 packaging
 black
