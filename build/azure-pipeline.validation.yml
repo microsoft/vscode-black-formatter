@@ -1,8 +1,21 @@
-name: Publish Release
+# PR and Push validation pipeline
+
 trigger:
   branches:
     include:
-      - refs/tags/*
+      - main
+      - release
+      - release/*
+      - release-*
+
+pr:
+  branches:
+    include:
+      - main
+      - release
+      - release/*
+      - release-*
+  drafts: false
 
 resources:
   repositories:
@@ -24,11 +37,6 @@ variables:
     value: 'https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/'
 
 parameters:
-  - name: publishExtension
-    displayName: 🚀 Publish Extension
-    type: boolean
-    default: false
-
   - name: buildSteps
     type: stepList
     default:
@@ -47,9 +55,6 @@ parameters:
       - script: python -m nox --session install_bundled_libs
         displayName: Install Python dependencies
 
-      - script: python ./build/update_ext_version.py --release --for-publishing
-        displayName: Update build number
-
       - script: npm run package
         displayName: Build extension
 
@@ -57,11 +62,7 @@ extends:
   template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
   parameters:
     sdl:
-      sourceAnalysisPool: VSEngSS-MicroBuild2022-1ES
-      codeSignValidation:
-        enabled: true
-      sbom:
-        enabled: false # Disable global SBOM generation; we'll enable selectively per artifact output
+      enabled: false
     pool:
       name: AzurePipelines-EO
       os: windows
@@ -77,18 +78,4 @@ extends:
               buildSteps: ${{ parameters.buildSteps }}
               isPreRelease: false
               standardizedVersioning: true
-              customNPMRegistry: $(AZURE_ARTIFACTS_FEED)
-
-      - stage: Publish
-        displayName: Publish Extension
-        dependsOn: Build
-        jobs:
-          - template: azure-pipelines/extension/templates/jobs/publish-extension.yml@templates
-            parameters:
-              publishExtension: ${{ parameters.publishExtension }}
-              preRelease: false
-              teamName: $(TeamName)
-              ghCreateTag: true
-              ghCreateRelease: true
-              ghReleaseAddChangeLog: true
               customNPMRegistry: $(AZURE_ARTIFACTS_FEED)

@@ -16,6 +16,11 @@ resources:
       type: git
       name: 1ESPipelineTemplates/MicroBuildTemplate
       ref: refs/tags/release
+
+    - repository: templates
+      type: git
+      name: DevDiv/Pylance-Eng
+      ref: refs/heads/main
 variables:
   - name: TeamName
     value: VSCode-black-formatter
@@ -23,11 +28,36 @@ variables:
     value: black-formatter.vsix
   - name: AZURE_ARTIFACTS_FEED
     value: 'https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/'
+
 parameters:
   - name: publishExtension
     displayName: 🚀 Publish Extension
     type: boolean
     default: false
+
+  - name: buildSteps
+    type: stepList
+    default:
+      - script: npm ci
+        displayName: Install NPM dependencies
+
+      - script: python -m pip install -U pip
+        displayName: Upgrade pip
+
+      - script: python -m pip install wheel
+        displayName: Install wheel
+
+      - script: python -m pip install nox
+        displayName: Install nox
+
+      - script: python -m nox --session install_bundled_libs
+        displayName: Install Python dependencies
+
+      - script: python ./build/update_ext_version.py --for-publishing
+        displayName: Update build number
+
+      - script: npm run package
+        displayName: Build extension
 
 extends:
   template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
@@ -48,61 +78,23 @@ extends:
       - stage: Build
         displayName: Build & Package Extension
         jobs:
-          - job: Build
-            displayName: Build Job
-            pool:
-              name: VSEngSS-MicroBuild2022-1ES # use windows for codesigning to make things easier https://dev.azure.com/devdiv/DevDiv/_wiki/wikis/DevDiv.wiki/650/MicroBuild-Signing
-              os: windows
-            templateContext:
-              mb:
-                signing:
-                  enabled: true
-                  signType: real
-                  signWithProd: true
-              outputs:
-                - output: pipelineArtifact
-                  displayName: 'Publish Drop Artifact'
-                  targetPath: '$(Build.StagingDirectory)\drop'
-                  artifactName: drop
-                  sbomEnabled: true
-            steps:
-              - template: build/templates/setup.yml@self
+          - template: azure-pipelines/extension/templates/jobs/package.yml@templates
+            parameters:
+              buildSteps: ${{ parameters.buildSteps }}
+              isPreRelease: true
+              standardizedVersioning: true
+              customNPMRegistry: $(AZURE_ARTIFACTS_FEED)
 
-              - script: npm ci
-                displayName: Install NPM dependencies
-
-              - script: python -m pip install -U pip
-                displayName: Upgrade pip
-
-              - script: python -m pip install wheel
-                displayName: Install wheel
-
-              - script: python -m pip install nox
-                displayName: Install nox
-
-              - script: python -m nox --session install_bundled_libs
-                displayName: Install Python dependencies
-
-              - script: python ./build/update_ext_version.py --for-publishing
-                displayName: Update build number
-
-              - script: npm run vsce-package-pre
-                displayName: Build VSIX
-
-              - template: build/templates/sign.yml@self
-                parameters:
-                  vsixName: $(VsixName)
-                  workingDirectory: $(Build.StagingDirectory)\drop
-                  signType: real
-                  verifySignature: true
-                  teamName: $(TeamName)
-
-              - ${{ if eq(parameters.publishExtension, true) }}:
-                  - template: build/templates/publish.yml@self
-                    parameters:
-                      azureSubscription: PylancePublishPipelineSecureConnectionWithManagedIdentity
-                      vsixName: $(VsixName)
-                      manifestName: extension.manifest
-                      signatureName: extension.signature.p7s
-                      publishFolder: drop
-                      preRelease: true
+      - stage: Publish
+        displayName: Publish Extension
+        dependsOn: Build
+        jobs:
+          - template: azure-pipelines/extension/templates/jobs/publish-extension.yml@templates
+            parameters:
+              publishExtension: ${{ parameters.publishExtension }}
+              preRelease: true
+              teamName: $(TeamName)
+              ghCreateTag: true
+              ghCreateRelease: true
+              ghReleaseAddChangeLog: true
+              customNPMRegistry: $(AZURE_ARTIFACTS_FEED)
