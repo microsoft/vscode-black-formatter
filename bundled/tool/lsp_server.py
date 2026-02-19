@@ -177,7 +177,7 @@ def _formatting_helper(
     extra_args += ["--stdin-filename", _get_filename_for_black(document)]
     result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
     if result and result.stdout:
-        if LSP_SERVER.protocol.trace == lsp.TraceValues.Verbose:
+        if LSP_SERVER.protocol.trace == lsp.TraceValue.Verbose:
             log_to_output(
                 f"{document.uri} :\r\n"
                 + ("*" * 100)
@@ -612,7 +612,7 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         if result.stderr:
             log_to_output(result.stderr)
 
-    if LSP_SERVER.protocol.trace == lsp.TraceValues.Verbose:
+    if LSP_SERVER.protocol.trace == lsp.TraceValue.Verbose:
         log_to_output(f"\r\n{result.stdout}\r\n")
 
     return result
