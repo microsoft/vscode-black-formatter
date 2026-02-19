@@ -229,9 +229,7 @@ def _formatting_helper(
 def _get_filename_for_black(document: TextDocument) -> str:
     """Gets or generates a file name to use with black when formatting."""
     doc_path = _get_document_path(document)
-    if document.uri.startswith("vscode-notebook-cell") and doc_path.endswith(
-        ".ipynb"
-    ):
+    if document.uri.startswith("vscode-notebook-cell") and doc_path.endswith(".ipynb"):
         # Treat the cell like a python file
         return str(pathlib.Path(doc_path).with_suffix(".py"))
     return doc_path
@@ -477,9 +475,7 @@ def _run_tool_on_document(
         return None
 
     if not is_python(document.source, doc_path):
-        log_warning(
-            f"Skipping non python code or code with syntax errors: {doc_path}"
-        )
+        log_warning(f"Skipping non python code or code with syntax errors: {doc_path}")
         return None
 
     # deep copy here to prevent accidentally updating global settings.
