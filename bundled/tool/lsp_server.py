@@ -14,6 +14,7 @@ import sys
 import sysconfig
 import traceback
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+from urllib.parse import urlparse, urlunparse
 
 
 # **********************************************************
@@ -79,6 +80,22 @@ MAX_WORKERS = 5
 LSP_SERVER = LanguageServer(
     name="black-server", version="v0.1.0", max_workers=MAX_WORKERS
 )
+
+
+def _get_document_path(document: TextDocument) -> str:
+    """Returns the filesystem path for a document.
+
+    Examples:
+        file:///path/to/file.py -> /path/to/file.py
+        vscode-notebook-cell:... -> /path/to/file.py
+    """
+
+    if not document.uri.startswith("file:"):
+        parsed = urlparse(document.uri)
+        file_uri = urlunparse(("file", *parsed[1:-1], ""))
+        if result := uris.to_fs_path(file_uri):
+            return result
+    return document.path
 
 
 # **********************************************************
@@ -211,12 +228,13 @@ def _formatting_helper(
 
 def _get_filename_for_black(document: TextDocument) -> str:
     """Gets or generates a file name to use with black when formatting."""
-    if document.uri.startswith("vscode-notebook-cell") and document.path.endswith(
+    doc_path = _get_document_path(document)
+    if document.uri.startswith("vscode-notebook-cell") and doc_path.endswith(
         ".ipynb"
     ):
         # Treat the cell like a python file
-        return document.path[:-6] + ".py"
-    return document.path
+        return str(pathlib.Path(doc_path).with_suffix(".py"))
+    return doc_path
 
 
 def _get_line_endings(lines: list[str]) -> str:
@@ -243,7 +261,7 @@ def _get_args_by_file_extension(document: TextDocument) -> List[str]:
     if document.uri.startswith("vscode-notebook-cell"):
         return []
 
-    p = document.path.lower()
+    p = _get_document_path(document).lower()
     if p.endswith(".py"):
         return []
     elif p.endswith(".pyi"):
@@ -395,7 +413,7 @@ def _get_settings_by_path(file_path: pathlib.Path):
 
 def _get_document_key(document: TextDocument):
     if WORKSPACE_SETTINGS:
-        document_workspace = pathlib.Path(document.path)
+        document_workspace = pathlib.Path(_get_document_path(document))
         workspaces = {s["workspaceFS"] for s in WORKSPACE_SETTINGS.values()}
 
         # Find workspace settings for the given file.
@@ -415,7 +433,7 @@ def _get_settings_by_document(document: TextDocument | None):
     key = _get_document_key(document)
     if key is None:
         # This is either a non-workspace file or there is no workspace.
-        key = utils.normalize_path(pathlib.Path(document.path).parent)
+        key = utils.normalize_path(pathlib.Path(_get_document_path(document)).parent)
         return {
             "cwd": key,
             "workspaceFS": key,
@@ -436,7 +454,7 @@ def get_cwd(settings: Dict[str, Any], document: Optional[TextDocument]) -> str:
 
     if settings["cwd"] == "${fileDirname}":
         if document is not None:
-            return os.fspath(pathlib.Path(document.path).parent)
+            return os.fspath(pathlib.Path(_get_document_path(document)).parent)
         return settings["workspaceFS"]
 
     return settings["cwd"]
@@ -453,13 +471,14 @@ def _run_tool_on_document(
     if use_stdin is true then contents of the document is passed to the
     tool via stdin.
     """
-    if utils.is_stdlib_file(document.path):
-        log_warning(f"Skipping standard library file: {document.path}")
+    doc_path = _get_document_path(document)
+    if utils.is_stdlib_file(doc_path):
+        log_warning(f"Skipping standard library file: {doc_path}")
         return None
 
-    if not is_python(document.source, document.path):
+    if not is_python(document.source, doc_path):
         log_warning(
-            f"Skipping non python code or code with syntax errors: {document.path}"
+            f"Skipping non python code or code with syntax errors: {doc_path}"
         )
         return None
 
