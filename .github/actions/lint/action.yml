@@ -5,6 +5,9 @@ inputs:
   node_version:
     description: 'Version of Node to install'
     required: true
+  python_version:
+    description: 'Version of Python to install'
+    required: true
 
 runs:
   using: 'composite'
@@ -27,10 +30,10 @@ runs:
       run: npm run format-check
       shell: bash
 
-    - name: Install Python
-      uses: actions/setup-python@v4
+    - name: Install Python ${{ inputs.python_version }}
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        python-version: ${{ inputs.python_version }}
 
     - name: Pip cache
       uses: actions/cache@v3

@@ -20,6 +20,10 @@ variables:
     value: VSCode-black-formatter
   - name: VsixName
     value: black-formatter.vsix
+  - name: NodeVersion
+    value: '22.17.0'
+  - name: PythonVersion
+    value: '3.10'
   - name: AZURE_ARTIFACTS_FEED
     value: 'https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/'
 
