@@ -3,6 +3,7 @@
 """
 Utility functions for use with tests.
 """
+
 import contextlib
 import json
 import os
