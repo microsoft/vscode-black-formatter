@@ -109,4 +109,4 @@ Create a pull request with all the changes using the `create-pull-request` safe 
 - Preserve the quoting style in YAML files (single quotes around version strings)
 - Keep the matrix list sorted in ascending version order
 - The `PYTHON_VERSION` / `PythonVersion` / `PYTHON_MINOR` values represent the **minimum** supported version and should only be updated if that version has gone end-of-life
-- Do not include pre-release Python versions (status `feature` or `prerelease`) in any updates
+- Do not include pre-release Python versions (status `prerelease`) in any updates
