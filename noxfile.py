@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """All the action we need during build"""
+
 import io
 import json
 import os
@@ -106,14 +107,14 @@ def _setup_template_environment(session: nox.Session) -> None:
     _install_bundle(session)
 
 
-@nox.session(python="3.9")
+@nox.session(python="3.10")
 def install_bundled_libs(session):
     """Installs the libraries that will be bundled with the extension."""
     session.install("wheel")
     _install_bundle(session)
 
 
-@nox.session(python="3.9")
+@nox.session(python="3.10")
 def setup(session: nox.Session) -> None:
     """Sets up the extension for development."""
     _setup_template_environment(session)

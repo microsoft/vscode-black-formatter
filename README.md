@@ -1,8 +1,8 @@
 # Formatter extension for Visual Studio Code using the Black formatter
 
-A Visual Studio Code extension with support for the Black formatter. The extension ships with `black=25.1.0`.
+A Visual Studio Code extension with support for the Black formatter. The extension ships with `black=26.1.0`.
 
-> Note: The minimum version of Black this extension supports is `25.1.0`.
+> Note: The minimum version of Black this extension supports is `26.1.0`.
 
 This extension includes support for all [actively supported versions](https://devguide.python.org/#status-of-python-branches) of the Python language.
 

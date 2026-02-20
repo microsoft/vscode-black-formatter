@@ -1,6 +1,6 @@
 # This file is used to generate requirements.txt.
 # To update requirements.txt, run the following commands.
-# Use `uv` with Python 3.9 when creating the environment.
+# Use `uv` with Python 3.10 (or earliest supported version) when creating the environment.
 #
 # Run following command:
 # uv pip compile --generate-hashes --upgrade -o ./requirements.txt ./requirements.in

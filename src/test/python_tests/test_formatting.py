@@ -3,6 +3,7 @@
 """
 Test for formatting over LSP.
 """
+
 import pathlib
 
 import pytest
