@@ -1,0 +1,77 @@
+version: 2
+updates:
+  # NPM dependencies are updated weekly, minor updates are grouped (1 PR "npm-minor-patch").
+  - package-ecosystem: 'npm'
+    labels:
+      - 'dependencies'
+      - 'debt'
+      - 'no-changelog'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    groups:
+      npm-minor-patch:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: '@types/vscode'
+      - dependency-name: '@types/node'
+      - dependency-name: 'vscode-languageclient'
+
+  # Python dependencies are updated weekly, minor updates are grouped (1 PR "pip-minor-patch").
+  # The no-changelog label is NOT added here
+  - package-ecosystem: 'pip'
+    labels:
+      - 'dependencies'
+      - 'debt'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    groups:
+      pip-minor-patch:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+
+  # Python test dependencies are updated weekly, minor updates are grouped (1 PR "pip-test-minor-patch").
+  - package-ecosystem: 'pip'
+    labels:
+      - 'dependencies'
+      - 'debt'
+      - 'no-changelog'
+    directory: '/src/test/python_tests'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    groups:
+      pip-test-minor-patch:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+
+  # GitHub Actions dependencies are updated weekly, minor updates are grouped (1 PR "github-actions-minor-patch").
+  - package-ecosystem: 'github-actions'
+    labels:
+      - 'dependencies'
+      - 'debt'
+      - 'no-changelog'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    groups:
+      github-actions-minor-patch:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
