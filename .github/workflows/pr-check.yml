@@ -138,13 +138,13 @@ jobs:
         shell: bash
 
       - name: Run TS Unit tests
-        uses: GabrielBB/xvfb-action@v1.6
+        uses: GabrielBB/xvfb-action@v1.7
         with:
           run: npm run tests
           working-directory: ${{ env.special-working-directory }}
 
       - name: Run TS Smoke tests
-        uses: GabrielBB/xvfb-action@v1.6
+        uses: GabrielBB/xvfb-action@v1.7
         with:
           run: npm run smoke-tests
           working-directory: ${{ env.special-working-directory }}
