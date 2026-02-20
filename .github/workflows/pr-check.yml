@@ -58,7 +58,7 @@ jobs:
 
       # Install bundled libs using env.PYTHON_VERSION even though you test it on other versions.
       - name: Use Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -74,7 +74,7 @@ jobs:
       # Now that the bundle is installed to target using env.PYTHON_VERSION
       # switch back the python we want to test with
       - name: Use Python ${{ matrix.python }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
 
@@ -116,7 +116,7 @@ jobs:
           cache-dependency-path: ${{ env.special-working-directory-relative }}/package-lock.json
 
       - name: Use Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
