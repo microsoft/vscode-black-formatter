@@ -65,6 +65,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
     };
 
+    const configFileWatcher = vscode.workspace.createFileSystemWatcher(
+        '**/{pyproject.toml,.black,setup.cfg,tox.ini}',
+    );
+
     context.subscriptions.push(
         onDidChangePythonInterpreter(async () => {
             await runServer();
@@ -79,6 +83,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             if (checkIfConfigurationChanged(e, serverId)) {
                 await runServer();
             }
+        }),
+        configFileWatcher,
+        configFileWatcher.onDidChange(async () => {
+            traceLog('Config file changed, restarting server.');
+            await runServer();
+        }),
+        configFileWatcher.onDidCreate(async () => {
+            traceLog('Config file created, restarting server.');
+            await runServer();
+        }),
+        configFileWatcher.onDidDelete(async () => {
+            traceLog('Config file deleted, restarting server.');
+            await runServer();
         }),
         registerLanguageStatusItem(serverId, serverName, `${serverId}.showLogs`),
     );
