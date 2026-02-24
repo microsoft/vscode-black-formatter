@@ -1,8 +1,11 @@
 name: Publish Release
-trigger:
-  branches:
-    include:
-      - refs/tags/*
+trigger: none
+#   branches:
+#     include:
+#       - release*
+#   tags:
+#     include: ['*']
+pr: none
 
 resources:
   repositories:
