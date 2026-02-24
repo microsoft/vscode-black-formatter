@@ -3,9 +3,11 @@
 
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { restartServer } from './common/server';
+import { createConfigFileWatchers } from './common/configWatcher';
+import { LS_SERVER_RESTART_DELAY, PYTHON_VERSION } from './common/constants';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/logging';
 import { initializePython, onDidChangePythonInterpreter } from './common/python';
+import { restartServer } from './common/server';
 import {
     checkIfConfigurationChanged,
     getWorkspaceSettings,
@@ -17,7 +19,6 @@ import { getInterpreterFromSetting, getProjectRoot } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import { registerEmptyFormatter } from './common/nullFormatter';
 import { registerLanguageStatusItem, updateStatus } from './common/status';
-import { LS_SERVER_RESTART_DELAY, PYTHON_VERSION } from './common/constants';
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -65,11 +66,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
     };
 
-    const configFileWatcher = vscode.workspace.createFileSystemWatcher(
-        '**/{pyproject.toml,.black,setup.cfg,tox.ini}',
-    );
-
     context.subscriptions.push(
+        // Create file watchers for Black configuration files
+        ...createConfigFileWatchers(runServer),
         onDidChangePythonInterpreter(async () => {
             await runServer();
         }),
@@ -83,19 +82,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             if (checkIfConfigurationChanged(e, serverId)) {
                 await runServer();
             }
-        }),
-        configFileWatcher,
-        configFileWatcher.onDidChange(async () => {
-            traceLog('Config file changed, restarting server.');
-            await runServer();
-        }),
-        configFileWatcher.onDidCreate(async () => {
-            traceLog('Config file created, restarting server.');
-            await runServer();
-        }),
-        configFileWatcher.onDidDelete(async () => {
-            traceLog('Config file deleted, restarting server.');
-            await runServer();
         }),
         registerLanguageStatusItem(serverId, serverName, `${serverId}.showLogs`),
     );
