@@ -78,7 +78,7 @@ jobs:
       - name: Check workflow file timestamps
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          GH_AW_WORKFLOW_FILE: 'issue-check-template.lock.yml'
+          GH_AW_WORKFLOW_FILE: 'issue-triage.lock.yml'
         with:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
@@ -195,7 +195,7 @@ jobs:
           </system>
           GH_AW_PROMPT_EOF
           cat << 'GH_AW_PROMPT_EOF' >> "$GH_AW_PROMPT"
-          {{#runtime-import .github/workflows/issue-check-template.md}}
+          {{#runtime-import .github/workflows/issue-triage.md}}
           GH_AW_PROMPT_EOF
       - name: Interpolate variables and render templates
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
@@ -275,7 +275,7 @@ jobs:
       GH_AW_SAFE_OUTPUTS: /opt/gh-aw/safeoutputs/outputs.jsonl
       GH_AW_SAFE_OUTPUTS_CONFIG_PATH: /opt/gh-aw/safeoutputs/config.json
       GH_AW_SAFE_OUTPUTS_TOOLS_PATH: /opt/gh-aw/safeoutputs/tools.json
-      GH_AW_WORKFLOW_ID_SANITIZED: issuechecktemplate
+      GH_AW_WORKFLOW_ID_SANITIZED: issuetriage
     outputs:
       checkout_pr_success: ${{ steps.checkout-pr.outputs.checkout_pr_success || 'true' }}
       has_patch: ${{ steps.collect_output.outputs.has_patch }}
@@ -901,7 +901,7 @@ jobs:
           GH_AW_WORKFLOW_NAME: 'Issue Triage'
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
-          GH_AW_WORKFLOW_ID: 'issue-check-template'
+          GH_AW_WORKFLOW_ID: 'issue-triage'
           GH_AW_SECRET_VERIFICATION_RESULT: ${{ needs.agent.outputs.secret_verification_result }}
           GH_AW_CHECKOUT_PR_SUCCESS: ${{ needs.agent.outputs.checkout_pr_success }}
           GH_AW_GROUP_REPORTS: 'false'
@@ -1064,7 +1064,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_AW_ENGINE_ID: 'copilot'
-      GH_AW_WORKFLOW_ID: 'issue-check-template'
+      GH_AW_WORKFLOW_ID: 'issue-triage'
       GH_AW_WORKFLOW_NAME: 'Issue Triage'
     outputs:
       create_discussion_error_count: ${{ steps.process_safe_outputs.outputs.create_discussion_error_count }}
