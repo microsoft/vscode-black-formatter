@@ -28,6 +28,10 @@ safe-outputs:
   noop:
     max: 1
 steps:
+- name: Checkout repository
+  uses: actions/checkout@v5
+  with:
+    persist-credentials: false
 - name: Checkout template repo
   uses: actions/checkout@v5
   with:

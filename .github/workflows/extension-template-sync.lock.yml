@@ -23,7 +23,7 @@
 #
 # Daily check (and on-demand trigger) to sync changes from the upstream microsoft/vscode-python-tools-extension-template into this repository. Reads recently merged PRs from the template, determines whether the changes apply to this repo, and opens a sync PR if they do.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"4b05c87401cb781cfeae5362abdcc9ea1bb6fccb6543505ba6fa2e82ae32da64","compiler_version":"v0.47.5"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"6848419a8d302e6fe5a6b3d24dbd1208071251f9a70212097c73ef3313f4a4d2","compiler_version":"v0.47.5"}
 
 name: 'Extension Template Sync'
 'on':
@@ -287,6 +287,10 @@ jobs:
           destination: /opt/gh-aw/actions
       - name: Create gh-aw temp directory
         run: bash /opt/gh-aw/actions/create_gh_aw_tmp_dir.sh
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
       - name: Checkout template repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
