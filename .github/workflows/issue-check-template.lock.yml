@@ -21,12 +21,15 @@
 #
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
-# When a new issue is opened, analyze its root cause and check whether the same issue could affect other extensions built from the microsoft/vscode-python-tools-extension-template. If so, suggest an upstream fix.
+# When a new issue is opened — or when a maintainer comments `/triage-issue` on an existing issue — analyze its root cause, check whether the same issue could affect other extensions built from the microsoft/vscode-python-tools-extension-template, and look for related open issues on the upstream Black repository (psf/black). If applicable, suggest an upstream fix and surface relevant Black issues to the reporter.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"225c7678d135a4827cff792ec7accbeeefda85e63df8066764fa1cb0b6c451ec","compiler_version":"v0.47.5"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"d68ba79a099ef2ca62a72c74850f17a09e981f3a8e995465473ca24739b43a7a","compiler_version":"v0.47.5"}
 
-name: 'Issue Root-Cause & Template Check'
+name: 'Issue Triage'
 'on':
+  issue_comment:
+    types:
+      - created
   issues:
     types:
       - opened
@@ -36,7 +39,7 @@ permissions: {}
 concurrency:
   group: 'gh-aw-${{ github.workflow }}-${{ github.event.issue.number }}'
 
-run-name: 'Issue Root-Cause & Template Check'
+run-name: 'Issue Triage'
 
 jobs:
   activation:
@@ -287,10 +290,6 @@ jobs:
           destination: /opt/gh-aw/actions
       - name: Create gh-aw temp directory
         run: bash /opt/gh-aw/actions/create_gh_aw_tmp_dir.sh
-      - name: Checkout repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          persist-credentials: false
       - name: Checkout template repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
@@ -337,7 +336,7 @@ jobs:
               version: "",
               agent_version: "0.0.412",
               cli_version: "v0.47.5",
-              workflow_name: "Issue Root-Cause & Template Check",
+              workflow_name: "Issue Triage",
               experimental: false,
               supports_tools_allowlist: true,
               run_id: context.runId,
@@ -873,7 +872,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
           GH_AW_NOOP_MAX: 1
-          GH_AW_WORKFLOW_NAME: 'Issue Root-Cause & Template Check'
+          GH_AW_WORKFLOW_NAME: 'Issue Triage'
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -886,7 +885,7 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: 'Issue Root-Cause & Template Check'
+          GH_AW_WORKFLOW_NAME: 'Issue Triage'
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -899,7 +898,7 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: 'Issue Root-Cause & Template Check'
+          GH_AW_WORKFLOW_NAME: 'Issue Triage'
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_WORKFLOW_ID: 'issue-check-template'
@@ -918,7 +917,7 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: 'Issue Root-Cause & Template Check'
+          GH_AW_WORKFLOW_NAME: 'Issue Triage'
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_NOOP_MESSAGE: ${{ steps.noop.outputs.noop_message }}
@@ -964,8 +963,8 @@ jobs:
       - name: Setup threat detection
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          WORKFLOW_NAME: 'Issue Root-Cause & Template Check'
-          WORKFLOW_DESCRIPTION: 'When a new issue is opened, analyze its root cause and check whether the same issue could affect other extensions built from the microsoft/vscode-python-tools-extension-template. If so, suggest an upstream fix.'
+          WORKFLOW_NAME: 'Issue Triage'
+          WORKFLOW_DESCRIPTION: 'When a new issue is opened — or when a maintainer comments `/triage-issue` on an existing issue — analyze its root cause, check whether the same issue could affect other extensions built from the microsoft/vscode-python-tools-extension-template, and look for related open issues on the upstream Black repository (psf/black). If applicable, suggest an upstream fix and surface relevant Black issues to the reporter.'
           HAS_PATCH: ${{ needs.agent.outputs.has_patch }}
         with:
           script: |
@@ -1066,7 +1065,7 @@ jobs:
     env:
       GH_AW_ENGINE_ID: 'copilot'
       GH_AW_WORKFLOW_ID: 'issue-check-template'
-      GH_AW_WORKFLOW_NAME: 'Issue Root-Cause & Template Check'
+      GH_AW_WORKFLOW_NAME: 'Issue Triage'
     outputs:
       create_discussion_error_count: ${{ steps.process_safe_outputs.outputs.create_discussion_error_count }}
       create_discussion_errors: ${{ steps.process_safe_outputs.outputs.create_discussion_errors }}
