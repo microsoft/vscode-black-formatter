@@ -20,6 +20,8 @@ tools:
 network:
   allowed: []
 safe-outputs:
+  messages:
+    run-started: "⏳ **Triage Issue Agent**: I will analyze this issue and determine if related issues exist in this repo, the upstream Python tool, or similar extensions. This may take a couple of minutes."
   add-comment:
     max: 1
   noop:
@@ -46,6 +48,8 @@ This workflow is triggered in two ways:
 2. **On demand** when a maintainer posts a `/triage-issue` comment on an existing issue.
 
 If triggered by a comment, first verify the comment body is exactly `/triage-issue` (ignoring leading/trailing whitespace). If it is not, call the `noop` safe output and stop — do not process arbitrary comments.
+
+> **Note:** A loading message has already been posted on the issue when this workflow started, so the reporter knows analysis is in progress. You do not need to post a preliminary comment — go straight to your analysis.
 
 Your goals are:
 
@@ -95,6 +99,9 @@ Search the **vscode-black-formatter** repository for the relevant code. Look at:
 - The files mentioned or implied by the issue (error messages, file paths, setting names).
 - Recent commits or changes that might have introduced the problem.
 - Related open or closed issues that describe similar symptoms.
+- Related open pull requests that may address or be related to the problem.
+
+Keep track of any related issues and PRs you find — you will reference them in your analysis comment.
 
 Formulate a clear, concise explanation of the probable root cause.
 
@@ -135,6 +142,11 @@ Post a comment on the issue using the `add-comment` safe output. Structure your 
 #### Affected Code
 - **File(s):** `<file paths>`
 - **Area:** <TypeScript client / Python server / Build & CI / Configuration>
+
+#### Related Issues & Pull Requests
+<List related open or recently closed issues and PRs from this repository that describe similar symptoms or address the same problem. If none are found, omit this section.>
+
+- **#NNN** — <issue/PR title> — <one-sentence explanation of why it is related>
 
 #### Template Impact
 <One of the following:>
