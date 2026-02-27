@@ -1,10 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """Unit tests for the get_cwd() helper in lsp_server."""
+
 import os
 import pathlib
 import sys
 import types
+
 
 # ---------------------------------------------------------------------------
 # Stub out bundled LSP dependencies so lsp_server can be imported without the
@@ -39,17 +41,31 @@ def _setup_mocks():
 
     mock_lsp = types.ModuleType("lsprotocol.types")
     for _name in [
-        "TEXT_DOCUMENT_DID_OPEN", "TEXT_DOCUMENT_DID_SAVE", "TEXT_DOCUMENT_DID_CLOSE",
-        "TEXT_DOCUMENT_FORMATTING", "INITIALIZE", "EXIT", "SHUTDOWN",
+        "TEXT_DOCUMENT_DID_OPEN",
+        "TEXT_DOCUMENT_DID_SAVE",
+        "TEXT_DOCUMENT_DID_CLOSE",
+        "TEXT_DOCUMENT_FORMATTING",
+        "INITIALIZE",
+        "EXIT",
+        "SHUTDOWN",
     ]:
         setattr(mock_lsp, _name, _name)
     for _name in [
-        "Diagnostic", "DiagnosticSeverity", "DidCloseTextDocumentParams",
-        "DidOpenTextDocumentParams", "DidSaveTextDocumentParams",
-        "DocumentFormattingParams", "InitializeParams", "Position", "Range", "TextEdit",
+        "Diagnostic",
+        "DiagnosticSeverity",
+        "DidCloseTextDocumentParams",
+        "DidOpenTextDocumentParams",
+        "DidSaveTextDocumentParams",
+        "DocumentFormattingParams",
+        "InitializeParams",
+        "Position",
+        "Range",
+        "TextEdit",
     ]:
         setattr(mock_lsp, _name, type(_name, (), {}))
-    mock_lsp.MessageType = type("MessageType", (), {"Log": 4, "Error": 1, "Warning": 2, "Info": 3})
+    mock_lsp.MessageType = type(
+        "MessageType", (), {"Log": 4, "Error": 1, "Warning": 2, "Info": 3}
+    )
 
     mock_pygls_lsp = types.ModuleType("pygls.lsp")
 
