@@ -446,16 +446,59 @@ def _get_settings_by_document(document: TextDocument | None):
 # Internal execution APIs.
 # *****************************************************
 def get_cwd(settings: Dict[str, Any], document: Optional[TextDocument]) -> str:
-    """Returns cwd for the given settings and document."""
-    if settings["cwd"] == "${workspaceFolder}":
-        return settings["workspaceFS"]
+    """Returns the working directory for running the tool.
 
-    if settings["cwd"] == "${fileDirname}":
-        if document is not None:
-            return os.fspath(pathlib.Path(_get_document_path(document)).parent)
-        return settings["workspaceFS"]
+    Resolves the following VS Code file-related variable substitutions when
+    a document is available:
 
-    return settings["cwd"]
+    - ``${file}`` – absolute path of the current document.
+    - ``${fileBasename}`` – file name with extension (e.g. ``foo.py``).
+    - ``${fileBasenameNoExtension}`` – file name without extension (e.g. ``foo``).
+    - ``${fileExtname}`` – file extension including the dot (e.g. ``.py``).
+    - ``${fileDirname}`` – directory containing the current document.
+    - ``${fileDirnameBasename}`` – name of the directory containing the document.
+    - ``${relativeFile}`` – document path relative to the workspace root.
+    - ``${relativeFileDirname}`` – document directory relative to the workspace root.
+    - ``${fileWorkspaceFolder}`` – workspace root folder for the document.
+
+    Variables that do not depend on the document (``${workspaceFolder}``,
+    ``${userHome}``, ``${cwd}``) are pre-resolved by the TypeScript client.
+
+    If no document is available and the value contains any unresolvable
+    file-variable, the workspace root is returned as a fallback.
+
+    See https://code.visualstudio.com/docs/reference/variables-reference
+    """
+    cwd = settings.get("cwd", settings["workspaceFS"])
+    workspace_fs = settings["workspaceFS"]
+
+    file_path = _get_document_path(document) if document else ""
+    if document and file_path:
+        file_dir = os.path.dirname(file_path)
+        file_basename = os.path.basename(file_path)
+        file_stem, file_ext = os.path.splitext(file_basename)
+
+        substitutions = {
+            "${file}": file_path,
+            "${fileBasename}": file_basename,
+            "${fileBasenameNoExtension}": file_stem,
+            "${fileExtname}": file_ext,
+            "${fileDirname}": file_dir,
+            "${fileDirnameBasename}": os.path.basename(file_dir),
+            "${relativeFile}": os.path.relpath(file_path, workspace_fs),
+            "${relativeFileDirname}": os.path.relpath(file_dir, workspace_fs),
+            "${fileWorkspaceFolder}": workspace_fs,
+        }
+
+        for token, value in substitutions.items():
+            cwd = cwd.replace(token, value)
+    else:
+        # Without a document we cannot resolve file-related variables.
+        # Fall back to workspace root if any remain.
+        if "${file" in cwd or "${relativeFile" in cwd:
+            cwd = workspace_fs
+
+    return cwd
 
 
 # pylint: disable=too-many-branches
