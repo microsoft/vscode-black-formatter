@@ -4,13 +4,55 @@
 import { commands, Disposable, Event, EventEmitter, extensions, Uri } from 'vscode';
 import { traceError, traceLog } from './logging';
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
-import type { PythonEnvironmentsAPI } from '../typings/pythonEnvironments';
+import type { PythonEnvironment, PythonEnvironmentsAPI } from '../typings/pythonEnvironments';
 import { PYTHON_MAJOR, PYTHON_MINOR, PYTHON_VERSION } from './constants';
 import { getProjectRoot } from './utilities';
 
 export interface IInterpreterDetails {
     path?: string[];
     resource?: Uri;
+}
+
+function parsePythonVersion(version: string | undefined): { major: number; minor: number; micro: number } | undefined {
+    if (!version) {
+        return undefined;
+    }
+    const parts = version.split('.');
+    const major = Number(parts[0]);
+    const minor = Number(parts[1] ?? 0);
+    const micro = Number(parts[2] ?? 0);
+    if (isNaN(major) || isNaN(minor) || isNaN(micro)) {
+        return undefined;
+    }
+    return { major, minor, micro };
+}
+
+function convertToResolvedEnvironment(environment: PythonEnvironment): ResolvedEnvironment | undefined {
+    const executable = environment.execInfo?.run?.executable;
+    if (!executable) {
+        return undefined;
+    }
+    const parsed = parsePythonVersion(environment.version);
+    return {
+        id: environment.envId?.id ?? '',
+        path: executable,
+        executable: {
+            uri: Uri.file(executable),
+            bitness: 'Unknown',
+            sysPrefix: environment.sysPrefix ?? '',
+        },
+        version: parsed
+            ? {
+                  major: parsed.major,
+                  minor: parsed.minor,
+                  micro: parsed.micro,
+                  release: { level: 'final', serial: 0 },
+                  sysVersion: environment.version ?? '',
+              }
+            : undefined,
+        environment: undefined,
+        tools: [],
+    } as ResolvedEnvironment;
 }
 
 const onDidChangePythonInterpreterEvent = new EventEmitter<void>();
@@ -127,6 +169,14 @@ export async function initializePython(disposables: Disposable[]): Promise<void>
 
 // TODO: Unused code
 export async function resolveInterpreter(interpreter: string[]): Promise<ResolvedEnvironment | undefined> {
+    const envsApi = await getEnvironmentsExtensionAPI();
+    if (envsApi) {
+        const environment = await envsApi.resolveEnvironment(Uri.file(interpreter[0]));
+        if (!environment) {
+            return undefined;
+        }
+        return convertToResolvedEnvironment(environment);
+    }
     const api = await getPythonExtensionAPI();
     return api?.environments.resolveEnvironment(interpreter[0]);
 }
@@ -137,9 +187,9 @@ export async function getInterpreterDetails(resource?: Uri): Promise<IInterprete
     if (envsApi) {
         const environment = await envsApi.getEnvironment(resource);
         if (environment) {
-            const versionParts = environment.version?.split('.').map(Number);
+            const parsed = parsePythonVersion(environment.version);
             const executable = environment.execInfo?.run?.executable;
-            if (versionParts && versionParts[0] === PYTHON_MAJOR && versionParts[1] >= PYTHON_MINOR) {
+            if (parsed && parsed.major === PYTHON_MAJOR && parsed.minor >= PYTHON_MINOR) {
                 if (executable) {
                     return { path: [executable], resource };
                 }
@@ -172,7 +222,10 @@ export async function getDebuggerPath(): Promise<string | undefined> {
 
 // TODO: Unused code
 export async function runPythonExtensionCommand(command: string, ...rest: unknown[]) {
-    await getPythonExtensionAPI();
+    const envsApi = await getEnvironmentsExtensionAPI();
+    if (!envsApi) {
+        await getPythonExtensionAPI();
+    }
     return await commands.executeCommand(command, ...rest);
 }
 

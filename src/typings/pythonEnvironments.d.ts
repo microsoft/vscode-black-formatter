@@ -41,7 +41,10 @@ export interface DidChangeEnvironmentEventArgs {
     new: PythonEnvironment | undefined;
 }
 
+export type ResolveEnvironmentContext = Uri;
+
 export interface PythonEnvironmentsAPI {
     getEnvironment(scope: GetEnvironmentScope): Promise<PythonEnvironment | undefined>;
+    resolveEnvironment(context: ResolveEnvironmentContext): Promise<PythonEnvironment | undefined>;
     onDidChangeEnvironment: Event<DidChangeEnvironmentEventArgs>;
 }
