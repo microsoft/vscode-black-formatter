@@ -14,24 +14,13 @@ export interface IInterpreterDetails {
     resource?: Uri;
 }
 
-function parsePythonVersion(version: string | undefined): { major: number; minor: number; micro: number } | undefined {
-    if (!version) {
-        return undefined;
-    }
-    const coerced = semver.coerce(version);
-    if (!coerced) {
-        return undefined;
-    }
-    return { major: coerced.major, minor: coerced.minor, micro: coerced.patch };
-}
-
 function convertToResolvedEnvironment(environment: PythonEnvironment): ResolvedEnvironment | undefined {
     const runConfig = environment.execInfo?.activatedRun ?? environment.execInfo?.run;
     const executable = runConfig?.executable;
     if (!executable) {
         return undefined;
     }
-    const parsed = parsePythonVersion(environment.version);
+    const coerced = semver.coerce(environment.version);
     return {
         id: environment.envId?.id ?? '',
         path: executable,
@@ -40,11 +29,11 @@ function convertToResolvedEnvironment(environment: PythonEnvironment): ResolvedE
             bitness: 'Unknown',
             sysPrefix: environment.sysPrefix ?? '',
         },
-        version: parsed
+        version: coerced
             ? {
-                  major: parsed.major,
-                  minor: parsed.minor,
-                  micro: parsed.micro,
+                  major: coerced.major,
+                  minor: coerced.minor,
+                  micro: coerced.patch,
                   release: { level: 'final', serial: 0 },
                   sysVersion: environment.version ?? '',
               }
@@ -187,11 +176,11 @@ export async function getInterpreterDetails(resource?: Uri): Promise<IInterprete
         try {
             const environment = await envsApi.getEnvironment(resource);
             if (environment) {
-                const parsed = parsePythonVersion(environment.version);
+                const coerced = semver.coerce(environment.version);
                 const runConfig = environment.execInfo?.activatedRun ?? environment.execInfo?.run;
                 const executable = runConfig?.executable;
                 const args = runConfig?.args ?? [];
-                if (parsed && parsed.major === PYTHON_MAJOR && parsed.minor >= PYTHON_MINOR) {
+                if (coerced && coerced.major === PYTHON_MAJOR && coerced.minor >= PYTHON_MINOR) {
                     if (executable) {
                         return { path: [executable, ...args], resource };
                     }
