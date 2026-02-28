@@ -28,7 +28,8 @@ function parsePythonVersion(version: string | undefined): { major: number; minor
 }
 
 function convertToResolvedEnvironment(environment: PythonEnvironment): ResolvedEnvironment | undefined {
-    const executable = environment.execInfo?.run?.executable;
+    const runConfig = environment.execInfo?.activatedRun ?? environment.execInfo?.run;
+    const executable = runConfig?.executable;
     if (!executable) {
         return undefined;
     }
@@ -185,22 +186,30 @@ export async function getInterpreterDetails(resource?: Uri): Promise<IInterprete
     // Prefer the Python Environments extension if it's available, as it provides a more comprehensive view of the available environments.
     const envsApi = await getEnvironmentsExtensionAPI();
     if (envsApi) {
-        const environment = await envsApi.getEnvironment(resource);
-        if (environment) {
-            const parsed = parsePythonVersion(environment.version);
-            const executable = environment.execInfo?.run?.executable;
-            if (parsed && parsed.major === PYTHON_MAJOR && parsed.minor >= PYTHON_MINOR) {
-                if (executable) {
-                    return { path: [executable], resource };
+        try {
+            const environment = await envsApi.getEnvironment(resource);
+            if (environment) {
+                const parsed = parsePythonVersion(environment.version);
+                const runConfig = environment.execInfo?.activatedRun ?? environment.execInfo?.run;
+                const executable = runConfig?.executable;
+                const args = runConfig?.args ?? [];
+                if (parsed && parsed.major === PYTHON_MAJOR && parsed.minor >= PYTHON_MINOR) {
+                    if (executable) {
+                        return { path: [executable, ...args], resource };
+                    }
+                    traceError('No executable found for selected Python environment.');
+                    return { path: undefined, resource };
                 }
-                traceError('No executable found for selected Python environment.');
+                traceError(`Python version ${environment.version} is not supported.`);
+                traceError(`Selected python path: ${runConfig?.executable}`);
+                traceError(`Supported versions are ${PYTHON_VERSION} and above.`);
                 return { path: undefined, resource };
             }
-            traceError(`Python version ${environment.version} is not supported.`);
-            traceError(`Selected python path: ${environment.execInfo?.run?.executable}`);
-            traceError(`Supported versions are ${PYTHON_VERSION} and above.`);
+            // No environment found via envs API, fall through to legacy resolver.
+        } catch (error) {
+            traceError('Error getting interpreter from Python environments extension: ', error);
+            // Fall through to legacy resolver.
         }
-        return { path: undefined, resource };
     }
 
     // Fall back to legacy ms-python.python extension API
