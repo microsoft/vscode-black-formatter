@@ -164,7 +164,7 @@ export async function getInterpreterDetails(resource?: Uri): Promise<IInterprete
     return { path: undefined, resource };
 }
 
-// TODO: Implement for new python environments extension
+// TODO: The Python Environments extension does not expose a debug API yet; uses legacy ms-python.python
 export async function getDebuggerPath(): Promise<string | undefined> {
     const api = await getPythonExtensionAPI();
     return api?.debug.getDebuggerPackagePath();
