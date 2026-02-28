@@ -18,9 +18,9 @@ function parsePythonVersion(version: string | undefined): { major: number; minor
         return undefined;
     }
     const parts = version.split('.');
-    const major = Number(parts[0]);
-    const minor = Number(parts[1] ?? 0);
-    const micro = Number(parts[2] ?? 0);
+    const major = parseInt(parts[0], 10);
+    const minor = parseInt(parts[1] ?? '0', 10);
+    const micro = parseInt(parts[2] ?? '0', 10);
     if (isNaN(major) || isNaN(minor) || isNaN(micro)) {
         return undefined;
     }
