@@ -4,7 +4,7 @@
 import { commands, Disposable, Event, EventEmitter, extensions, Uri } from 'vscode';
 import { traceError, traceLog } from './logging';
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
-import { PythonEnvironmentsAPI } from '../typings/pythonEnvironments';
+import type { PythonEnvironmentsAPI } from '../typings/pythonEnvironments';
 import { PYTHON_MAJOR, PYTHON_MINOR, PYTHON_VERSION } from './constants';
 import { getProjectRoot } from './utilities';
 
@@ -40,15 +40,15 @@ async function getEnvironmentsExtensionAPI(): Promise<PythonEnvironmentsAPI | un
         if (!extension.isActive) {
             await extension.activate();
         }
-        const api = extension.exports as PythonEnvironmentsAPI | undefined;
+        const api = extension.exports;
         if (!api) {
-            traceError('Python environments extension exports are undefined or invalid.');
+            traceError('Python environments extension did not provide any exports.');
             return undefined;
         }
-        _envsApi = api;
+        _envsApi = api as PythonEnvironmentsAPI;
         return _envsApi;
     } catch (ex) {
-        traceError('Failed to activate python environments extension or access its exports.', ex);
+        traceError('Failed to activate or retrieve API from Python environments extension.', ex as Error);
         return undefined;
     }
 }
@@ -102,7 +102,7 @@ export async function initializePython(disposables: Disposable[]): Promise<void>
                 }),
             );
 
-            traceLog('Waiting for interpreter from python environments extension.');
+            traceLog('Waiting for interpreter from Python environments extension.');
             await refreshServerPython();
             return;
         }
@@ -125,6 +125,7 @@ export async function initializePython(disposables: Disposable[]): Promise<void>
     }
 }
 
+// TODO: Unused code
 export async function resolveInterpreter(interpreter: string[]): Promise<ResolvedEnvironment | undefined> {
     const api = await getPythonExtensionAPI();
     return api?.environments.resolveEnvironment(interpreter[0]);
@@ -136,10 +137,18 @@ export async function getInterpreterDetails(resource?: Uri): Promise<IInterprete
     if (envsApi) {
         const environment = await envsApi.getEnvironment(resource);
         if (environment) {
-            return {
-                path: [environment.execInfo.run.executable],
-                resource,
-            };
+            const versionParts = environment.version?.split('.').map(Number);
+            const executable = environment.execInfo?.run?.executable;
+            if (versionParts && versionParts[0] === PYTHON_MAJOR && versionParts[1] >= PYTHON_MINOR) {
+                if (executable) {
+                    return { path: [executable], resource };
+                }
+                traceError('No executable found for selected Python environment.');
+                return { path: undefined, resource };
+            }
+            traceError(`Python version ${environment.version} is not supported.`);
+            traceError(`Selected python path: ${environment.execInfo?.run?.executable}`);
+            traceError(`Supported versions are ${PYTHON_VERSION} and above.`);
         }
         return { path: undefined, resource };
     }
@@ -155,11 +164,13 @@ export async function getInterpreterDetails(resource?: Uri): Promise<IInterprete
     return { path: undefined, resource };
 }
 
+// TODO: Implement for new python environments extension
 export async function getDebuggerPath(): Promise<string | undefined> {
     const api = await getPythonExtensionAPI();
     return api?.debug.getDebuggerPackagePath();
 }
 
+// TODO: Unused code
 export async function runPythonExtensionCommand(command: string, ...rest: unknown[]) {
     await getPythonExtensionAPI();
     return await commands.executeCommand(command, ...rest);
