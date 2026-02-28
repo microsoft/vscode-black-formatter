@@ -4,6 +4,7 @@
 import { commands, Disposable, Event, EventEmitter, extensions, Uri } from 'vscode';
 import { traceError, traceLog } from './logging';
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
+import * as semver from 'semver';
 import type { PythonEnvironment, PythonEnvironmentsAPI } from '../typings/pythonEnvironments';
 import { PYTHON_MAJOR, PYTHON_MINOR, PYTHON_VERSION } from './constants';
 import { getProjectRoot } from './utilities';
@@ -17,14 +18,11 @@ function parsePythonVersion(version: string | undefined): { major: number; minor
     if (!version) {
         return undefined;
     }
-    const parts = version.split('.');
-    const major = parseInt(parts[0], 10);
-    const minor = parseInt(parts[1] ?? '0', 10);
-    const micro = parseInt(parts[2] ?? '0', 10);
-    if (isNaN(major) || isNaN(minor) || isNaN(micro)) {
+    const coerced = semver.coerce(version);
+    if (!coerced) {
         return undefined;
     }
-    return { major, minor, micro };
+    return { major: coerced.major, minor: coerced.minor, micro: coerced.patch };
 }
 
 function convertToResolvedEnvironment(environment: PythonEnvironment): ResolvedEnvironment | undefined {

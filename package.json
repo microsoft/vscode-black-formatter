@@ -186,6 +186,7 @@
     "dependencies": {
         "@vscode/python-extension": "^1.0.5",
         "fs-extra": "^11.3.1",
+        "semver": "^7.7.4",
         "vscode-languageclient": "^9.0.1"
     },
     "devDependencies": {
@@ -195,6 +196,7 @@
         "@types/glob": "^9.0.0",
         "@types/mocha": "^10.0.10",
         "@types/node": "22.x",
+        "@types/semver": "^7.7.1",
         "@types/sinon": "^17.0.4",
         "@types/vscode": "^1.74.0",
         "@typescript-eslint/eslint-plugin": "^8.40.0",
