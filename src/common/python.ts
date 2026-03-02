@@ -1,15 +1,46 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { commands, Disposable, Event, EventEmitter, Uri } from 'vscode';
+import { commands, Disposable, Event, EventEmitter, extensions, Uri } from 'vscode';
 import { traceError, traceLog } from './logging';
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
+import * as semver from 'semver';
+import type { PythonEnvironment, PythonEnvironmentsAPI } from '../typings/pythonEnvironments';
 import { PYTHON_MAJOR, PYTHON_MINOR, PYTHON_VERSION } from './constants';
 import { getProjectRoot } from './utilities';
 
 export interface IInterpreterDetails {
     path?: string[];
     resource?: Uri;
+}
+
+function convertToResolvedEnvironment(environment: PythonEnvironment): ResolvedEnvironment | undefined {
+    const runConfig = environment.execInfo?.activatedRun ?? environment.execInfo?.run;
+    const executable = runConfig?.executable;
+    if (!executable) {
+        return undefined;
+    }
+    const coerced = semver.coerce(environment.version);
+    return {
+        id: environment.envId?.id ?? '',
+        path: executable,
+        executable: {
+            uri: Uri.file(executable),
+            bitness: 'Unknown',
+            sysPrefix: environment.sysPrefix ?? '',
+        },
+        version: coerced
+            ? {
+                  major: coerced.major,
+                  minor: coerced.minor,
+                  micro: coerced.patch,
+                  release: { level: 'final', serial: 0 },
+                  sysVersion: environment.version ?? '',
+              }
+            : undefined,
+        environment: undefined,
+        tools: [],
+    } as ResolvedEnvironment;
 }
 
 const onDidChangePythonInterpreterEvent = new EventEmitter<void>();
@@ -22,6 +53,34 @@ async function getPythonExtensionAPI(): Promise<PythonExtension | undefined> {
     }
     _api = await PythonExtension.api();
     return _api;
+}
+
+const PYTHON_ENVIRONMENTS_EXTENSION_ID = 'ms-python.vscode-python-envs';
+
+let _envsApi: PythonEnvironmentsAPI | undefined;
+async function getEnvironmentsExtensionAPI(): Promise<PythonEnvironmentsAPI | undefined> {
+    if (_envsApi) {
+        return _envsApi;
+    }
+    const extension = extensions.getExtension(PYTHON_ENVIRONMENTS_EXTENSION_ID);
+    if (!extension) {
+        return undefined;
+    }
+    try {
+        if (!extension.isActive) {
+            await extension.activate();
+        }
+        const api = extension.exports;
+        if (!api) {
+            traceError('Python environments extension did not provide any exports.');
+            return undefined;
+        }
+        _envsApi = api as PythonEnvironmentsAPI;
+        return _envsApi;
+    } catch (ex) {
+        traceError('Failed to activate or retrieve API from Python environments extension.', ex as Error);
+        return undefined;
+    }
 }
 
 function sameInterpreter(a: string[], b: string[]): boolean {
@@ -63,6 +122,22 @@ async function refreshServerPython(): Promise<void> {
 
 export async function initializePython(disposables: Disposable[]): Promise<void> {
     try {
+        // Prefer the Python Environments extension if it's available, as it provides a more comprehensive view of the available environments.
+        const envsApi = await getEnvironmentsExtensionAPI();
+
+        if (envsApi) {
+            disposables.push(
+                envsApi.onDidChangeEnvironment(async () => {
+                    await refreshServerPython();
+                }),
+            );
+
+            traceLog('Waiting for interpreter from Python environments extension.');
+            await refreshServerPython();
+            return;
+        }
+
+        // Fall back to legacy ms-python.python extension API
         const api = await getPythonExtensionAPI();
 
         if (api) {
@@ -80,12 +155,51 @@ export async function initializePython(disposables: Disposable[]): Promise<void>
     }
 }
 
+// TODO: Unused code
 export async function resolveInterpreter(interpreter: string[]): Promise<ResolvedEnvironment | undefined> {
+    const envsApi = await getEnvironmentsExtensionAPI();
+    if (envsApi) {
+        const environment = await envsApi.resolveEnvironment(Uri.file(interpreter[0]));
+        if (!environment) {
+            return undefined;
+        }
+        return convertToResolvedEnvironment(environment);
+    }
     const api = await getPythonExtensionAPI();
     return api?.environments.resolveEnvironment(interpreter[0]);
 }
 
 export async function getInterpreterDetails(resource?: Uri): Promise<IInterpreterDetails> {
+    // Prefer the Python Environments extension if it's available, as it provides a more comprehensive view of the available environments.
+    const envsApi = await getEnvironmentsExtensionAPI();
+    if (envsApi) {
+        try {
+            const environment = await envsApi.getEnvironment(resource);
+            if (environment) {
+                const coerced = semver.coerce(environment.version);
+                const runConfig = environment.execInfo?.activatedRun ?? environment.execInfo?.run;
+                const executable = runConfig?.executable;
+                const args = runConfig?.args ?? [];
+                if (coerced && coerced.major === PYTHON_MAJOR && coerced.minor >= PYTHON_MINOR) {
+                    if (executable) {
+                        return { path: [executable, ...args], resource };
+                    }
+                    traceError('No executable found for selected Python environment.');
+                    return { path: undefined, resource };
+                }
+                traceError(`Python version ${environment.version} is not supported.`);
+                traceError(`Selected python path: ${runConfig?.executable}`);
+                traceError(`Supported versions are ${PYTHON_VERSION} and above.`);
+                return { path: undefined, resource };
+            }
+            // No environment found via envs API, fall through to legacy resolver.
+        } catch (error) {
+            traceError('Error getting interpreter from Python environments extension: ', error);
+            // Fall through to legacy resolver.
+        }
+    }
+
+    // Fall back to legacy ms-python.python extension API
     const api = await getPythonExtensionAPI();
     const environment = await api?.environments.resolveEnvironment(
         api?.environments.getActiveEnvironmentPath(resource),
@@ -96,13 +210,18 @@ export async function getInterpreterDetails(resource?: Uri): Promise<IInterprete
     return { path: undefined, resource };
 }
 
+// TODO: The Python Environments extension does not expose a debug API yet; uses legacy ms-python.python
 export async function getDebuggerPath(): Promise<string | undefined> {
     const api = await getPythonExtensionAPI();
     return api?.debug.getDebuggerPackagePath();
 }
 
+// TODO: Unused code
 export async function runPythonExtensionCommand(command: string, ...rest: unknown[]) {
-    await getPythonExtensionAPI();
+    const envsApi = await getEnvironmentsExtensionAPI();
+    if (!envsApi) {
+        await getPythonExtensionAPI();
+    }
     return await commands.executeCommand(command, ...rest);
 }
 
