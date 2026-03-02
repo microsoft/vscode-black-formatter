@@ -236,7 +236,7 @@ export function checkVersion(resolved: ResolvedEnvironment | undefined): boolean
     return false;
 }
 
-export function _resetForTesting(): void {
+export function resetCachedApis(): void {
     _api = undefined;
     _envsApi = undefined;
 }

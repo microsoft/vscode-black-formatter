@@ -5,14 +5,14 @@ import { assert } from 'chai';
 import * as sinon from 'sinon';
 import { EventEmitter, extensions, Uri } from 'vscode';
 import { PythonExtension } from '@vscode/python-extension';
-import { getInterpreterDetails, _resetForTesting } from '../../../../common/python';
+import { getInterpreterDetails, resetCachedApis } from '../../../../common/python';
 
 suite('Python Interpreter Resolution Tests', () => {
     let getExtensionStub: sinon.SinonStub;
     let pythonExtensionApiStub: sinon.SinonStub;
 
     setup(() => {
-        _resetForTesting();
+        resetCachedApis();
         getExtensionStub = sinon.stub(extensions, 'getExtension');
         pythonExtensionApiStub = sinon.stub(PythonExtension, 'api');
     });
