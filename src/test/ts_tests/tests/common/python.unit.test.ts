@@ -90,4 +90,35 @@ suite('Python Interpreter Resolution Tests', () => {
         assert.strictEqual(result.path![0], interpreterUri.fsPath);
         assert.isTrue(mockLegacyApi.environments.resolveEnvironment.calledOnce);
     });
+
+    test('Rejects unsupported Python version from Environments extension', async () => {
+        const mockEnvsApi = {
+            getEnvironment: sinon.stub().resolves({
+                version: '3.8.0',
+                execInfo: {
+                    run: { executable: '/usr/bin/python3.8', args: [] },
+                },
+                envId: { id: 'old-env', managerId: 'test-manager' },
+                sysPrefix: '/usr',
+                name: 'old-python',
+                displayName: 'Python 3.8',
+                environmentPath: Uri.file('/usr/bin/python3.8'),
+            }),
+            resolveEnvironment: sinon.stub(),
+            onDidChangeEnvironment: new EventEmitter().event,
+        };
+
+        getExtensionStub.withArgs('ms-python.vscode-python-envs').returns({
+            isActive: true,
+            activate: sinon.stub().resolves(),
+            exports: mockEnvsApi,
+        });
+
+        const result = await getInterpreterDetails(Uri.file('/test/workspace'));
+
+        assert.isUndefined(result.path);
+        assert.isTrue(mockEnvsApi.getEnvironment.calledOnce);
+        // Should not fall through to legacy when version is explicitly unsupported
+        assert.isTrue(pythonExtensionApiStub.notCalled);
+    });
 });
