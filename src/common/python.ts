@@ -235,3 +235,8 @@ export function checkVersion(resolved: ResolvedEnvironment | undefined): boolean
     traceError(`Supported versions are ${PYTHON_VERSION} and above.`);
     return false;
 }
+
+export function _resetForTesting(): void {
+    _api = undefined;
+    _envsApi = undefined;
+}
