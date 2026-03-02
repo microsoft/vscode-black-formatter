@@ -121,4 +121,41 @@ suite('Python Interpreter Resolution Tests', () => {
         // Should not fall through to legacy when version is explicitly unsupported
         assert.isTrue(pythonExtensionApiStub.notCalled);
     });
+
+    test('Rejects unsupported Python version from legacy extension', async () => {
+        // Envs extension not installed
+        getExtensionStub.withArgs('ms-python.vscode-python-envs').returns(undefined);
+
+        const interpreterUri = Uri.file('/usr/bin/python3.8');
+        const mockLegacyApi = {
+            environments: {
+                getActiveEnvironmentPath: sinon.stub().returns('/usr/bin/python3.8'),
+                resolveEnvironment: sinon.stub().resolves({
+                    executable: {
+                        uri: interpreterUri,
+                        bitness: '64-bit',
+                        sysPrefix: '/usr',
+                    },
+                    version: {
+                        major: 3,
+                        minor: 8,
+                        micro: 0,
+                        release: { level: 'final', serial: 0 },
+                        sysVersion: '3.8.0',
+                    },
+                }),
+                onDidChangeActiveEnvironmentPath: new EventEmitter().event,
+            },
+            debug: {
+                getDebuggerPackagePath: sinon.stub(),
+            },
+        };
+
+        pythonExtensionApiStub.resolves(mockLegacyApi);
+
+        const result = await getInterpreterDetails(Uri.file('/test/workspace'));
+
+        assert.isUndefined(result.path);
+        assert.isTrue(mockLegacyApi.environments.resolveEnvironment.calledOnce);
+    });
 });
