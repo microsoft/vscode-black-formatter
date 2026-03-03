@@ -33,7 +33,8 @@ def test_change_cwd_happy_path(tmp_path):
 
 
 def test_change_cwd_permission_error_does_not_crash(caplog):
-    """When os.chdir raises PermissionError the body still runs, cwd is unchanged, and a warning is logged."""
+    """When os.chdir raises PermissionError the body still runs,
+    cwd is unchanged, and a warning is logged."""
     original_cwd = os.getcwd()
     body_executed = False
 
