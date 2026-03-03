@@ -1,18 +1,13 @@
 ---
 description: >
-  Daily check (and on-demand trigger) to sync changes from the upstream
-  microsoft/vscode-python-tools-extension-template into this repository.
-  Reads recently merged PRs from the template, determines whether the
-  changes apply to this repo, and opens a sync PR if they do.
+  Scheduled and on-demand check to detect unsynced changes from the
+  upstream microsoft/vscode-python-tools-extension-template. Compares
+  recent template PRs against this repo's files and opens an issue
+  for each PR whose changes are not yet present.
 on:
   schedule:
     - cron: daily
   workflow_dispatch:
-    inputs:
-      pr_number:
-        description: "PR number from microsoft/vscode-python-tools-extension-template to sync"
-        required: true
-        type: number
 permissions:
   contents: read
   pull-requests: read
@@ -23,10 +18,8 @@ tools:
 network:
   allowed: []
 safe-outputs:
-  create-pull-request:
-    draft: true
-  noop:
-    max: 1
+  create-issue:
+    max: 10
 steps:
 - name: Checkout repository
   uses: actions/checkout@v5
@@ -42,12 +35,9 @@ steps:
 
 # Extension Template Sync
 
-You are an AI agent that keeps the **vscode-black-formatter** repository in sync with the upstream **[vscode-python-tools-extension-template](https://github.com/microsoft/vscode-python-tools-extension-template)**.
+You are an AI agent that monitors the **vscode-black-formatter** repository for unsynced changes from the upstream **[vscode-python-tools-extension-template](https://github.com/microsoft/vscode-python-tools-extension-template)**.
 
-This workflow runs in two modes:
-
-1. **Scheduled (daily):** Automatically checks for PRs merged into the template repository within the last 24 hours and processes each one.
-2. **On demand (`workflow_dispatch`):** Receives a specific PR number from the template repository and processes that single PR.
+This workflow runs **daily on a schedule** and can also be **triggered manually**. It examines recently merged PRs in the template repository, compares the affected files against this repository, and opens an issue for each PR whose changes have not yet been incorporated.
 
 ## Context
 
@@ -60,7 +50,7 @@ Key **shared areas** that come from the template (and should be kept in sync):
 - **Build & CI infrastructure**: `noxfile.py`, webpack config, ESLint config, Azure Pipelines definitions, GitHub Actions workflows.
 - **Dependency management**: `requirements.in` / `requirements.txt`, bundled libs pattern.
 
-Key **black-specific areas** that should NOT be overwritten blindly:
+Key **Black-specific areas** that are NOT expected to match the template:
 
 - Tool-specific logic in `bundled/tool/lsp_server.py` (the template provides a skeleton; this repo has Black-specific implementation).
 - Black-specific settings in `package.json` (`contributes.configuration`).
@@ -73,85 +63,61 @@ Key **black-specific areas** that should NOT be overwritten blindly:
 
 ## Your Task
 
-### Step 1: Identify the template PR(s) to process
+### Step 1: Fetch recent template PRs
 
-**If triggered by `workflow_dispatch`:**
-- Use the provided `pr_number` input.
-- Read the PR from `microsoft/vscode-python-tools-extension-template`.
-- **Verify the PR is merged.** If it is not merged, call the `noop` safe output with an explanation and stop.
+- List the last 50 merged PRs in `microsoft/vscode-python-tools-extension-template`.
+- If there are no merged PRs, stop.
 
-**If triggered by `schedule`:**
-- List recently merged PRs in `microsoft/vscode-python-tools-extension-template` (merged within the last 24 hours).
-- If no PRs were merged, call the `noop` safe output and stop.
-- Process each merged PR through Steps 2–4 below. If multiple PRs are relevant, combine their changes into a single sync PR.
-
-### Step 2: Assess relevance
+### Step 2: For each merged PR, detect missing changes
 
 For each merged template PR:
 
 1. **Get the list of changed files and the diff.**
 2. For each changed file, determine:
    - **Does a corresponding file exist in this repository?** Template files map by path (e.g., `src/common/server.ts` → `src/common/server.ts`).
-   - **Is it a shared/template file or a tool-specific placeholder?** Refer to the shared vs. black-specific areas listed in the Context section.
-   - **Has this repo diverged from the template in the affected code?** Compare the current file in this repo to the template's pre-change version (the PR's base). If they have diverged significantly, flag the file for manual review rather than applying changes blindly.
+   - **Is it a shared/template file or a tool-specific placeholder?** Refer to the shared vs. Black-specific areas listed in the Context section. Skip files that are entirely tool-specific.
+   - **Compare the post-change version from the template PR (head) against the current file in this repository.** If the relevant changes introduced by the PR are already present in this repo's version, the PR is considered synced.
 
 3. Classify the PR as:
-   - **Fully applicable**: All changed files exist here and the code is close enough.
-   - **Partially applicable**: Some files are relevant, others are not or have diverged.
-   - **Not applicable**: Changes are entirely template-placeholder-specific or affect files that don't exist here.
+   - **Synced**: All relevant changes from the PR are already present in this repository — skip it.
+   - **Not applicable**: Changes are entirely template-placeholder-specific or affect files that don't exist here — skip it.
+   - **Unsynced**: One or more relevant files in this repository do not yet contain the changes from the PR — proceed to Step 3.
 
-If **not applicable**, call the `noop` safe output with an explanation and stop.
+### Step 3: Create an issue for each unsynced PR
 
-### Step 3: Apply the changes
+For each unsynced template PR, use the `create-issue` safe output with:
 
-For each relevant file:
-
-1. **Read the current version** in this repository.
-2. **Read the pre-change and post-change versions** from the template PR (base and head).
-3. **Apply the equivalent change** to this repository's version:
-   - Preserve any Black-specific customizations.
-   - Only apply hunks that modify shared/template code — skip hunks that touch tool-specific placeholder sections.
-   - Maintain the same coding style and conventions used in this repository.
-4. **Write the modified file** to the workspace.
-
-If a file has diverged too much to apply changes confidently, **do not modify it** — instead note it in the PR body as needing manual attention.
-
-### Step 4: Create the sync PR
-
-Use the `create-pull-request` safe output with:
-
-- **Title**: `Template Sync: <Title of PR>` (if syncing a single PR) or `Template Sync: <Summary>` (if combining multiple PRs)
+- **Title**: `Template Sync: <Title of template PR>`
 - **Body** structured as:
 
 ```
-### 🔄 Template Sync
+### 🔄 Template Sync Required
 
-This PR syncs changes from the upstream [vscode-python-tools-extension-template](https://github.com/microsoft/vscode-python-tools-extension-template).
+Changes from the upstream [vscode-python-tools-extension-template](https://github.com/microsoft/vscode-python-tools-extension-template) have not yet been incorporated into this repository.
 
-#### Source PR(s)
+#### Source PR
 - microsoft/vscode-python-tools-extension-template#<NUMBER> — <title>
 
-#### Related Issues
-<List any issues referenced or fixed by the source PR(s), including cross-repo issues. Omit this section if none.>
+#### Summary
+<Brief summary of what the template PR changed and why.>
 
-#### Changes Applied
-<List of files modified and a brief description of what changed in each.>
+#### Files with missing changes
+<List each file in this repo that differs from the template PR's post-change version, with a brief note on what differs.>
 
-#### Files Skipped
-<List of files from the template PR that were skipped and why. Omit this section if none were skipped.>
+#### Suggested fix
+<For each file with missing changes, provide a concrete diff or code snippet showing the recommended changes to bring this repo in line with the template. Preserve any Black-specific customizations — only suggest changes for shared/template code. Use fenced diff blocks for clarity.>
 
-#### ⚠️ Review Notes
-- Review all changes carefully, especially in files with tool-specific customizations.
-- Run tests locally before merging.
+#### Files skipped
+<List any files from the template PR that were skipped because they are tool-specific or don't exist in this repo. Omit this section if none.>
 
 ---
-🤖 This PR was auto-generated by the [`extension-template-sync`](.github/workflows/extension-template-sync.md) workflow.
+🤖 This issue was auto-generated by the [`extension-template-sync`](.github/workflows/extension-template-sync.md) workflow.
 ```
 
-### Step 5: Handle edge cases
+### Step 4: Handle edge cases
 
 - **CI/workflow files** (`.github/workflows/`, Azure Pipelines): These are often shared — still assess relevance.
-- **Large refactors**: Apply what you can confidently and flag the rest for manual review.
-- **Dependency updates** (`requirements.in`, `requirements.txt`, `package.json`): Be careful with version bumps — only sync shared dependencies, not tool-specific ones.
-- **No applicable changes**: Call the `noop` safe output instead of creating an empty PR.
-- **Multiple PRs on schedule**: Combine all applicable changes into a single sync PR to avoid PR noise.
+- **Large refactors**: Flag differing files and summarize in the issue body.
+- **Dependency updates** (`requirements.in`, `requirements.txt`, `package.json`): Only consider shared dependencies, not tool-specific ones.
+- **No unsynced changes found**: Do nothing — do not create any issues.
+- **Already-open issues**: Before creating a new issue, search for existing open issues in this repository with the same title pattern (`Template Sync: <title>`). If one already exists for the same template PR, skip it to avoid duplicates.
