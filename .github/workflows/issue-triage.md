@@ -24,8 +24,6 @@ safe-outputs:
     run-started: "⏳ **Triage Issue Agent**: I will analyze this issue and determine if related issues exist in this repo, the upstream Python tool, or similar extensions. This may take a couple of minutes."
   add-comment:
     max: 1
-  noop:
-    max: 1
 steps:
 - name: Checkout repository
   uses: actions/checkout@v5
@@ -47,7 +45,7 @@ This workflow is triggered in two ways:
 1. **Automatically** when a new issue is opened.
 2. **On demand** when a maintainer posts a `/triage-issue` comment on an existing issue.
 
-If triggered by a comment, first verify the comment body is exactly `/triage-issue` (ignoring leading/trailing whitespace). If it is not, call the `noop` safe output and stop — do not process arbitrary comments.
+If triggered by a comment, first verify the comment body is exactly `/triage-issue` (ignoring leading/trailing whitespace). If it is not, stop — do not process arbitrary comments.
 
 > **Note:** A loading message has already been posted on the issue when this workflow started, so the reporter knows analysis is in progress. You do not need to post a preliminary comment — go straight to your analysis.
 
@@ -88,9 +86,9 @@ Read the newly opened issue carefully. Identify:
 - Any error messages, logs, stack traces, or reproduction steps.
 - Which part of the codebase is likely involved (TypeScript client, Python server, build/CI, configuration).
 
-Search open and recently closed issues for similar symptoms or error messages. If a clear duplicate exists, call the `noop` safe output with a reference to the existing issue and stop.
+Search open and recently closed issues for similar symptoms or error messages. If a clear duplicate exists, stop — do not comment.
 
-If the issue is clearly a feature request, spam, or not actionable, call the `noop` safe output with a brief explanation and stop.
+If the issue is clearly a feature request, spam, or not actionable, stop — do not comment.
 
 ### Step 2: Investigate the root cause
 
@@ -186,4 +184,4 @@ The following open issue(s) on the [Black repository](https://github.com/psf/bla
 - If you cannot determine the root cause with reasonable confidence, still post a comment summarizing what you found and noting the uncertainty.
 - If the issue is about a dependency (e.g., Black itself, pygls, a VS Code API change), note that and skip the template comparison. For Black-specific behaviour issues, prioritise the upstream Black issue search (Step 3) over the template comparison.
 - When referencing upstream Black issues, never open more than **3** related issues in your comment, and only include those you are most confident about. If many candidates exist, pick the most relevant.
-- If you determine there is nothing to do (spam, duplicate, feature request with no investigation needed), call the `noop` safe output instead of commenting.
+- If you determine there is nothing to do (spam, duplicate, feature request with no investigation needed), do not comment.
