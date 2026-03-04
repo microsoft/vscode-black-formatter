@@ -89,12 +89,6 @@
                     "scope": "resource",
                     "type": "array"
                 },
-                "black-formatter.serverEnabled": {
-                    "default": true,
-                    "markdownDescription": "%settings.serverEnabled.description%",
-                    "scope": "window",
-                    "type": "boolean"
-                },
                 "black-formatter.cwd": {
                     "default": "${workspaceFolder}",
                     "markdownDescription": "%settings.cwd.description%",
