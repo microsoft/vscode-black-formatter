@@ -10,6 +10,7 @@ import { initializePython, onDidChangePythonInterpreter } from './common/python'
 import { restartServer } from './common/server';
 import {
     checkIfConfigurationChanged,
+    getServerEnabled,
     getWorkspaceSettings,
     logDefaultFormatter,
     logLegacySettings,
@@ -48,6 +49,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
         isRestarting = true;
         try {
+            if (!getServerEnabled(serverId)) {
+                if (lsClient) {
+                    try {
+                        await lsClient.stop();
+                    } catch (ex) {
+                        traceError(`Server: Stop failed: ${ex}`);
+                    }
+                    lsClient = undefined;
+                }
+                return;
+            }
+
             const projectRoot = await getProjectRoot();
             const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
             if (workspaceSetting.interpreter.length === 0) {

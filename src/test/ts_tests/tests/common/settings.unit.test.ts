@@ -8,10 +8,67 @@ import * as TypeMoq from 'typemoq';
 import { Uri, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
 import { EXTENSION_ROOT_DIR } from '../../../../common/constants';
 import * as python from '../../../../common/python';
-import { ISettings, getWorkspaceSettings } from '../../../../common/settings';
+import { ISettings, checkIfConfigurationChanged, getServerEnabled, getWorkspaceSettings } from '../../../../common/settings';
 import * as vscodeapi from '../../../../common/vscodeapi';
 
 suite('Settings Tests', () => {
+    suite('getServerEnabled tests', () => {
+        let getConfigurationStub: sinon.SinonStub;
+        let configMock: TypeMoq.IMock<WorkspaceConfiguration>;
+
+        setup(() => {
+            getConfigurationStub = sinon.stub(vscodeapi, 'getConfiguration');
+            configMock = TypeMoq.Mock.ofType<WorkspaceConfiguration>();
+            getConfigurationStub.returns(configMock.object);
+        });
+
+        teardown(() => {
+            sinon.restore();
+        });
+
+        test('Returns true by default', () => {
+            configMock
+                .setup((c) => c.get<boolean>('serverEnabled', true))
+                .returns(() => true)
+                .verifiable(TypeMoq.Times.once());
+
+            const result = getServerEnabled('black-formatter');
+            assert.strictEqual(result, true);
+            configMock.verifyAll();
+        });
+
+        test('Returns false when disabled', () => {
+            configMock
+                .setup((c) => c.get<boolean>('serverEnabled', true))
+                .returns(() => false)
+                .verifiable(TypeMoq.Times.once());
+
+            const result = getServerEnabled('black-formatter');
+            assert.strictEqual(result, false);
+            configMock.verifyAll();
+        });
+    });
+
+    suite('checkIfConfigurationChanged tests', () => {
+        test('Detects serverEnabled change', () => {
+            const event = {
+                affectsConfiguration: (section: string) => section === 'black-formatter.serverEnabled',
+            } as import('vscode').ConfigurationChangeEvent;
+
+            const result = checkIfConfigurationChanged(event, 'black-formatter');
+            assert.strictEqual(result, true);
+        });
+
+        test('Returns false for unrelated change', () => {
+            const event = {
+                affectsConfiguration: () => false,
+            } as unknown as import('vscode').ConfigurationChangeEvent;
+
+            const result = checkIfConfigurationChanged(event, 'black-formatter');
+            assert.strictEqual(result, false);
+        });
+    });
+
     suite('getWorkspaceSettings tests', () => {
         let getConfigurationStub: sinon.SinonStub;
         let getInterpreterDetailsStub: sinon.SinonStub;

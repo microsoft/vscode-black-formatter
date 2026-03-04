@@ -15,5 +15,6 @@
     "settings.showNotifications.off.description": "All notifications are turned off, any errors or warnings when formatting Python files are still available in the logs.",
     "settings.showNotifications.onError.description": "Notifications are shown only in the case of an error when formatting Python files.",
     "settings.showNotifications.onWarning.description": "Notifications are shown for any errors and warnings when formatting Python files.",
-    "settings.showNotifications.always.description": "Notifications are show for anything that the server chooses to show when formatting Python files."
+    "settings.showNotifications.always.description": "Notifications are show for anything that the server chooses to show when formatting Python files.",
+    "settings.serverEnabled.description": "Enable or disable the Black formatter language server."
 }
