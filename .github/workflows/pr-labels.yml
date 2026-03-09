@@ -16,6 +16,6 @@ jobs:
       - name: 'PR impact specified'
         uses: mheap/github-action-required-labels@v5
         with:
-          mode: exactly
+          mode: minimum
           count: 1
           labels: 'bug, debt, feature-request, no-changelog'
