@@ -74,7 +74,7 @@ def _setup_mocks():
         "Range",
         "TextEdit",
     ]:
-        setattr(mock_lsp, _name, type(_name, (), {}))
+        setattr(mock_lsp, _name, type(_name, (), {"__init__": lambda self, **kw: None}))
     mock_lsp.MessageType = type(
         "MessageType", (), {"Log": 4, "Error": 1, "Warning": 2, "Info": 3}
     )
