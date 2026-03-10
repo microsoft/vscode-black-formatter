@@ -77,8 +77,28 @@ GLOBAL_SETTINGS = {}
 RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
+NOTEBOOK_SYNC_OPTIONS = lsp.NotebookDocumentSyncOptions(
+    notebook_selector=[
+        lsp.NotebookDocumentFilterWithNotebook(
+            notebook="jupyter-notebook",
+            cells=[
+                lsp.NotebookCellLanguage(language="python"),
+            ],
+        ),
+        lsp.NotebookDocumentFilterWithNotebook(
+            notebook="interactive",
+            cells=[
+                lsp.NotebookCellLanguage(language="python"),
+            ],
+        ),
+    ],
+    save=True,
+)
 LSP_SERVER = LanguageServer(
-    name="black-server", version="v0.1.0", max_workers=MAX_WORKERS
+    name="black-server",
+    version="v0.1.0",
+    max_workers=MAX_WORKERS,
+    notebook_document_sync=NOTEBOOK_SYNC_OPTIONS,
 )
 
 
