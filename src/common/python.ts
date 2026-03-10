@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { commands, Disposable, Event, EventEmitter, extensions, Uri } from 'vscode';
+import { PythonEnvironmentApi, PythonEnvironment, PythonEnvironments } from '@vscode/python-environments';
+import { commands, Disposable, Event, EventEmitter, Uri } from 'vscode';
 import { traceError, traceLog } from './logging';
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
 import * as semver from 'semver';
-import type { PythonEnvironment, PythonEnvironmentsAPI } from '../typings/pythonEnvironments';
 import { PYTHON_MAJOR, PYTHON_MINOR, PYTHON_VERSION } from './constants';
 import { getProjectRoot } from './utilities';
 
@@ -55,32 +55,17 @@ async function getPythonExtensionAPI(): Promise<PythonExtension | undefined> {
     return _api;
 }
 
-const PYTHON_ENVIRONMENTS_EXTENSION_ID = 'ms-python.vscode-python-envs';
-
-let _envsApi: PythonEnvironmentsAPI | undefined;
-async function getEnvironmentsExtensionAPI(): Promise<PythonEnvironmentsAPI | undefined> {
+let _envsApi: PythonEnvironmentApi | undefined;
+async function getEnvironmentsExtensionAPI(): Promise<PythonEnvironmentApi | undefined> {
     if (_envsApi) {
         return _envsApi;
     }
-    const extension = extensions.getExtension(PYTHON_ENVIRONMENTS_EXTENSION_ID);
-    if (!extension) {
-        return undefined;
-    }
     try {
-        if (!extension.isActive) {
-            await extension.activate();
-        }
-        const api = extension.exports;
-        if (!api) {
-            traceError('Python environments extension did not provide any exports.');
-            return undefined;
-        }
-        _envsApi = api as PythonEnvironmentsAPI;
-        return _envsApi;
-    } catch (ex) {
-        traceError('Failed to activate or retrieve API from Python environments extension.', ex as Error);
+        _envsApi = await PythonEnvironments.api();
+    } catch {
         return undefined;
     }
+    return _envsApi;
 }
 
 function sameInterpreter(a: string[], b: string[]): boolean {
