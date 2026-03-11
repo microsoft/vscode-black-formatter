@@ -28,7 +28,7 @@ variables:
   - name: PythonVersion
     value: '3.10'
   - name: AZURE_ARTIFACTS_FEED
-    value: 'https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/'
+    value: 'https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/'
 
 parameters:
   - name: publishExtension
