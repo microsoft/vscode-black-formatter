@@ -7,7 +7,7 @@ pr:
   branches:
     include:
       - '*'
-  drafts: false
+  drafts: true
 
 resources:
   repositories:
