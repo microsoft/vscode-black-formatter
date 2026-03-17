@@ -1,21 +1,13 @@
-# PR and Push validation pipeline
-
 trigger:
   branches:
     include:
-      - main
-      - release
-      - release/*
-      - release-*
+      - '*'
 
 pr:
   branches:
     include:
-      - main
-      - release
-      - release/*
-      - release-*
-  drafts: false
+      - '*'
+  drafts: true
 
 resources:
   repositories:
@@ -59,10 +51,11 @@ parameters:
         displayName: Build extension
 
 extends:
-  template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
+  template: azure-pipelines/MicroBuild.1ES.Unofficial.yml@MicroBuildTemplate
   parameters:
     sdl:
       enabled: false
+      sourceAnalysisPool: VSEngSS-MicroBuild2022-1ES
     pool:
       name: AzurePipelines-EO
       os: windows
