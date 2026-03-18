@@ -48,7 +48,9 @@
         "onLanguage:python",
         "workspaceContains:pyproject.toml",
         "workspaceContains:.black",
-        "workspaceContains:*.py"
+        "workspaceContains:*.py",
+        "onNotebook:jupyter-notebook",
+        "onNotebook:interactive"
     ],
     "main": "./dist/extension.js",
     "l10n": "./l10n",
