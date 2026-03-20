@@ -50,7 +50,7 @@ jobs:
       secret_verification_result: ${{ steps.validate-secret.outputs.verification_result }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@33cd6c7f1fee588654ef19def2e6a4174be66197 # v0.51.6
+        uses: github/gh-aw/actions/setup@a898ed7b8f8238a30d9c9f560813547e695cfb0a # v0.62.4
         with:
           destination: /opt/gh-aw/actions
       - name: Generate agentic run info
@@ -252,7 +252,7 @@ jobs:
       output_types: ${{ steps.collect_output.outputs.output_types }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@33cd6c7f1fee588654ef19def2e6a4174be66197 # v0.51.6
+        uses: github/gh-aw/actions/setup@a898ed7b8f8238a30d9c9f560813547e695cfb0a # v0.62.4
         with:
           destination: /opt/gh-aw/actions
       - name: Checkout repository
@@ -603,7 +603,7 @@ jobs:
           }
           GH_AW_MCP_CONFIG_EOF
       - name: Download activation artifact
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: activation
           path: /tmp/gh-aw
@@ -906,12 +906,12 @@ jobs:
       total_count: ${{ steps.missing_tool.outputs.total_count }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@33cd6c7f1fee588654ef19def2e6a4174be66197 # v0.51.6
+        uses: github/gh-aw/actions/setup@a898ed7b8f8238a30d9c9f560813547e695cfb0a # v0.62.4
         with:
           destination: /opt/gh-aw/actions
       - name: Download agent output artifact
         continue-on-error: true
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: agent-output
           path: /tmp/gh-aw/safeoutputs/
@@ -1026,12 +1026,12 @@ jobs:
       process_safe_outputs_temporary_id_map: ${{ steps.process_safe_outputs.outputs.temporary_id_map }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@33cd6c7f1fee588654ef19def2e6a4174be66197 # v0.51.6
+        uses: github/gh-aw/actions/setup@a898ed7b8f8238a30d9c9f560813547e695cfb0a # v0.62.4
         with:
           destination: /opt/gh-aw/actions
       - name: Download agent output artifact
         continue-on-error: true
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: agent-output
           path: /tmp/gh-aw/safeoutputs/
@@ -1042,7 +1042,7 @@ jobs:
           echo "GH_AW_AGENT_OUTPUT=/tmp/gh-aw/safeoutputs/agent_output.json" >> "$GITHUB_ENV"
       - name: Download patch artifact
         continue-on-error: true
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: agent-artifacts
           path: /tmp/gh-aw/
