@@ -120,6 +120,6 @@ Changes from the upstream [vscode-python-tools-extension-template](https://githu
 
 - **CI/workflow files** (`.github/workflows/`, Azure Pipelines): These are often shared — still assess relevance.
 - **Large refactors**: Flag differing files and summarize in the issue body.
-- **Dependency updates** (`requirements.in`, `requirements.txt`, `package.json`): Only consider shared dependencies, not tool-specific ones.
+- **Dependency updates** (`requirements.in`, `requirements.txt`, `package.json`, `package-lock.json`): **Skip entirely.** Dependency version bumps are handled automatically by Dependabot in this repository. Do not create issues for template PRs that only update dependency versions.
 - **No unsynced changes found**: Do nothing — do not create any issues.
 - **Duplicate prevention**: Before creating a new issue, search for existing issues **and** pull requests in this repository — both **open and closed** — with the same title pattern (`Template Sync: <title>`) or that reference the same template PR number. If a matching issue or PR already exists, skip it to avoid duplicates.
