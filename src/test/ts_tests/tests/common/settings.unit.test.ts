@@ -266,9 +266,7 @@ suite('Settings Tests', () => {
             await getWorkspaceSettings('black-formatter', workspace1);
 
             assert.isTrue(
-                traceErrorStub.calledWith(
-                    sinon.match('["--line-length=88"]'),
-                ),
+                traceErrorStub.calledWith(sinon.match('["--line-length=88"]')),
                 'Expected traceError to be called with space-in-args warning',
             );
         });
