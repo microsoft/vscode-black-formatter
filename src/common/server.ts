@@ -72,7 +72,7 @@ async function createServer(
     initializationOptions: IInitOptions,
 ): Promise<LanguageClient> {
     const command = settings.interpreter[0];
-    const workspaceUri = Uri.parse(settings.workspace);
+    const workspaceUri = Uri.file(settings.workspace);
     const cwd = settings.cwd === '${fileDirname}' ? workspaceUri.fsPath : settings.cwd;
 
     // Load environment variables from envFile (python.envFile setting or .env)
