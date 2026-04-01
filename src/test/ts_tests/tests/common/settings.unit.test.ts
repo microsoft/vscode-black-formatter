@@ -10,6 +10,7 @@ import { EXTENSION_ROOT_DIR } from '../../../../common/constants';
 import * as python from '../../../../common/python';
 import { ISettings, getWorkspaceSettings } from '../../../../common/settings';
 import * as vscodeapi from '../../../../common/vscodeapi';
+import * as logging from '../../../../common/logging';
 
 suite('Settings Tests', () => {
     suite('getWorkspaceSettings tests', () => {
@@ -210,6 +211,66 @@ suite('Settings Tests', () => {
 
             configMock.verifyAll();
             pythonConfigMock.verifyAll();
+        });
+    });
+
+    suite('resolveVariables validation tests', () => {
+        let getConfigurationStub: sinon.SinonStub;
+        let getInterpreterDetailsStub: sinon.SinonStub;
+        let getWorkspaceFoldersStub: sinon.SinonStub;
+        let configMock: TypeMoq.IMock<WorkspaceConfiguration>;
+        let traceErrorStub: sinon.SinonStub;
+        const workspace1: WorkspaceFolder = {
+            uri: Uri.file(path.join(EXTENSION_ROOT_DIR, 'src', 'test', 'testWorkspace', 'workspace1')),
+            name: 'workspace1',
+            index: 0,
+        };
+
+        setup(() => {
+            getConfigurationStub = sinon.stub(vscodeapi, 'getConfiguration');
+            getInterpreterDetailsStub = sinon.stub(python, 'getInterpreterDetails');
+            configMock = TypeMoq.Mock.ofType<WorkspaceConfiguration>();
+            getConfigurationStub.returns(configMock.object);
+            getInterpreterDetailsStub.resolves({ path: undefined });
+            getWorkspaceFoldersStub = sinon.stub(vscodeapi, 'getWorkspaceFolders');
+            getWorkspaceFoldersStub.returns([workspace1]);
+            traceErrorStub = sinon.stub(logging, 'traceError');
+        });
+
+        teardown(() => {
+            sinon.restore();
+        });
+
+        test('Throws error when args contain a non-string value', async () => {
+            configMock.setup((c) => c.get<string[]>('args', [])).returns(() => [42 as unknown as string]);
+            configMock.setup((c) => c.get('cwd', TypeMoq.It.isAnyString())).returns(() => '${workspaceFolder}');
+            configMock.setup((c) => c.get<string[]>('path', [])).returns(() => []);
+            configMock.setup((c) => c.get('importStrategy', 'useBundled')).returns(() => 'useBundled');
+            configMock.setup((c) => c.get('showNotifications', 'off')).returns(() => 'off');
+
+            try {
+                await getWorkspaceSettings('black-formatter', workspace1);
+                assert.fail('Expected an error to be thrown for non-string arg value');
+            } catch (e: unknown) {
+                assert.include((e as Error).message, 'must be "string"');
+            }
+        });
+
+        test('Logs error when args contain space-separated flags', async () => {
+            configMock.setup((c) => c.get<string[]>('args', [])).returns(() => ['--line-length 88']);
+            configMock.setup((c) => c.get('cwd', TypeMoq.It.isAnyString())).returns(() => '${workspaceFolder}');
+            configMock.setup((c) => c.get<string[]>('path', [])).returns(() => []);
+            configMock.setup((c) => c.get('importStrategy', 'useBundled')).returns(() => 'useBundled');
+            configMock.setup((c) => c.get('showNotifications', 'off')).returns(() => 'off');
+
+            await getWorkspaceSettings('black-formatter', workspace1);
+
+            assert.isTrue(
+                traceErrorStub.calledWith(
+                    sinon.match('["--line-length=88"]'),
+                ),
+                'Expected traceError to be called with space-in-args warning',
+            );
         });
     });
 });
