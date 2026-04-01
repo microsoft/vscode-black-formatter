@@ -186,7 +186,11 @@ def run_module(
 
 
 def run_path(
-    argv: Sequence[str], use_stdin: bool, cwd: str, source: str = None
+    argv: Sequence[str],
+    use_stdin: bool,
+    cwd: str,
+    source: str = None,
+    timeout: float = None,
 ) -> RunResult:
     """Runs as an executable."""
     if use_stdin:
@@ -198,7 +202,12 @@ def run_path(
             stdin=subprocess.PIPE,
             cwd=cwd,
         ) as process:
-            return RunResult(*process.communicate(input=source))
+            try:
+                return RunResult(*process.communicate(input=source, timeout=timeout))
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.communicate()
+                raise
     else:
         result = subprocess.run(
             argv,
@@ -207,6 +216,7 @@ def run_path(
             stderr=subprocess.PIPE,
             check=False,
             cwd=cwd,
+            timeout=timeout,
         )
         return RunResult(result.stdout, result.stderr)
 

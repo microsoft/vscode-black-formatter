@@ -10,6 +10,7 @@ import json
 import os
 import pathlib
 import re
+import subprocess
 import sys
 import sysconfig
 import traceback
@@ -113,6 +114,9 @@ MIN_VERSION = "22.3.0"
 # Minimum version of black that supports the `--line-ranges` CLI option.
 LINE_RANGES_MIN_VERSION = (23, 11, 0)
 
+# Timeout in seconds for formatting operations to prevent indefinite blocking.
+FORMATTING_TIMEOUT = 120
+
 # Versions of black found by workspace
 VERSION_LOOKUP: Dict[str, Tuple[int, int, int]] = {}
 
@@ -193,7 +197,13 @@ def _formatting_helper(
     args = [] if args is None else args
     extra_args = args + _get_args_by_file_extension(document)
     extra_args += ["--stdin-filename", _get_filename_for_black(document)]
-    result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
+    try:
+        result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
+    except (subprocess.TimeoutExpired, TimeoutError):
+        log_warning(
+            f"Formatting timed out after {FORMATTING_TIMEOUT}s for {document.uri}"
+        )
+        return None
     if result and result.stdout:
         if LSP_SERVER.protocol.trace == lsp.TraceValue.Verbose:
             log_to_output(
@@ -559,6 +569,7 @@ def _run_tool_on_document(
             use_stdin=use_stdin,
             cwd=cwd,
             source=document.source.replace("\r\n", "\n"),
+            timeout=FORMATTING_TIMEOUT,
         )
         if result.stderr:
             log_to_output(result.stderr)
@@ -579,6 +590,7 @@ def _run_tool_on_document(
             env={
                 "LS_IMPORT_STRATEGY": settings["importStrategy"],
             },
+            timeout=FORMATTING_TIMEOUT,
         )
         result = _to_run_result_with_logging(result)
     else:
@@ -634,7 +646,9 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         # This mode is used when running executables.
         log_to_output(" ".join(argv))
         log_to_output(f"CWD Server: {cwd}")
-        result = utils.run_path(argv=argv, use_stdin=True, cwd=cwd)
+        result = utils.run_path(
+            argv=argv, use_stdin=True, cwd=cwd, timeout=FORMATTING_TIMEOUT
+        )
         if result.stderr:
             log_to_output(result.stderr)
     elif use_rpc:
@@ -652,6 +666,7 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
             env={
                 "LS_IMPORT_STRATEGY": settings["importStrategy"],
             },
+            timeout=FORMATTING_TIMEOUT,
         )
         result = _to_run_result_with_logging(result)
     else:

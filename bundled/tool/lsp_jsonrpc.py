@@ -226,6 +226,7 @@ def run_over_json_rpc(
     cwd: str,
     source: Optional[str] = None,
     env: Optional[Dict[str, str]] = None,
+    timeout: Optional[float] = None,
 ) -> RpcRunResult:
     """Uses JSON-RPC to execute a command."""
     rpc: Union[JsonRpc, None] = get_or_start_json_rpc(workspace, interpreter, cwd, env)
@@ -246,7 +247,26 @@ def run_over_json_rpc(
 
     rpc.send_data(msg)
 
-    data = rpc.receive_data()
+    if timeout is not None:
+        result_container: list = [None]
+        error_container: list = [None]
+
+        def _receive():
+            try:
+                result_container[0] = rpc.receive_data()
+            except Exception as e:
+                error_container[0] = e
+
+        recv_thread = threading.Thread(target=_receive, daemon=True)
+        recv_thread.start()
+        recv_thread.join(timeout)
+        if recv_thread.is_alive():
+            raise TimeoutError(f"JSON-RPC call timed out after {timeout}s")
+        if error_container[0] is not None:
+            raise error_container[0]
+        data = result_container[0]
+    else:
+        data = rpc.receive_data()
 
     if data["id"] != msg_id:
         return RpcRunResult(
