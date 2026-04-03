@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+import * as dotenv from 'dotenv';
 import * as fsapi from 'fs-extra';
 import { Disposable, env, l10n, LanguageStatusSeverity, LogOutputChannel, Uri } from 'vscode';
 import { State } from 'vscode-languageclient';
@@ -21,32 +22,6 @@ import { getConfiguration } from './vscodeapi';
 
 export type IInitOptions = { settings: ISettings[]; globalSettings: ISettings };
 
-function parseEnvFile(content: string): Record<string, string> {
-    const envVars: Record<string, string> = {};
-    for (const line of content.split(/\r?\n/)) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) {
-            continue;
-        }
-        // Support optional 'export ' prefix
-        const entry = trimmed.startsWith('export ') ? trimmed.slice(7) : trimmed;
-        const eqIndex = entry.indexOf('=');
-        if (eqIndex < 0) {
-            continue;
-        }
-        const key = entry.slice(0, eqIndex).trim();
-        let value = entry.slice(eqIndex + 1).trim();
-        // Strip matching surrounding quotes
-        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-            value = value.slice(1, -1);
-        }
-        if (key) {
-            envVars[key] = value;
-        }
-    }
-    return envVars;
-}
-
 async function getEnvFileVars(workspaceUri: Uri): Promise<Record<string, string>> {
     const pythonConfig = getConfiguration('python', workspaceUri);
     let envFilePath = pythonConfig.get<string>('envFile', '${workspaceFolder}/.env');
@@ -56,7 +31,7 @@ async function getEnvFileVars(workspaceUri: Uri): Promise<Record<string, string>
         if (await fsapi.pathExists(envFilePath)) {
             const content = await fsapi.readFile(envFilePath, 'utf-8');
             traceInfo(`Loaded env file: ${envFilePath}`);
-            return parseEnvFile(content);
+            return dotenv.parse(content);
         }
     } catch (ex) {
         traceError(`Failed to read env file ${envFilePath}: ${ex}`);
