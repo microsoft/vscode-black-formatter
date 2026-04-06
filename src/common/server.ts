@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+import * as path from 'path';
 import * as dotenv from 'dotenv';
 import * as fsapi from 'fs-extra';
 import { Disposable, env, l10n, LanguageStatusSeverity, LogOutputChannel, Uri } from 'vscode';
@@ -53,8 +54,18 @@ async function createServer(
     // Load environment variables from envFile (python.envFile setting or .env)
     const envFileVars = await getEnvFileVars(workspaceUri);
 
+    // Build environment: .env provides defaults, system env wins for conflicts.
+    // Path-like variables are appended rather than overridden.
+    const newEnv = { ...envFileVars, ...process.env };
+
+    // Append .env PYTHONPATH/PATH to system values instead of replacing
+    for (const pathVar of ['PYTHONPATH', 'PATH']) {
+        if (envFileVars[pathVar] && process.env[pathVar]) {
+            newEnv[pathVar] = process.env[pathVar] + path.delimiter + envFileVars[pathVar];
+        }
+    }
+
     // Set debugger path needed for debugging python code.
-    const newEnv = { ...process.env, ...envFileVars };
     const debuggerPath = await getDebuggerPath();
     const isDebugScript = await fsapi.pathExists(DEBUG_SERVER_SCRIPT_PATH);
     if (newEnv.USE_DEBUGPY && debuggerPath) {
