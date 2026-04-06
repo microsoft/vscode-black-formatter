@@ -646,9 +646,13 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         # This mode is used when running executables.
         log_to_output(" ".join(argv))
         log_to_output(f"CWD Server: {cwd}")
-        result = utils.run_path(
-            argv=argv, use_stdin=True, cwd=cwd, timeout=FORMATTING_TIMEOUT
-        )
+        try:
+            result = utils.run_path(
+                argv=argv, use_stdin=True, cwd=cwd, timeout=FORMATTING_TIMEOUT
+            )
+        except (subprocess.TimeoutExpired, TimeoutError):
+            log_warning(f"Tool execution timed out after {FORMATTING_TIMEOUT}s")
+            return utils.RunResult("", f"Timed out after {FORMATTING_TIMEOUT}s")
         if result.stderr:
             log_to_output(result.stderr)
     elif use_rpc:
@@ -656,18 +660,22 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         # the interpreter used for running this server.
         log_to_output(" ".join(settings["interpreter"] + ["-m"] + argv))
         log_to_output(f"CWD formatter: {cwd}")
-        result = jsonrpc.run_over_json_rpc(
-            workspace=code_workspace,
-            interpreter=settings["interpreter"],
-            module=TOOL_MODULE,
-            argv=argv,
-            use_stdin=True,
-            cwd=cwd,
-            env={
-                "LS_IMPORT_STRATEGY": settings["importStrategy"],
-            },
-            timeout=FORMATTING_TIMEOUT,
-        )
+        try:
+            result = jsonrpc.run_over_json_rpc(
+                workspace=code_workspace,
+                interpreter=settings["interpreter"],
+                module=TOOL_MODULE,
+                argv=argv,
+                use_stdin=True,
+                cwd=cwd,
+                env={
+                    "LS_IMPORT_STRATEGY": settings["importStrategy"],
+                },
+                timeout=FORMATTING_TIMEOUT,
+            )
+        except (subprocess.TimeoutExpired, TimeoutError):
+            log_warning(f"JSON-RPC execution timed out after {FORMATTING_TIMEOUT}s")
+            return utils.RunResult("", f"Timed out after {FORMATTING_TIMEOUT}s")
         result = _to_run_result_with_logging(result)
     else:
         # In this mode the tool is run as a module in the same process as the language server.
