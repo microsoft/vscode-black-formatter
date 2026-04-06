@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+import * as path from 'path';
+import * as dotenv from 'dotenv';
 import * as fsapi from 'fs-extra';
 import { Disposable, env, l10n, LanguageStatusSeverity, LogOutputChannel, Uri } from 'vscode';
 import { State } from 'vscode-languageclient';
@@ -17,8 +19,32 @@ import { getExtensionSettings, getGlobalSettings, getServerTransport, ISettings 
 import { getDocumentSelector, getLSClientTraceLevel } from './utilities';
 import { updateStatus } from './status';
 import { unregisterEmptyFormatter } from './nullFormatter';
+import { getConfiguration } from './vscodeapi';
 
 export type IInitOptions = { settings: ISettings[]; globalSettings: ISettings };
+
+async function getEnvFileVars(workspaceUri: Uri): Promise<Record<string, string>> {
+    const pythonConfig = getConfiguration('python', workspaceUri);
+    let envFilePath = pythonConfig.get<string>('envFile', '${workspaceFolder}/.env');
+    envFilePath = envFilePath.replace('${workspaceFolder}', workspaceUri.fsPath);
+
+    try {
+        if (await fsapi.pathExists(envFilePath)) {
+            const content = await fsapi.readFile(envFilePath, 'utf-8');
+            traceInfo(`Loaded env file: ${envFilePath}`);
+            // NOTE: We use Node's `dotenv` package to parse .env files. This has subtle
+            // differences from Python's `python-dotenv` (e.g., variable interpolation,
+            // multiline value handling). The Python subprocess receives env vars via
+            // process.env inheritance, not by re-parsing the .env file. If exact parity
+            // with python-dotenv is needed, consider passing the .env path to the Python
+            // side for re-parsing.
+            return dotenv.parse(content);
+        }
+    } catch (ex) {
+        traceError(`Failed to read env file ${envFilePath}: ${ex}`);
+    }
+    return {};
+}
 
 async function createServer(
     settings: ISettings,
@@ -31,8 +57,24 @@ async function createServer(
     const workspaceUri = Uri.parse(settings.workspace);
     const cwd = settings.cwd === '${fileDirname}' ? workspaceUri.fsPath : settings.cwd;
 
+    // Load environment variables from envFile (python.envFile setting or .env)
+    // Environment variables from .env are loaded once at server creation time.
+    // Changes to the .env file require restarting the extension to take effect.
+    // A file watcher for hot-reload could be added in a future enhancement.
+    const envFileVars = await getEnvFileVars(workspaceUri);
+
+    // Build environment: .env provides defaults, system env wins for conflicts.
+    // Path-like variables are appended rather than overridden.
+    const newEnv = { ...envFileVars, ...process.env };
+
+    // Append .env PYTHONPATH/PATH to system values instead of replacing
+    for (const pathVar of ['PYTHONPATH', 'PATH']) {
+        if (envFileVars[pathVar] && process.env[pathVar]) {
+            newEnv[pathVar] = process.env[pathVar] + path.delimiter + envFileVars[pathVar];
+        }
+    }
+
     // Set debugger path needed for debugging python code.
-    const newEnv = { ...process.env };
     const debuggerPath = await getDebuggerPath();
     const isDebugScript = await fsapi.pathExists(DEBUG_SERVER_SCRIPT_PATH);
     if (newEnv.USE_DEBUGPY && debuggerPath) {

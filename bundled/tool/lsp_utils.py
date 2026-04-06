@@ -175,9 +175,18 @@ def _run_module(
 
 
 def run_module(
-    module: str, argv: Sequence[str], use_stdin: bool, cwd: str, source: str = None
+    module: str,
+    argv: Sequence[str],
+    use_stdin: bool,
+    cwd: str,
+    source: str = None,
+    timeout: float = None,
 ) -> RunResult:
     """Runs as a module."""
+    if timeout is not None:
+        # In-process execution via runpy cannot be reliably timed out.
+        # Timeout is only effective for subprocess (run_path) and JSON-RPC paths.
+        pass
     with CWD_LOCK:
         if is_same_path(os.getcwd(), cwd):
             return _run_module(module, argv, use_stdin, source)
@@ -186,7 +195,11 @@ def run_module(
 
 
 def run_path(
-    argv: Sequence[str], use_stdin: bool, cwd: str, source: str = None
+    argv: Sequence[str],
+    use_stdin: bool,
+    cwd: str,
+    source: str = None,
+    timeout: float = None,
 ) -> RunResult:
     """Runs as an executable."""
     if use_stdin:
@@ -198,7 +211,12 @@ def run_path(
             stdin=subprocess.PIPE,
             cwd=cwd,
         ) as process:
-            return RunResult(*process.communicate(input=source))
+            try:
+                return RunResult(*process.communicate(input=source, timeout=timeout))
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.communicate()
+                raise
     else:
         result = subprocess.run(
             argv,
@@ -207,6 +225,7 @@ def run_path(
             stderr=subprocess.PIPE,
             check=False,
             cwd=cwd,
+            timeout=timeout,
         )
         return RunResult(result.stdout, result.stderr)
 
