@@ -687,7 +687,10 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         with utils.substitute_attr(sys, "path", [""] + sys.path[:]):
             try:
                 result = utils.run_module(
-                    module=TOOL_MODULE, argv=argv, use_stdin=True, cwd=cwd,
+                    module=TOOL_MODULE,
+                    argv=argv,
+                    use_stdin=True,
+                    cwd=cwd,
                     timeout=FORMATTING_TIMEOUT,
                 )
             except Exception:

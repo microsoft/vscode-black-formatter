@@ -175,7 +175,11 @@ def _run_module(
 
 
 def run_module(
-    module: str, argv: Sequence[str], use_stdin: bool, cwd: str, source: str = None,
+    module: str,
+    argv: Sequence[str],
+    use_stdin: bool,
+    cwd: str,
+    source: str = None,
     timeout: float = None,
 ) -> RunResult:
     """Runs as a module."""
