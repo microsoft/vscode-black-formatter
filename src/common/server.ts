@@ -32,6 +32,12 @@ async function getEnvFileVars(workspaceUri: Uri): Promise<Record<string, string>
         if (await fsapi.pathExists(envFilePath)) {
             const content = await fsapi.readFile(envFilePath, 'utf-8');
             traceInfo(`Loaded env file: ${envFilePath}`);
+            // NOTE: We use Node's `dotenv` package to parse .env files. This has subtle
+            // differences from Python's `python-dotenv` (e.g., variable interpolation,
+            // multiline value handling). The Python subprocess receives env vars via
+            // process.env inheritance, not by re-parsing the .env file. If exact parity
+            // with python-dotenv is needed, consider passing the .env path to the Python
+            // side for re-parsing.
             return dotenv.parse(content);
         }
     } catch (ex) {
