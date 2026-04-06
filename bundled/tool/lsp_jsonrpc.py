@@ -129,6 +129,22 @@ class ProcessManager:
         self._lock = threading.Lock()
         self._thread_pool = ThreadPoolExecutor(10)
 
+    def stop_process(self, workspace: str) -> None:
+        """Stop the process for the given workspace."""
+        with self._lock:
+            if workspace in self._processes:
+                proc = self._processes[workspace]
+                try:
+                    proc.kill()
+                    proc.wait(timeout=5)
+                except Exception:
+                    pass
+                del self._processes[workspace]
+            if workspace in self._rpc:
+                rpc = self._rpc.pop(workspace)
+                with contextlib.suppress(Exception):
+                    rpc.close()
+
     def stop_all_processes(self):
         """Send exit command to all processes and shutdown transport."""
         for i in self._rpc.values():
@@ -261,6 +277,7 @@ def run_over_json_rpc(
         recv_thread.start()
         recv_thread.join(timeout)
         if recv_thread.is_alive():
+            _process_manager.stop_process(workspace)
             raise TimeoutError(f"JSON-RPC call timed out after {timeout}s")
         if error_container[0] is not None:
             raise error_container[0]
