@@ -58,6 +58,9 @@ async function createServer(
     const cwd = settings.cwd === '${fileDirname}' ? workspaceUri.fsPath : settings.cwd;
 
     // Load environment variables from envFile (python.envFile setting or .env)
+    // Environment variables from .env are loaded once at server creation time.
+    // Changes to the .env file require restarting the extension to take effect.
+    // A file watcher for hot-reload could be added in a future enhancement.
     const envFileVars = await getEnvFileVars(workspaceUri);
 
     // Build environment: .env provides defaults, system env wins for conflicts.
