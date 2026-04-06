@@ -175,9 +175,14 @@ def _run_module(
 
 
 def run_module(
-    module: str, argv: Sequence[str], use_stdin: bool, cwd: str, source: str = None
+    module: str, argv: Sequence[str], use_stdin: bool, cwd: str, source: str = None,
+    timeout: float = None,
 ) -> RunResult:
     """Runs as a module."""
+    if timeout is not None:
+        # In-process execution via runpy cannot be reliably timed out.
+        # Timeout is only effective for subprocess (run_path) and JSON-RPC paths.
+        pass
     with CWD_LOCK:
         if is_same_path(os.getcwd(), cwd):
             return _run_module(module, argv, use_stdin, source)
