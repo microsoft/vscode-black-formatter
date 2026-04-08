@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import contextlib
+import fnmatch
 import io
 import logging
 import os
@@ -68,9 +69,12 @@ def is_same_path(file_path1: str, file_path2: str) -> bool:
     return pathlib.Path(file_path1) == pathlib.Path(file_path2)
 
 
-def normalize_path(file_path: str) -> str:
+def normalize_path(file_path: str, resolve_symlinks: bool = True) -> str:
     """Returns normalized path."""
-    return str(pathlib.Path(file_path).resolve())
+    path = pathlib.Path(file_path)
+    if resolve_symlinks:
+        path = path.resolve()
+    return str(path)
 
 
 def is_current_interpreter(executable) -> bool:
@@ -82,6 +86,35 @@ def is_stdlib_file(file_path: str) -> bool:
     """Return True if the file belongs to the standard library."""
     normalized_path = str(pathlib.Path(file_path).resolve())
     return any(normalized_path.startswith(path) for path in _stdlib_paths)
+
+
+def _get_relative_path(file_path: str, workspace_root: str) -> str:
+    """Returns the file path relative to the workspace root.
+
+    Falls back to the original path if the workspace root is empty or
+    the paths are on different drives (Windows).
+    """
+    if not workspace_root:
+        return pathlib.Path(file_path).as_posix()
+    try:
+        return pathlib.Path(file_path).relative_to(workspace_root).as_posix()
+    except ValueError:
+        return pathlib.Path(file_path).as_posix()
+
+
+def is_match(patterns: List[str], file_path: str, workspace_root: str = None) -> bool:
+    """Returns true if the file matches one of the fnmatch patterns."""
+    if not patterns:
+        return False
+    relative_path = (
+        _get_relative_path(file_path, workspace_root) if workspace_root else file_path
+    )
+    file_name = pathlib.Path(file_path).name
+    return any(
+        fnmatch.fnmatch(relative_path, pattern)
+        or (not pattern.startswith("/") and fnmatch.fnmatch(file_name, pattern))
+        for pattern in patterns
+    )
 
 
 # pylint: disable-next=too-few-public-methods
