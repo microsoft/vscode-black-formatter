@@ -188,7 +188,7 @@
     "dependencies": {
         "@vscode/python-environments": "https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/@vscode/python-environments/-/python-environments-1.0.0.tgz",
         "@vscode/python-extension": "^1.0.5",
-        "dotenv": "^17.4.0",
+        "dotenv": "^17.4.1",
         "fs-extra": "^11.3.4",
         "semver": "^7.7.4",
         "vscode-languageclient": "^9.0.1"
@@ -201,10 +201,10 @@
         "@types/mocha": "^10.0.10",
         "@types/node": "22.x",
         "@types/semver": "^7.7.1",
-        "@types/sinon": "^21.0.0",
+        "@types/sinon": "^21.0.1",
         "@types/vscode": "^1.74.0",
-        "@typescript-eslint/eslint-plugin": "^8.57.0",
-        "@typescript-eslint/parser": "^8.57.0",
+        "@typescript-eslint/eslint-plugin": "^8.58.1",
+        "@typescript-eslint/parser": "^8.58.1",
         "@vscode/test-electron": "^2.5.2",
         "@vscode/vsce": "^3.7.1-1",
         "chai": "^4.3.10",
@@ -212,11 +212,11 @@
         "glob": "^11.1.0",
         "mocha": "^11.7.5",
         "prettier": "^3.8.1",
-        "sinon": "^21.0.2",
-        "ts-loader": "^9.5.4",
+        "sinon": "^21.0.3",
+        "ts-loader": "^9.5.7",
         "typemoq": "^2.1.0",
         "typescript": "^5.9.3",
-        "typescript-eslint": "^8.57.0",
+        "typescript-eslint": "^8.58.1",
         "webpack": "^5.105.4",
         "webpack-cli": "^5.1.4"
     }
