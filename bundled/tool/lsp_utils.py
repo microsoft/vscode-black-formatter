@@ -16,7 +16,7 @@ import subprocess
 import sys
 import sysconfig
 import threading
-from typing import Any, Callable, List, Sequence, Tuple, Union
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
 # Save the working directory used when loading this module
 SERVER_CWD = os.getcwd()
@@ -121,9 +121,10 @@ def is_match(patterns: List[str], file_path: str, workspace_root: str = None) ->
 class RunResult:
     """Object to hold result from running tool."""
 
-    def __init__(self, stdout, stderr):
-        self.stdout = stdout
-        self.stderr = stderr
+    def __init__(self, stdout: str, stderr: str, exit_code: Optional[int] = None):
+        self.stdout: str = stdout
+        self.stderr: str = stderr
+        self.exit_code: Optional[int] = exit_code
 
 
 class CustomIO(io.TextIOWrapper):
