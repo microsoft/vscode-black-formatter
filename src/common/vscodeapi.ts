@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     commands,
@@ -10,6 +11,8 @@ import {
     languages,
     LanguageStatusItem,
     LogOutputChannel,
+    StatusBarAlignment,
+    StatusBarItem,
     Uri,
     window,
     workspace,
@@ -31,6 +34,7 @@ export function registerCommand(command: string, callback: (...args: any[]) => a
 }
 
 export const { onDidChangeConfiguration } = workspace;
+export const { onDidChangeActiveTextEditor } = window;
 
 export function isVirtualWorkspace(): boolean {
     const isVirtual = workspace.workspaceFolders && workspace.workspaceFolders.every((f) => f.uri.scheme !== 'file');
@@ -54,4 +58,8 @@ export function registerDocumentFormattingEditProvider(
 
 export function createLanguageStatusItem(id: string, selector: DocumentSelector): LanguageStatusItem {
     return languages.createLanguageStatusItem(id, selector);
+}
+
+export function createStatusBarItem(id: string, alignment?: StatusBarAlignment, priority?: number): StatusBarItem {
+    return window.createStatusBarItem(id, alignment ?? StatusBarAlignment.Right, priority);
 }
