@@ -9,34 +9,44 @@ import { BLACK_CONFIG_FILES } from '../../../../common/constants';
 
 interface MockFileSystemWatcher {
     watcher: FileSystemWatcher;
+    changeDisposable: { dispose: sinon.SinonStub };
+    createDisposable: { dispose: sinon.SinonStub };
+    deleteDisposable: { dispose: sinon.SinonStub };
     fireDidCreate(): Promise<void>;
     fireDidChange(): Promise<void>;
     fireDidDelete(): Promise<void>;
 }
 
-function createMockFileSystemWatcher(): MockFileSystemWatcher {
+function createMockFileSystemWatcher(sb: sinon.SinonSandbox): MockFileSystemWatcher {
+    const changeDisposable = { dispose: sb.stub() };
+    const createDisposable = { dispose: sb.stub() };
+    const deleteDisposable = { dispose: sb.stub() };
+
     let onDidChangeHandler: (() => Promise<void>) | undefined;
     let onDidCreateHandler: (() => Promise<void>) | undefined;
     let onDidDeleteHandler: (() => Promise<void>) | undefined;
 
     const watcher = {
-        onDidChange: (handler: () => Promise<void>): Disposable => {
+        onDidChange: sb.stub().callsFake((handler: () => Promise<void>): Disposable => {
             onDidChangeHandler = handler;
-            return { dispose: () => {} };
-        },
-        onDidCreate: (handler: () => Promise<void>): Disposable => {
+            return changeDisposable as unknown as Disposable;
+        }),
+        onDidCreate: sb.stub().callsFake((handler: () => Promise<void>): Disposable => {
             onDidCreateHandler = handler;
-            return { dispose: () => {} };
-        },
-        onDidDelete: (handler: () => Promise<void>): Disposable => {
+            return createDisposable as unknown as Disposable;
+        }),
+        onDidDelete: sb.stub().callsFake((handler: () => Promise<void>): Disposable => {
             onDidDeleteHandler = handler;
-            return { dispose: () => {} };
-        },
-        dispose: () => {},
+            return deleteDisposable as unknown as Disposable;
+        }),
+        dispose: sb.stub(),
     } as unknown as FileSystemWatcher;
 
     return {
         watcher,
+        changeDisposable,
+        createDisposable,
+        deleteDisposable,
         fireDidCreate: async () => {
             if (onDidCreateHandler) {
                 await onDidCreateHandler();
@@ -59,10 +69,21 @@ suite('Config File Watcher Tests', () => {
     let sandbox: sinon.SinonSandbox;
     let createFileSystemWatcherStub: sinon.SinonStub;
     let mockWatchers: MockFileSystemWatcher[];
+    let onConfigChangedCallback: sinon.SinonStub;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let mockWatcher: any;
+    let changeDisposable: { dispose: sinon.SinonStub };
+    let createDisposable: { dispose: sinon.SinonStub };
+    let deleteDisposable: { dispose: sinon.SinonStub };
 
     setup(() => {
         sandbox = sinon.createSandbox();
-        mockWatchers = BLACK_CONFIG_FILES.map(() => createMockFileSystemWatcher());
+        mockWatchers = BLACK_CONFIG_FILES.map(() => createMockFileSystemWatcher(sandbox));
+        onConfigChangedCallback = sandbox.stub().resolves();
+        mockWatcher = mockWatchers[0].watcher;
+        changeDisposable = mockWatchers[0].changeDisposable;
+        createDisposable = mockWatchers[0].createDisposable;
+        deleteDisposable = mockWatchers[0].deleteDisposable;
 
         let watcherIndex = 0;
         createFileSystemWatcherStub = sandbox.stub(workspace, 'createFileSystemWatcher').callsFake(() => {
@@ -141,5 +162,29 @@ suite('Config File Watcher Tests', () => {
         for (const d of disposables) {
             assert.isFunction(d.dispose);
         }
+    });
+
+    test('Should dispose all subscriptions and watcher on dispose', () => {
+        const watchers = createConfigFileWatchers(onConfigChangedCallback);
+
+        watchers[0].dispose();
+
+        assert.strictEqual(changeDisposable.dispose.callCount, 1, 'Change subscription should be disposed');
+        assert.strictEqual(createDisposable.dispose.callCount, 1, 'Create subscription should be disposed');
+        assert.strictEqual(deleteDisposable.dispose.callCount, 1, 'Delete subscription should be disposed');
+        assert.strictEqual(mockWatcher.dispose.callCount, 1, 'Watcher should be disposed');
+    });
+
+    test('Should not call callback after dispose', () => {
+        const watchers = createConfigFileWatchers(onConfigChangedCallback);
+
+        // Dispose the watcher
+        watchers[0].dispose();
+
+        // Get the handlers and call them after disposal
+        const changeHandler = mockWatcher.onDidChange.getCall(0).args[0];
+        changeHandler();
+
+        assert.strictEqual(onConfigChangedCallback.callCount, 0, 'Callback should not be called after dispose');
     });
 });
