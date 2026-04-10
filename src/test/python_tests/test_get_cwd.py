@@ -1,110 +1,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-"""Unit tests for the get_cwd() helper in lsp_server."""
+"""Unit tests for the get_cwd() helper in lsp_server.
+
+Mock setup for pygls/lsprotocol and sys.path configuration is provided
+by conftest.py — no per-file ``_setup_mocks()`` is needed.
+"""
 
 import os
-import pathlib
-import sys
 import types
 
-
-# ---------------------------------------------------------------------------
-# Stub out bundled LSP dependencies so lsp_server can be imported without the
-# full VS Code extension environment.
-# ---------------------------------------------------------------------------
-def _setup_mocks():
-    class _MockLS:
-        def __init__(self, **kwargs):
-            pass
-
-        def feature(self, *args, **kwargs):
-            return lambda f: f
-
-        def command(self, *args, **kwargs):
-            return lambda f: f
-
-        def window_log_message(self, *args, **kwargs):
-            pass
-
-        def window_show_message(self, *args, **kwargs):
-            pass
-
-    mock_lsp_server = types.ModuleType("pygls.lsp.server")
-    mock_lsp_server.LanguageServer = _MockLS
-
-    mock_workspace = types.ModuleType("pygls.workspace")
-    mock_workspace.TextDocument = type("TextDocument", (), {"path": None, "uri": None})
-
-    mock_uris = types.ModuleType("pygls.uris")
-    mock_uris.from_fs_path = lambda p: "file://" + p
-    mock_uris.to_fs_path = lambda p: p.replace("file://", "")
-
-    mock_lsp = types.ModuleType("lsprotocol.types")
-    for _name in [
-        "TEXT_DOCUMENT_DID_OPEN",
-        "TEXT_DOCUMENT_DID_SAVE",
-        "TEXT_DOCUMENT_DID_CLOSE",
-        "TEXT_DOCUMENT_FORMATTING",
-        "INITIALIZE",
-        "EXIT",
-        "SHUTDOWN",
-        "NOTEBOOK_DOCUMENT_DID_OPEN",
-        "NOTEBOOK_DOCUMENT_DID_CHANGE",
-        "NOTEBOOK_DOCUMENT_DID_SAVE",
-        "NOTEBOOK_DOCUMENT_DID_CLOSE",
-    ]:
-        setattr(mock_lsp, _name, _name)
-    for _name in [
-        "Diagnostic",
-        "DiagnosticSeverity",
-        "DidCloseTextDocumentParams",
-        "DidOpenTextDocumentParams",
-        "DidSaveTextDocumentParams",
-        "DidChangeNotebookDocumentParams",
-        "DidCloseNotebookDocumentParams",
-        "DidOpenNotebookDocumentParams",
-        "DidSaveNotebookDocumentParams",
-        "DocumentFormattingParams",
-        "InitializeParams",
-        "NotebookCellKind",
-        "NotebookCellLanguage",
-        "NotebookDocumentFilterWithNotebook",
-        "NotebookDocumentSyncOptions",
-        "Position",
-        "Range",
-        "TextEdit",
-    ]:
-        setattr(mock_lsp, _name, type(_name, (), {"__init__": lambda self, **kw: None}))
-    mock_lsp.MessageType = type(
-        "MessageType", (), {"Log": 4, "Error": 1, "Warning": 2, "Info": 3}
-    )
-
-    mock_pygls_lsp = types.ModuleType("pygls.lsp")
-
-    for _mod_name, _mod in [
-        ("pygls", types.ModuleType("pygls")),
-        ("pygls.lsp", mock_pygls_lsp),
-        ("pygls.lsp.server", mock_lsp_server),
-        ("pygls.workspace", mock_workspace),
-        ("pygls.uris", mock_uris),
-        ("lsprotocol", types.ModuleType("lsprotocol")),
-        ("lsprotocol.types", mock_lsp),
-        ("lsp_jsonrpc", types.ModuleType("lsp_jsonrpc")),
-        ("lsp_utils", types.ModuleType("lsp_utils")),
-        ("lsp_edit_utils", types.ModuleType("lsp_edit_utils")),
-        ("lsp_io", types.ModuleType("lsp_io")),
-    ]:
-        if _mod_name not in sys.modules:
-            sys.modules[_mod_name] = _mod
-
-    tool_dir = str(pathlib.Path(__file__).parents[3] / "bundled" / "tool")
-    if tool_dir not in sys.path:
-        sys.path.insert(0, tool_dir)
-
-
-_setup_mocks()
-
-import lsp_server  # noqa: E402
+import lsp_server
 
 WORKSPACE = "/home/user/myproject"
 
