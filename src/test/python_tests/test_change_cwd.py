@@ -1,17 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-"""Unit tests for the change_cwd() context manager in lsp_utils."""
+"""Unit tests for the change_cwd() context manager in lsp_utils.
+
+Mock LSP dependencies and sys.path setup are provided by conftest.py.
+"""
 
 import logging
 import os
-import pathlib
-import sys
 from unittest.mock import patch
-
-# Ensure bundled libs and tool are importable.
-_PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, os.fsdecode(_PROJECT_ROOT / "bundled" / "libs"))
-sys.path.insert(0, os.fsdecode(_PROJECT_ROOT / "bundled" / "tool"))
 
 import lsp_utils
 
