@@ -138,6 +138,22 @@ class LspSession(MethodDispatcher):
         """Sends did close notification to LSP Server."""
         self._send_notification("textDocument/didClose", params=did_close_params)
 
+    def notify_notebook_did_open(self, params):
+        """Sends notebookDocument/didOpen notification to LSP Server."""
+        self._send_notification("notebookDocument/didOpen", params=params)
+
+    def notify_notebook_did_change(self, params):
+        """Sends notebookDocument/didChange notification to LSP Server."""
+        self._send_notification("notebookDocument/didChange", params=params)
+
+    def notify_notebook_did_save(self, params):
+        """Sends notebookDocument/didSave notification to LSP Server."""
+        self._send_notification("notebookDocument/didSave", params=params)
+
+    def notify_notebook_did_close(self, params):
+        """Sends notebookDocument/didClose notification to LSP Server."""
+        self._send_notification("notebookDocument/didClose", params=params)
+
     def text_document_formatting(self, formatting_params):
         """Sends text document references request to LSP server."""
         fut = self._send_request("textDocument/formatting", params=formatting_params)
