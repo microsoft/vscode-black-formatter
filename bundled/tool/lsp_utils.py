@@ -77,7 +77,7 @@ def normalize_path(file_path: str, resolve_symlinks: bool = True) -> str:
     return str(path)
 
 
-def is_current_interpreter(executable) -> bool:
+def is_current_interpreter(executable: str) -> bool:
     """Returns true if the executable path is same as the current interpreter."""
     return is_same_path(executable, sys.executable)
 
@@ -121,10 +121,12 @@ def is_match(patterns: List[str], file_path: str, workspace_root: str = None) ->
 class RunResult:
     """Object to hold result from running tool."""
 
-    def __init__(self, stdout: str, stderr: str, exit_code: Optional[int] = None):
+    def __init__(
+        self, stdout: str, stderr: str, exit_code: Optional[Union[int, str]] = None
+    ):
         self.stdout: str = stdout
         self.stderr: str = stderr
-        self.exit_code: Optional[int] = exit_code
+        self.exit_code: Optional[Union[int, str]] = exit_code
 
 
 class CustomIO(io.TextIOWrapper):
@@ -191,8 +193,9 @@ def _run_module(
     """Runs as a module."""
     str_output = CustomIO("<stdout>", encoding="utf-8")
     str_error = CustomIO("<stderr>", encoding="utf-8")
+    exit_code = None
 
-    with contextlib.suppress(SystemExit):
+    try:
         with substitute_attr(sys, "argv", argv):
             with redirect_io("stdout", str_output):
                 with redirect_io("stderr", str_error):
@@ -204,8 +207,10 @@ def _run_module(
                             runpy.run_module(module, run_name="__main__")
                     else:
                         runpy.run_module(module, run_name="__main__")
+    except SystemExit as ex:
+        exit_code = ex.code
 
-    return RunResult(str_output.get_value(), str_error.get_value())
+    return RunResult(str_output.get_value(), str_error.get_value(), exit_code)
 
 
 def run_module(
