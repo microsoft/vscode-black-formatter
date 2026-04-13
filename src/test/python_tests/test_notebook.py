@@ -8,6 +8,7 @@ opened, changed, saved, and closed via the notebook document protocol,
 and that formatting produces correct results on notebook cells.
 """
 
+import pytest
 from hamcrest import assert_that, is_
 
 from .lsp_test_client import constants, session, utils
@@ -28,8 +29,9 @@ def _cell_uri(cell_id="C00001"):
     return _notebook_uri().replace("file:", "vscode-notebook-cell:") + f"#{cell_id}"
 
 
-def test_notebook_did_open():
-    """Opening a notebook and formatting a cell produces correct edits."""
+@pytest.mark.parametrize("also_save", [False, True], ids=["open", "save"])
+def test_notebook_formatting_after_open_or_save(also_save):
+    """Formatting works after opening a notebook, and after saving it."""
     contents = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
     nb_uri = _notebook_uri()
     cell_uri = _cell_uri("C00001")
@@ -57,6 +59,15 @@ def test_notebook_did_open():
                 ],
             }
         )
+
+        if also_save:
+            ls_session.notify_notebook_did_save(
+                {
+                    "notebookDocument": {
+                        "uri": nb_uri,
+                    },
+                }
+            )
 
         actual = ls_session.text_document_formatting(
             {
@@ -225,57 +236,6 @@ def test_notebook_did_change_add_cell():
         unformatted, utils.destructure_text_edits(actual)
     )
     assert_that(actual_text, is_(formatted))
-
-
-def test_notebook_did_save():
-    """Saving a notebook does not interfere with cell formatting."""
-    contents = UNFORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
-    nb_uri = _notebook_uri()
-    cell_uri = _cell_uri("C00001")
-
-    with session.LspSession() as ls_session:
-        ls_session.initialize()
-
-        ls_session.notify_notebook_did_open(
-            {
-                "notebookDocument": {
-                    "uri": nb_uri,
-                    "notebookType": "jupyter-notebook",
-                    "version": 0,
-                    "cells": [
-                        {"kind": 2, "document": cell_uri},
-                    ],
-                },
-                "cellTextDocuments": [
-                    {
-                        "uri": cell_uri,
-                        "languageId": "python",
-                        "version": 1,
-                        "text": contents,
-                    },
-                ],
-            }
-        )
-
-        ls_session.notify_notebook_did_save(
-            {
-                "notebookDocument": {
-                    "uri": nb_uri,
-                },
-            }
-        )
-
-        # Formatting should still work after save.
-        actual = ls_session.text_document_formatting(
-            {
-                "textDocument": {"uri": cell_uri},
-                "options": {"tabSize": 4, "insertSpaces": True},
-            }
-        )
-
-    expected_text = FORMATTED_TEST_FILE_PATH.read_text(encoding="utf-8")
-    actual_text = utils.apply_text_edits(contents, utils.destructure_text_edits(actual))
-    assert_that(actual_text, is_(expected_text))
 
 
 def test_notebook_did_close():
