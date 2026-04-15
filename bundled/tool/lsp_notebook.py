@@ -181,6 +181,9 @@ def remap_diagnostics_to_cells(
             code=diag.code,
             code_description=diag.code_description,
             source=diag.source,
+            # TODO: remap related_information locations through cell_map when a tool
+            # starts emitting them; forwarding raw combined-source positions produces
+            # incorrect navigation targets.
             related_information=diag.related_information,
             tags=diag.tags,
             data=diag.data,

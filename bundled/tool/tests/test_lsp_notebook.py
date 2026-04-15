@@ -420,4 +420,4 @@ class TestRemapDiagnosticsToCells:
         assert d.range.start.character == 5
         # Guard should ensure end >= start
         assert d.range.end.line == 2
-        assert d.range.end.character >= d.range.start.character
+        assert d.range.end.character == 5  # guard sets end = start position
