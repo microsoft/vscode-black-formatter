@@ -70,7 +70,6 @@ import lsp_jsonrpc as jsonrpc
 import lsp_notebook as notebook
 import lsp_utils as utils
 from lsprotocol import types as lsp
-
 from pygls import uris
 from pygls.lsp.server import LanguageServer
 from pygls.workspace import TextDocument
