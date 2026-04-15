@@ -67,6 +67,7 @@ update_environ_path()
 import lsp_edit_utils as edit_utils
 import lsp_io
 import lsp_jsonrpc as jsonrpc
+import lsp_notebook as notebook
 import lsp_utils as utils
 from lsprotocol import types as lsp
 from pygls import uris
@@ -78,28 +79,12 @@ GLOBAL_SETTINGS = {}
 RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
-NOTEBOOK_SYNC_OPTIONS = lsp.NotebookDocumentSyncOptions(
-    notebook_selector=[
-        lsp.NotebookDocumentFilterWithNotebook(
-            notebook="jupyter-notebook",
-            cells=[
-                lsp.NotebookCellLanguage(language="python"),
-            ],
-        ),
-        lsp.NotebookDocumentFilterWithNotebook(
-            notebook="interactive",
-            cells=[
-                lsp.NotebookCellLanguage(language="python"),
-            ],
-        ),
-    ],
-    save=True,
-)
+
 LSP_SERVER = LanguageServer(
     name="black-server",
     version="v0.1.0",
     max_workers=MAX_WORKERS,
-    notebook_document_sync=NOTEBOOK_SYNC_OPTIONS,
+    notebook_document_sync=notebook.NOTEBOOK_SYNC_OPTIONS,
 )
 
 
