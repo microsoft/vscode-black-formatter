@@ -1,8 +1,5 @@
 name: Publish Release
 trigger:
-  branches:
-    include:
-      - release*
   tags:
     include: ['*']
 pr: none
