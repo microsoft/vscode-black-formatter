@@ -18,7 +18,7 @@ Start by reading `package.json` to determine the current version. Then confirm w
 
 - **Even minor** = stable release (e.g. `2026.4.0` — *example*)
 - **Odd minor** = pre-release / dev (e.g. `2026.3.0-dev`, `2026.5.0-dev` — *examples*)
-- The stable release pipeline (`build/azure-devdiv-pipeline.stable.yml`) triggers on git tags matching `refs/tags/*`
+- The stable release pipeline (`build/azure-devdiv-pipeline.stable.yml`) triggers on git tags matching `*`
 - Tag format: `v<version>` (e.g. `v2026.4.0` — *example*)
 - Release branch format: `release/<YYYY>.<EVEN_MINOR>` (e.g. `release/2026.4` — *example*)
 
