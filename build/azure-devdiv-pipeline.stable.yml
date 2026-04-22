@@ -1,10 +1,10 @@
 name: Publish Release
-trigger: none
-#   branches:
-#     include:
-#       - release*
-#   tags:
-#     include: ['*']
+trigger:
+  branches:
+    include:
+      - release*
+  tags:
+    include: ['*']
 pr: none
 
 resources:
