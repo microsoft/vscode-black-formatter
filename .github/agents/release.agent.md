@@ -18,7 +18,7 @@ Start by reading `package.json` to determine the current version. Then confirm w
 
 - **Even minor** = stable release (e.g. `2026.4.0` — *example*)
 - **Odd minor** = pre-release / dev (e.g. `2026.3.0-dev`, `2026.5.0-dev` — *examples*)
-- The stable release pipeline (`build/azure-devdiv-pipeline.stable.yml`) triggers on git tags matching `v*`
+- The stable release pipeline (`build/azure-devdiv-pipeline.stable.yml`) triggers on pushes to `release/*` branches
 - Tag format: `v<version>` (e.g. `v2026.4.0` — *example*)
 - Release branch format: `release/<YYYY>.<EVEN_MINOR>` (e.g. `release/2026.4` — *example*)
 
@@ -68,6 +68,8 @@ git checkout -b release/2026.4
 git push upstream release/2026.4
 ```
 
+The stable release pipeline triggers automatically when the release branch is pushed to upstream.
+
 > ✋ **Confirm**: Is the release branch pushed to upstream?
 
 ---
@@ -98,9 +100,9 @@ Goal: Keep `main` moving forward on an odd minor with `-dev` suffix.
 
 ---
 
-### Phase 4 — Tag and trigger the pipeline
+### Phase 4 — Tag the release
 
-Goal: Push a tag from the release branch to trigger the stable pipeline.
+Goal: Tag the release commit for GitHub release tracking.
 
 Replace `release/2026.4` and `v2026.4.0` with the actual branch and version:
 ```
@@ -111,11 +113,11 @@ git tag v2026.4.0
 git push upstream v2026.4.0
 ```
 
-The pipeline triggers automatically on the new tag. Navigate to the stable pipeline in Azure DevOps to monitor the run.
+The tag marks the release for GitHub. The pipeline was already triggered by the release branch push in Phase 2. Navigate to the stable pipeline in Azure DevOps to monitor progress.
 
 When the pipeline completes signing, it will pause for manual validation before publishing. Approve to publish to the VS Code Marketplace.
 
-> ✋ **Confirm**: Has the tag been pushed and the pipeline started?
+> ✋ **Confirm**: Has the tag been pushed and is the pipeline running?
 
 ---
 
