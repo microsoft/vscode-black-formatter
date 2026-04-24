@@ -76,7 +76,7 @@ The stable release pipeline triggers automatically when the release branch is pu
 
 ### Phase 3 — Advance `main` back to dev
 
-Goal: Keep `main` moving forward on an odd minor with `-dev` suffix.
+Goal: Keep `main` moving forward on the next **odd** minor version with `-dev` suffix. Stable releases use even minor versions; dev versions use odd.
 
 1. From `main` (or a new branch off it, replacing `2026.5.0-dev` with the actual next dev version):
    ```
@@ -88,13 +88,18 @@ Goal: Keep `main` moving forward on an odd minor with `-dev` suffix.
    - From: the stable version just released (e.g. `2026.4.0` — *example*)
    - To: the next odd minor with `-dev` suffix (e.g. `2026.5.0-dev` — *example*)
 
-3. Commit, push, and merge via PR (replace `2026.5.0-dev` with the actual next dev version):
+3. Commit and push (replace `2026.5.0-dev` with the actual next dev version):
    ```
    git add package.json
    git commit -m "Bump version to 2026.5.0-dev"
    git push origin bump/2026.5.0-dev
    ```
-   Open a PR targeting `main` and merge it.
+
+4. Create a PR targeting `main`, add the `debt` label, and enable auto-merge:
+   ```
+   gh pr create --base main --title "Bump version to 2026.5.0-dev" --body "Advance main to the next odd minor pre-release development version." --label debt
+   gh pr merge <PR_NUMBER> --squash --auto
+   ```
 
 > ✋ **Confirm**: Has `main` been updated to the next dev version?
 
