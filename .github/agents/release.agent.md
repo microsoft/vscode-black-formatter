@@ -128,8 +128,21 @@ When the pipeline completes signing, it will pause for manual validation before 
 
 ## Done
 
-Once the pipeline has published successfully:
-- A GitHub release will be created at the release tag (e.g. `v2026.4.0` — *example*)
-- The extension will be live on the marketplace as a stable release
+Once the pipeline has published successfully, verify the release:
+
+1. **Check GitHub Releases** — confirm the new version appears on the releases page:
+   `
+   gh release list --repo microsoft/vscode-black-formatter --limit 5
+   `
+   Or visit: https://github.com/microsoft/vscode-black-formatter/releases
+
+2. **Verify the release tag** matches the expected version (e.g. `v2026.4.0` — *example*):
+   `
+   gh release view v<VERSION> --repo microsoft/vscode-black-formatter
+   `
+
+> ✋ **Confirm**: Does the new version appear on the [releases page](https://github.com/microsoft/vscode-black-formatter/releases)?
+
+- The extension should now be live on the VS Code Marketplace as a stable release.
 
 Congratulations on the release! 🎉
