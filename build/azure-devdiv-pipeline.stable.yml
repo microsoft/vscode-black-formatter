@@ -32,7 +32,7 @@ parameters:
   - name: publishExtension
     displayName: 🚀 Publish Extension
     type: boolean
-    default: false
+    default: true
 
   - name: buildSteps
     type: stepList
