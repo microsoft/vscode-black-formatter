@@ -11,18 +11,14 @@ from __future__ import annotations
 from typing import Sequence
 
 from vscode_common_python_lsp import (
-    SERVER_CWD,
     PythonFileKind,
     RunResult,
-    change_cwd,
     classify_python_file,
 )
 from vscode_common_python_lsp import run_module as _run_module
 from vscode_common_python_lsp import run_path as _run_path
 
 __all__ = [
-    "SERVER_CWD",
-    "change_cwd",
     "is_stdlib_file",
     "run_module",
     "run_path",
