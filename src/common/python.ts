@@ -5,8 +5,9 @@ import { PythonEnvironmentApi, PythonEnvironment, PythonEnvironments } from '@vs
 import { commands, Disposable, Event, EventEmitter, Uri } from 'vscode';
 import { traceError, traceLog } from './logging';
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
+import { PythonEnvironmentsProvider } from '@vscode/common-python-lsp';
 import * as semver from 'semver';
-import { PYTHON_MAJOR, PYTHON_MINOR, PYTHON_VERSION } from './constants';
+import { BLACK_TOOL_CONFIG, PYTHON_MAJOR, PYTHON_MINOR, PYTHON_VERSION } from './constants';
 import { getProjectRoot } from './utilities';
 
 export interface IInterpreterDetails {
@@ -224,4 +225,13 @@ export function checkVersion(resolved: ResolvedEnvironment | undefined): boolean
 export function resetCachedApis(): void {
     _api = undefined;
     _envsApi = undefined;
+}
+
+let _pythonProvider: PythonEnvironmentsProvider | undefined;
+
+export function getPythonProvider(): PythonEnvironmentsProvider {
+    if (!_pythonProvider) {
+        _pythonProvider = new PythonEnvironmentsProvider(BLACK_TOOL_CONFIG);
+    }
+    return _pythonProvider;
 }
