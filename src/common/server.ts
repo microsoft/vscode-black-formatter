@@ -15,8 +15,6 @@ import { traceError } from './logging';
 import { getPythonProvider } from './python';
 import { ISettings } from './settings';
 
-export type { IInitOptions } from '@vscode/common-python-lsp';
-
 export function getServerCwd(settings: ISettings): string {
     // ISettings is structurally compatible but lacks the index signature IBaseSettings requires
     return _getServerCwd(settings as unknown as IBaseSettings);

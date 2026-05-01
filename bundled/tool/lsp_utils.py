@@ -16,23 +16,14 @@ from vscode_common_python_lsp import (
     RunResult,
     change_cwd,
     classify_python_file,
-    is_current_interpreter,
-    normalize_path,
 )
 from vscode_common_python_lsp import run_module as _run_module
 from vscode_common_python_lsp import run_path as _run_path
-from vscode_common_python_lsp import (
-    substitute_attr,
-)
 
 __all__ = [
     "SERVER_CWD",
     "change_cwd",
-    "is_current_interpreter",
     "is_stdlib_file",
-    "normalize_path",
-    "RunResult",
-    "substitute_attr",
     "run_module",
     "run_path",
 ]
