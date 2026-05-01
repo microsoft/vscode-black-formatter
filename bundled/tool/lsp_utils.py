@@ -29,7 +29,9 @@ from vscode_common_python_lsp import (
 )
 from vscode_common_python_lsp import run_module as _run_module
 from vscode_common_python_lsp import run_path as _run_path
-from vscode_common_python_lsp import substitute_attr
+from vscode_common_python_lsp import (
+    substitute_attr,
+)
 
 __all__ = [
     "SERVER_CWD",
