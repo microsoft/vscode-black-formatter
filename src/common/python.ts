@@ -1,237 +1,47 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { PythonEnvironmentApi, PythonEnvironment, PythonEnvironments } from '@vscode/python-environments';
-import { commands, Disposable, Event, EventEmitter, Uri } from 'vscode';
-import { traceError, traceLog } from './logging';
-import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
-import { PythonEnvironmentsProvider } from '@vscode/common-python-lsp';
-import * as semver from 'semver';
-import { BLACK_TOOL_CONFIG, PYTHON_MAJOR, PYTHON_MINOR, PYTHON_VERSION } from './constants';
-import { getProjectRoot } from './utilities';
+// Thin wrapper: delegates to @vscode/common-python-lsp shared package.
 
-export interface IInterpreterDetails {
-    path?: string[];
-    resource?: Uri;
-}
+import { Disposable, Event, EventEmitter, Uri } from 'vscode';
+import { PythonExtension } from '@vscode/python-extension';
+import { IInterpreterDetails, PythonEnvironmentsProvider } from '@vscode/common-python-lsp';
+import { BLACK_TOOL_CONFIG } from './constants';
 
-function convertToResolvedEnvironment(environment: PythonEnvironment): ResolvedEnvironment | undefined {
-    const runConfig = environment.execInfo?.activatedRun ?? environment.execInfo?.run;
-    const executable = runConfig?.executable;
-    if (!executable) {
-        return undefined;
-    }
-    const coerced = semver.coerce(environment.version);
-    return {
-        id: environment.envId?.id ?? '',
-        path: executable,
-        executable: {
-            uri: Uri.file(executable),
-            bitness: 'Unknown',
-            sysPrefix: environment.sysPrefix ?? '',
-        },
-        version: coerced
-            ? {
-                  major: coerced.major,
-                  minor: coerced.minor,
-                  micro: coerced.patch,
-                  release: { level: 'final', serial: 0 },
-                  sysVersion: environment.version ?? '',
-              }
-            : undefined,
-        environment: undefined,
-        tools: [],
-    } as ResolvedEnvironment;
-}
+export type { IInterpreterDetails };
 
-const onDidChangePythonInterpreterEvent = new EventEmitter<void>();
-export const onDidChangePythonInterpreter: Event<void> = onDidChangePythonInterpreterEvent.event;
+const _onDidChangePython = new EventEmitter<void>();
+export const onDidChangePythonInterpreter: Event<void> = _onDidChangePython.event;
 
-let _api: PythonExtension | undefined;
-async function getPythonExtensionAPI(): Promise<PythonExtension | undefined> {
-    if (_api) {
-        return _api;
-    }
-    _api = await PythonExtension.api();
-    return _api;
-}
+let _provider = new PythonEnvironmentsProvider(BLACK_TOOL_CONFIG);
+let _providerSub = _provider.onDidChangeInterpreter(() => _onDidChangePython.fire());
 
-let _envsApi: PythonEnvironmentApi | undefined;
-async function getEnvironmentsExtensionAPI(): Promise<PythonEnvironmentApi | undefined> {
-    if (_envsApi) {
-        return _envsApi;
-    }
-    try {
-        _envsApi = await PythonEnvironments.api();
-    } catch {
-        return undefined;
-    }
-    return _envsApi;
-}
-
-function sameInterpreter(a: string[], b: string[]): boolean {
-    if (a.length !== b.length) {
-        return false;
-    }
-    for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-let serverPython: string[] | undefined;
-function checkAndFireEvent(interpreter: string[] | undefined): void {
-    if (interpreter === undefined) {
-        if (serverPython) {
-            // Python was reset for this uri
-            serverPython = undefined;
-            onDidChangePythonInterpreterEvent.fire();
-            return;
-        } else {
-            return; // No change in interpreter
-        }
-    }
-
-    if (!serverPython || !sameInterpreter(serverPython, interpreter)) {
-        serverPython = interpreter;
-        onDidChangePythonInterpreterEvent.fire();
-    }
-}
-
-async function refreshServerPython(): Promise<void> {
-    const projectRoot = await getProjectRoot();
-    const interpreter = await getInterpreterDetails(projectRoot?.uri);
-    checkAndFireEvent(interpreter.path);
+export function getPythonProvider(): PythonEnvironmentsProvider {
+    return _provider;
 }
 
 export async function initializePython(disposables: Disposable[]): Promise<void> {
-    try {
-        // Prefer the Python Environments extension if it's available, as it provides a more comprehensive view of the available environments.
-        const envsApi = await getEnvironmentsExtensionAPI();
-
-        if (envsApi) {
-            disposables.push(
-                envsApi.onDidChangeEnvironment(async () => {
-                    await refreshServerPython();
-                }),
-            );
-
-            traceLog('Waiting for interpreter from Python environments extension.');
-            await refreshServerPython();
-            return;
-        }
-
-        // Fall back to legacy ms-python.python extension API
-        const api = await getPythonExtensionAPI();
-
-        if (api) {
-            disposables.push(
-                api.environments.onDidChangeActiveEnvironmentPath(async () => {
-                    await refreshServerPython();
-                }),
-            );
-
-            traceLog('Waiting for interpreter from Python extension.');
-            await refreshServerPython();
-        }
-    } catch (error) {
-        traceError('Error initializing Python: ', error);
-    }
-}
-
-// TODO: Unused code
-export async function resolveInterpreter(interpreter: string[]): Promise<ResolvedEnvironment | undefined> {
-    const envsApi = await getEnvironmentsExtensionAPI();
-    if (envsApi) {
-        const environment = await envsApi.resolveEnvironment(Uri.file(interpreter[0]));
-        if (!environment) {
-            return undefined;
-        }
-        return convertToResolvedEnvironment(environment);
-    }
-    const api = await getPythonExtensionAPI();
-    return api?.environments.resolveEnvironment(interpreter[0]);
+    return _provider.initializePython(disposables);
 }
 
 export async function getInterpreterDetails(resource?: Uri): Promise<IInterpreterDetails> {
-    // Prefer the Python Environments extension if it's available, as it provides a more comprehensive view of the available environments.
-    const envsApi = await getEnvironmentsExtensionAPI();
-    if (envsApi) {
-        try {
-            const environment = await envsApi.getEnvironment(resource);
-            if (environment) {
-                const coerced = semver.coerce(environment.version);
-                const runConfig = environment.execInfo?.activatedRun ?? environment.execInfo?.run;
-                const executable = runConfig?.executable;
-                const args = runConfig?.args ?? [];
-                if (coerced && coerced.major === PYTHON_MAJOR && coerced.minor >= PYTHON_MINOR) {
-                    if (executable) {
-                        return { path: [executable, ...args], resource };
-                    }
-                    traceError('No executable found for selected Python environment.');
-                    return { path: undefined, resource };
-                }
-                traceError(`Python version ${environment.version} is not supported.`);
-                traceError(`Selected python path: ${runConfig?.executable}`);
-                traceError(`Supported versions are ${PYTHON_VERSION} and above.`);
-                return { path: undefined, resource };
-            }
-            // No environment found via envs API, fall through to legacy resolver.
-        } catch (error) {
-            traceError('Error getting interpreter from Python environments extension: ', error);
-            // Fall through to legacy resolver.
-        }
-    }
-
-    // Fall back to legacy ms-python.python extension API
-    const api = await getPythonExtensionAPI();
-    const environment = await api?.environments.resolveEnvironment(
-        api?.environments.getActiveEnvironmentPath(resource),
-    );
-    if (environment?.executable.uri && checkVersion(environment)) {
-        return { path: [environment?.executable.uri.fsPath], resource };
-    }
-    return { path: undefined, resource };
+    return _provider.getInterpreterDetails(resource);
 }
 
-// TODO: The Python Environments extension does not expose a debug API yet; uses legacy ms-python.python
 export async function getDebuggerPath(): Promise<string | undefined> {
-    const api = await getPythonExtensionAPI();
-    return api?.debug.getDebuggerPackagePath();
-}
-
-// TODO: Unused code
-export async function runPythonExtensionCommand(command: string, ...rest: unknown[]) {
-    const envsApi = await getEnvironmentsExtensionAPI();
-    if (!envsApi) {
-        await getPythonExtensionAPI();
+    const result = await _provider.getDebuggerPath();
+    if (result) return result;
+    try {
+        const legacyApi = await PythonExtension.api();
+        return legacyApi?.debug?.getDebuggerPackagePath();
+    } catch {
+        return undefined;
     }
-    return await commands.executeCommand(command, ...rest);
-}
-
-export function checkVersion(resolved: ResolvedEnvironment | undefined): boolean {
-    const version = resolved?.version;
-    if (version?.major === PYTHON_MAJOR && version?.minor >= PYTHON_MINOR) {
-        return true;
-    }
-    traceError(`Python version ${version?.major}.${version?.minor} is not supported.`);
-    traceError(`Selected python path: ${resolved?.executable.uri?.fsPath}`);
-    traceError(`Supported versions are ${PYTHON_VERSION} and above.`);
-    return false;
 }
 
 export function resetCachedApis(): void {
-    _api = undefined;
-    _envsApi = undefined;
-}
-
-let _pythonProvider: PythonEnvironmentsProvider | undefined;
-
-export function getPythonProvider(): PythonEnvironmentsProvider {
-    if (!_pythonProvider) {
-        _pythonProvider = new PythonEnvironmentsProvider(BLACK_TOOL_CONFIG);
-    }
-    return _pythonProvider;
+    _providerSub.dispose();
+    _provider.dispose();
+    _provider = new PythonEnvironmentsProvider(BLACK_TOOL_CONFIG);
+    _providerSub = _provider.onDidChangeInterpreter(() => _onDidChangePython.fire());
 }
