@@ -17,7 +17,7 @@ import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
 import { traceInfo, traceWarn } from './logging';
 import { TransportKind } from 'vscode-languageclient/node';
 
-export interface ISettings extends IBaseSettings {}
+export type ISettings = IBaseSettings;
 
 export function getServerTransport(namespace: string, uri: Uri): TransportKind {
     const config = getConfiguration(namespace, uri);
