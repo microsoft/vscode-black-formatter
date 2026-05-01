@@ -129,6 +129,12 @@ def setup_lsp_mocks():
         sys.path.insert(0, tool_dir)
         _INJECTED_PATH = tool_dir
 
+    # Also add bundled/libs so the shared vscode_common_python_lsp package
+    # is importable (installed there by nox install_bundled_libs).
+    libs_dir = str(pathlib.Path(__file__).parents[3] / "bundled" / "libs")
+    if libs_dir not in sys.path:
+        sys.path.insert(0, libs_dir)
+
     # -- Wire modules into sys.modules --------------------------------------
     # lsp_utils, lsp_jsonrpc, lsp_edit_utils, and lsp_io live in bundled/tool
     # and only use stdlib — let the real modules be imported so integration
