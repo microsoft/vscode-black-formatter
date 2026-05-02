@@ -30,7 +30,9 @@ export async function getInterpreterDetails(resource?: Uri): Promise<IInterprete
 
 export async function getDebuggerPath(): Promise<string | undefined> {
     const result = await _provider.getDebuggerPath();
-    if (result) { return result; }
+    if (result) {
+        return result;
+    }
     try {
         const legacyApi = await PythonExtension.api();
         return legacyApi?.debug?.getDebuggerPackagePath();
