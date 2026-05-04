@@ -38,6 +38,15 @@ update_sys_path(
     os.getenv("LS_IMPORT_STRATEGY", "useBundled"),
 )
 
+# **********************************************************
+# Imports needed for the language server goes below this.
+# **********************************************************
+# pylint: disable=wrong-import-position,import-error
+import lsp_edit_utils as edit_utils
+import lsp_io
+import lsp_jsonrpc as jsonrpc
+import lsp_notebook as notebook
+import lsp_utils as utils
 from lsprotocol import types as lsp
 from pygls import uris
 from pygls.lsp.server import LanguageServer
@@ -49,16 +58,6 @@ from vscode_common_python_lsp import (
     substitute_attr,
     update_environ_path,
 )
-
-# **********************************************************
-# Imports needed for the language server goes below this.
-# **********************************************************
-# pylint: disable=wrong-import-position,import-error
-import lsp_edit_utils as edit_utils
-import lsp_io
-import lsp_jsonrpc as jsonrpc
-import lsp_notebook as notebook
-import lsp_utils as utils
 
 update_environ_path()
 
