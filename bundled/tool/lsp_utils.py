@@ -11,7 +11,6 @@ from __future__ import annotations
 from typing import Sequence
 
 from vscode_common_python_lsp import (
-    PythonFileKind,
     RunResult,
     classify_python_file,
 )
