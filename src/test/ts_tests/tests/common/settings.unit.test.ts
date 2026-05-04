@@ -10,6 +10,7 @@ import * as path from 'path';
 import * as sinon from 'sinon';
 import * as TypeMoq from 'typemoq';
 import { Uri, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
+import { TransportKind } from 'vscode-languageclient/node';
 import { EXTENSION_ROOT_DIR } from '../../../../common/constants';
 import { getServerTransport, logLegacySettings, logDefaultFormatter } from '../../../../common/settings';
 import * as vscodeapi from '../../../../common/vscodeapi';
@@ -39,15 +40,13 @@ suite('Settings Tests', () => {
         test('Returns stdio by default', () => {
             configMock.setup((c) => c.get<string>('serverTransport', 'stdio')).returns(() => 'stdio');
             const transport = getServerTransport('black-formatter', workspace1.uri);
-            // TransportKind.stdio === 0
-            assert.strictEqual(transport, 0);
+            assert.strictEqual(transport, TransportKind.stdio);
         });
 
         test('Returns pipe when configured', () => {
             configMock.setup((c) => c.get<string>('serverTransport', 'stdio')).returns(() => 'pipe');
             const transport = getServerTransport('black-formatter', workspace1.uri);
-            // TransportKind.pipe === 1
-            assert.strictEqual(transport, 1);
+            assert.strictEqual(transport, TransportKind.pipe);
         });
     });
 
