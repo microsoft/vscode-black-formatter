@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import * as path from 'path';
+import { ToolConfig } from '@vscode/common-python-lsp';
 
 export const EXTENSION_ID = 'ms-python.black-formatter';
 const folderName = path.basename(__dirname);
@@ -15,3 +16,17 @@ export const PYTHON_MINOR = 10;
 export const PYTHON_VERSION = `${PYTHON_MAJOR}.${PYTHON_MINOR}`;
 export const LS_SERVER_RESTART_DELAY = 1000;
 export const BLACK_CONFIG_FILES = ['pyproject.toml', '.black', 'setup.cfg', 'tox.ini'];
+
+export const BLACK_TOOL_CONFIG: ToolConfig = {
+    toolId: 'black-formatter',
+    toolDisplayName: 'Black',
+    toolModule: 'black',
+    minimumPythonVersion: { major: PYTHON_MAJOR, minor: PYTHON_MINOR },
+    configFiles: BLACK_CONFIG_FILES,
+    serverScript: SERVER_SCRIPT_PATH,
+    debugServerScript: DEBUG_SERVER_SCRIPT_PATH,
+    settingsDefaults: {
+        serverTransport: 'stdio',
+    },
+    trackedSettings: ['args', 'cwd', 'path', 'interpreter', 'importStrategy', 'showNotifications', 'serverTransport'],
+};

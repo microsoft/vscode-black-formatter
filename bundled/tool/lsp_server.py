@@ -10,8 +10,8 @@ import json
 import os
 import pathlib
 import re
+import subprocess
 import sys
-import sysconfig
 import traceback
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from urllib.parse import urlparse, urlunparse
@@ -29,26 +29,6 @@ def update_sys_path(path_to_add: str, strategy: str) -> None:
             sys.path.append(path_to_add)
 
 
-# **********************************************************
-# Update PATH before running anything.
-# **********************************************************
-def update_environ_path() -> None:
-    """Update PATH environment variable with the 'scripts' directory.
-    Windows: .venv/Scripts
-    Linux/MacOS: .venv/bin
-    """
-    scripts = sysconfig.get_path("scripts")
-    paths_variants = ["Path", "PATH"]
-
-    for var_name in paths_variants:
-        if var_name in os.environ:
-            paths = os.environ[var_name].split(os.pathsep)
-            if scripts not in paths:
-                paths.insert(0, scripts)
-                os.environ[var_name] = os.pathsep.join(paths)
-                break
-
-
 # Ensure that we can import LSP libraries, and other bundled libraries.
 BUNDLE_DIR = pathlib.Path(__file__).parent.parent
 # Always use bundled server files.
@@ -57,7 +37,6 @@ update_sys_path(
     os.fspath(BUNDLE_DIR / "libs"),
     os.getenv("LS_IMPORT_STRATEGY", "useBundled"),
 )
-update_environ_path()
 
 # **********************************************************
 # Imports needed for the language server goes below this.
@@ -66,19 +45,33 @@ update_environ_path()
 import lsp_edit_utils as edit_utils
 import lsp_io
 import lsp_jsonrpc as jsonrpc
+import lsp_notebook as notebook
 import lsp_utils as utils
 from lsprotocol import types as lsp
 from pygls import uris
 from pygls.lsp.server import LanguageServer
 from pygls.workspace import TextDocument
+from vscode_common_python_lsp import (
+    RunResult,
+    is_current_interpreter,
+    normalize_path,
+    substitute_attr,
+    update_environ_path,
+)
+
+update_environ_path()
 
 WORKSPACE_SETTINGS = {}
 GLOBAL_SETTINGS = {}
 RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
+
 LSP_SERVER = LanguageServer(
-    name="black-server", version="v0.1.0", max_workers=MAX_WORKERS
+    name="black-server",
+    version="v0.1.0",
+    max_workers=MAX_WORKERS,
+    notebook_document_sync=notebook.NOTEBOOK_SYNC_OPTIONS,
 )
 
 
@@ -112,6 +105,9 @@ MIN_VERSION = "22.3.0"
 
 # Minimum version of black that supports the `--line-ranges` CLI option.
 LINE_RANGES_MIN_VERSION = (23, 11, 0)
+
+# Timeout in seconds for formatting operations to prevent indefinite blocking.
+FORMATTING_TIMEOUT = 120
 
 # Versions of black found by workspace
 VERSION_LOOKUP: Dict[str, Tuple[int, int, int]] = {}
@@ -193,7 +189,13 @@ def _formatting_helper(
     args = [] if args is None else args
     extra_args = args + _get_args_by_file_extension(document)
     extra_args += ["--stdin-filename", _get_filename_for_black(document)]
-    result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
+    try:
+        result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
+    except (subprocess.TimeoutExpired, TimeoutError):
+        log_warning(
+            f"Formatting timed out after {FORMATTING_TIMEOUT}s for {document.uri}"
+        )
+        return None
     if result and result.stdout:
         if LSP_SERVER.protocol.trace == lsp.TraceValue.Verbose:
             log_to_output(
@@ -379,7 +381,7 @@ def _get_global_defaults():
 
 def _update_workspace_settings(settings):
     if not settings:
-        key = utils.normalize_path(os.getcwd())
+        key = normalize_path(os.getcwd())
         WORKSPACE_SETTINGS[key] = {
             "cwd": key,
             "workspaceFS": key,
@@ -389,7 +391,7 @@ def _update_workspace_settings(settings):
         return
 
     for setting in settings:
-        key = utils.normalize_path(uris.to_fs_path(setting["workspace"]))
+        key = normalize_path(uris.to_fs_path(setting["workspace"]))
         WORKSPACE_SETTINGS[key] = {
             **setting,
             "workspaceFS": key,
@@ -400,7 +402,7 @@ def _get_settings_by_path(file_path: pathlib.Path):
     workspaces = {s["workspaceFS"] for s in WORKSPACE_SETTINGS.values()}
 
     while file_path != file_path.parent:
-        str_file_path = utils.normalize_path(file_path)
+        str_file_path = normalize_path(file_path)
         if str_file_path in workspaces:
             return WORKSPACE_SETTINGS[str_file_path]
         file_path = file_path.parent
@@ -416,7 +418,7 @@ def _get_document_key(document: TextDocument):
 
         # Find workspace settings for the given file.
         while document_workspace != document_workspace.parent:
-            norm_path = utils.normalize_path(document_workspace)
+            norm_path = normalize_path(document_workspace)
             if norm_path in workspaces:
                 return norm_path
             document_workspace = document_workspace.parent
@@ -431,7 +433,7 @@ def _get_settings_by_document(document: TextDocument | None):
     key = _get_document_key(document)
     if key is None:
         # This is either a non-workspace file or there is no workspace.
-        key = utils.normalize_path(pathlib.Path(_get_document_path(document)).parent)
+        key = normalize_path(pathlib.Path(_get_document_path(document)).parent)
         return {
             "cwd": key,
             "workspaceFS": key,
@@ -506,7 +508,7 @@ def _run_tool_on_document(
     document: TextDocument,
     use_stdin: bool = False,
     extra_args: Sequence[str] = [],
-) -> utils.RunResult | None:
+) -> RunResult | None:
     """Runs tool on the given document.
 
     if use_stdin is true then contents of the document is passed to the
@@ -533,7 +535,7 @@ def _run_tool_on_document(
         # 'path' setting takes priority over everything.
         use_path = True
         argv = settings["path"]
-    elif settings["interpreter"] and not utils.is_current_interpreter(
+    elif settings["interpreter"] and not is_current_interpreter(
         settings["interpreter"][0]
     ):
         # If there is a different interpreter set use JSON-RPC to the subprocess
@@ -559,6 +561,7 @@ def _run_tool_on_document(
             use_stdin=use_stdin,
             cwd=cwd,
             source=document.source.replace("\r\n", "\n"),
+            timeout=FORMATTING_TIMEOUT,
         )
         if result.stderr:
             log_to_output(result.stderr)
@@ -579,6 +582,7 @@ def _run_tool_on_document(
             env={
                 "LS_IMPORT_STRATEGY": settings["importStrategy"],
             },
+            timeout=FORMATTING_TIMEOUT,
         )
         result = _to_run_result_with_logging(result)
     else:
@@ -587,7 +591,7 @@ def _run_tool_on_document(
         log_to_output(f"CWD formatter: {cwd}")
         # This is needed to preserve sys.path, in cases where the tool modifies
         # sys.path and that might not work for this scenario next time around.
-        with utils.substitute_attr(sys, "path", [""] + sys.path[:]):
+        with substitute_attr(sys, "path", [""] + sys.path[:]):
             try:
                 result = utils.run_module(
                     module=TOOL_MODULE,
@@ -595,6 +599,7 @@ def _run_tool_on_document(
                     use_stdin=use_stdin,
                     cwd=cwd,
                     source=document.source,
+                    timeout=FORMATTING_TIMEOUT,
                 )
             except Exception:
                 log_error(traceback.format_exc(chain=True))
@@ -605,7 +610,7 @@ def _run_tool_on_document(
     return result
 
 
-def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunResult:
+def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> RunResult:
     """Runs tool."""
     code_workspace = settings["workspaceFS"]
     cwd = get_cwd(settings, None)
@@ -616,7 +621,7 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         # 'path' setting takes priority over everything.
         use_path = True
         argv = settings["path"]
-    elif len(settings["interpreter"]) > 0 and not utils.is_current_interpreter(
+    elif len(settings["interpreter"]) > 0 and not is_current_interpreter(
         settings["interpreter"][0]
     ):
         # If there is a different interpreter set use JSON-RPC to the subprocess
@@ -634,7 +639,13 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         # This mode is used when running executables.
         log_to_output(" ".join(argv))
         log_to_output(f"CWD Server: {cwd}")
-        result = utils.run_path(argv=argv, use_stdin=True, cwd=cwd)
+        try:
+            result = utils.run_path(
+                argv=argv, use_stdin=True, cwd=cwd, timeout=FORMATTING_TIMEOUT
+            )
+        except (subprocess.TimeoutExpired, TimeoutError):
+            log_warning(f"Tool execution timed out after {FORMATTING_TIMEOUT}s")
+            return RunResult("", f"Timed out after {FORMATTING_TIMEOUT}s")
         if result.stderr:
             log_to_output(result.stderr)
     elif use_rpc:
@@ -642,17 +653,22 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         # the interpreter used for running this server.
         log_to_output(" ".join(settings["interpreter"] + ["-m"] + argv))
         log_to_output(f"CWD formatter: {cwd}")
-        result = jsonrpc.run_over_json_rpc(
-            workspace=code_workspace,
-            interpreter=settings["interpreter"],
-            module=TOOL_MODULE,
-            argv=argv,
-            use_stdin=True,
-            cwd=cwd,
-            env={
-                "LS_IMPORT_STRATEGY": settings["importStrategy"],
-            },
-        )
+        try:
+            result = jsonrpc.run_over_json_rpc(
+                workspace=code_workspace,
+                interpreter=settings["interpreter"],
+                module=TOOL_MODULE,
+                argv=argv,
+                use_stdin=True,
+                cwd=cwd,
+                env={
+                    "LS_IMPORT_STRATEGY": settings["importStrategy"],
+                },
+                timeout=FORMATTING_TIMEOUT,
+            )
+        except (subprocess.TimeoutExpired, TimeoutError):
+            log_warning(f"JSON-RPC execution timed out after {FORMATTING_TIMEOUT}s")
+            return RunResult("", f"Timed out after {FORMATTING_TIMEOUT}s")
         result = _to_run_result_with_logging(result)
     else:
         # In this mode the tool is run as a module in the same process as the language server.
@@ -660,10 +676,14 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
         log_to_output(f"CWD formatter: {cwd}")
         # This is needed to preserve sys.path, in cases where the tool modifies
         # sys.path and that might not work for this scenario next time around.
-        with utils.substitute_attr(sys, "path", [""] + sys.path[:]):
+        with substitute_attr(sys, "path", [""] + sys.path[:]):
             try:
                 result = utils.run_module(
-                    module=TOOL_MODULE, argv=argv, use_stdin=True, cwd=cwd
+                    module=TOOL_MODULE,
+                    argv=argv,
+                    use_stdin=True,
+                    cwd=cwd,
+                    timeout=FORMATTING_TIMEOUT,
                 )
             except Exception:
                 log_error(traceback.format_exc(chain=True))
@@ -677,7 +697,7 @@ def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunR
     return result
 
 
-def _to_run_result_with_logging(rpc_result: jsonrpc.RpcRunResult) -> utils.RunResult:
+def _to_run_result_with_logging(rpc_result: jsonrpc.RpcRunResult) -> RunResult:
     error = ""
     if rpc_result.exception:
         log_error(rpc_result.exception)
@@ -685,7 +705,7 @@ def _to_run_result_with_logging(rpc_result: jsonrpc.RpcRunResult) -> utils.RunRe
     elif rpc_result.stderr:
         log_to_output(rpc_result.stderr)
         error = rpc_result.stderr
-    return utils.RunResult(rpc_result.stdout, error)
+    return RunResult(rpc_result.stdout, error)
 
 
 # *****************************************************

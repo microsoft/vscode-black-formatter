@@ -1,10 +1,8 @@
 name: Publish Release
-trigger: none
-#   branches:
-#     include:
-#       - release*
-#   tags:
-#     include: ['*']
+trigger:
+  branches:
+    include:
+      - 'release/*'
 pr: none
 
 resources:
@@ -34,7 +32,7 @@ parameters:
   - name: publishExtension
     displayName: 🚀 Publish Extension
     type: boolean
-    default: false
+    default: true
 
   - name: buildSteps
     type: stepList
@@ -86,9 +84,23 @@ extends:
               standardizedVersioning: true
               customNPMRegistry: $(AZURE_ARTIFACTS_FEED)
 
+      - stage: WaitForValidation
+        displayName: Wait for Validation
+        dependsOn: Build
+        jobs:
+          - job: wait_for_validation
+            displayName: Wait for manual validation
+            pool: server
+            steps:
+              - task: ManualValidation@0
+                timeoutInMinutes: 1440 # task times out in 1 day
+                inputs:
+                  notifyUsers: 'plseng@microsoft.com'
+                  instructions: 'please test the latest draft release then publish it.'
+                  onTimeout: 'reject'
       - stage: Publish
         displayName: Publish Extension
-        dependsOn: Build
+        dependsOn: WaitForValidation
         jobs:
           - template: azure-pipelines/extension/templates/jobs/publish-extension.yml@templates
             parameters:
