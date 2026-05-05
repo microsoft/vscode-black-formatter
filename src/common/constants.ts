@@ -26,21 +26,7 @@ export const BLACK_TOOL_CONFIG: ToolConfig = {
     serverScript: SERVER_SCRIPT_PATH,
     debugServerScript: DEBUG_SERVER_SCRIPT_PATH,
     settingsDefaults: {
-        args: [],
-        cwd: '${workspaceFolder}',
-        importStrategy: 'useBundled',
-        interpreter: [],
-        path: [],
-        showNotifications: 'off',
         serverTransport: 'stdio',
     },
-    trackedSettings: [
-        'black-formatter.args',
-        'black-formatter.cwd',
-        'black-formatter.path',
-        'black-formatter.interpreter',
-        'black-formatter.importStrategy',
-        'black-formatter.showNotifications',
-        'black-formatter.serverTransport',
-    ],
+    trackedSettings: ['args', 'cwd', 'path', 'interpreter', 'importStrategy', 'showNotifications', 'serverTransport'],
 };

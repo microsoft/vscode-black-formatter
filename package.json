@@ -186,13 +186,11 @@
         ]
     },
     "dependencies": {
-        "@vscode/python-environments": "https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/@vscode/python-environments/-/python-environments-1.0.0.tgz",
         "@vscode/python-extension": "^1.0.5",
         "dotenv": "^17.4.0",
         "fs-extra": "^11.3.4",
-        "semver": "^7.7.4",
         "vscode-languageclient": "^9.0.1",
-        "@vscode/common-python-lsp": "0.2.1"
+        "@vscode/common-python-lsp": "0.4.0"
     },
     "devDependencies": {
         "@eslint/js": "^9.33.0",
@@ -201,9 +199,9 @@
         "@types/glob": "^9.0.0",
         "@types/mocha": "^10.0.10",
         "@types/node": "22.x",
-        "@types/semver": "^7.7.1",
         "@types/sinon": "^21.0.0",
         "@types/vscode": "^1.74.0",
+        "@vscode/python-environments": "https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/@vscode/python-environments/-/python-environments-1.0.0.tgz",
         "@typescript-eslint/eslint-plugin": "^8.57.0",
         "@typescript-eslint/parser": "^8.57.0",
         "@vscode/test-electron": "^2.5.2",
