@@ -24,11 +24,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const outputChannel = vscode.window.createOutputChannel(serverName, { log: true });
     context.subscriptions.push(outputChannel, registerLogger(outputChannel));
 
+    const resolvedServerInfo = { ...serverInfo, name: serverName };
+
     const pythonProvider = new PythonEnvironmentsProvider(BLACK_TOOL_CONFIG);
     context.subscriptions.push(pythonProvider);
 
     toolContext = createToolContext({
-        serverInfo: { ...serverInfo, name: serverName },
+        serverInfo: resolvedServerInfo,
         outputChannel,
         toolConfig: BLACK_TOOL_CONFIG,
         pythonProvider,
@@ -36,7 +38,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push({ dispose: () => toolContext?.dispose() });
 
     registerCommonSubscriptions(context, {
-        serverInfo: { ...serverInfo, name: serverName },
+        serverInfo: resolvedServerInfo,
         outputChannel,
         toolConfig: BLACK_TOOL_CONFIG,
         toolContext,

@@ -9,7 +9,7 @@ const folderName = path.basename(__dirname);
 export const EXTENSION_ROOT_DIR =
     folderName === 'common' ? path.dirname(path.dirname(__dirname)) : path.dirname(__dirname);
 
-export const BLACK_CONFIG_FILES = ['pyproject.toml', '.black', 'setup.cfg', 'tox.ini'];
+const BLACK_CONFIG_FILES = ['pyproject.toml', '.black', 'setup.cfg', 'tox.ini'];
 
 export const BLACK_TOOL_CONFIG: ToolConfig = {
     toolId: 'black-formatter',
