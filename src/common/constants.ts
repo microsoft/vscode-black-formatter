@@ -2,29 +2,23 @@
 // Licensed under the MIT License.
 
 import * as path from 'path';
-import { ToolConfig } from '@vscode/common-python-lsp';
+import type { ToolConfig } from '@vscode/common-python-lsp';
 
 export const EXTENSION_ID = 'ms-python.black-formatter';
 const folderName = path.basename(__dirname);
 export const EXTENSION_ROOT_DIR =
     folderName === 'common' ? path.dirname(path.dirname(__dirname)) : path.dirname(__dirname);
-export const BUNDLED_PYTHON_SCRIPTS_DIR = path.join(EXTENSION_ROOT_DIR, 'bundled');
-export const SERVER_SCRIPT_PATH = path.join(BUNDLED_PYTHON_SCRIPTS_DIR, 'tool', `lsp_server.py`);
-export const DEBUG_SERVER_SCRIPT_PATH = path.join(BUNDLED_PYTHON_SCRIPTS_DIR, 'tool', `_debug_server.py`);
-export const PYTHON_MAJOR = 3;
-export const PYTHON_MINOR = 10;
-export const PYTHON_VERSION = `${PYTHON_MAJOR}.${PYTHON_MINOR}`;
-export const LS_SERVER_RESTART_DELAY = 1000;
-export const BLACK_CONFIG_FILES = ['pyproject.toml', '.black', 'setup.cfg', 'tox.ini'];
+
+const BLACK_CONFIG_FILES = ['pyproject.toml', '.black', 'setup.cfg', 'tox.ini'];
 
 export const BLACK_TOOL_CONFIG: ToolConfig = {
     toolId: 'black-formatter',
     toolDisplayName: 'Black',
     toolModule: 'black',
-    minimumPythonVersion: { major: PYTHON_MAJOR, minor: PYTHON_MINOR },
+    minimumPythonVersion: { major: 3, minor: 10 },
     configFiles: BLACK_CONFIG_FILES,
-    serverScript: SERVER_SCRIPT_PATH,
-    debugServerScript: DEBUG_SERVER_SCRIPT_PATH,
+    serverScript: path.join(EXTENSION_ROOT_DIR, 'bundled', 'tool', 'lsp_server.py'),
+    debugServerScript: path.join(EXTENSION_ROOT_DIR, 'bundled', 'tool', '_debug_server.py'),
     settingsDefaults: {
         serverTransport: 'stdio',
     },
