@@ -21,14 +21,15 @@ def update_sys_path(path_to_add: str, strategy: str) -> None:
             sys.path.append(path_to_add)
 
 
+def configure_bundled_sys_path(bundle_dir: pathlib.Path) -> None:
+    """Ensure the runner's runtime dependencies always come from the bundle."""
+    update_sys_path(os.fspath(bundle_dir / "tool"), "useBundled")
+    update_sys_path(os.fspath(bundle_dir / "libs"), "useBundled")
+
+
 # Ensure that we can import LSP libraries, and other bundled libraries.
 BUNDLE_DIR = pathlib.Path(__file__).parent.parent
-# Always use bundled server files.
-update_sys_path(os.fspath(BUNDLE_DIR / "tool"), "useBundled")
-update_sys_path(
-    os.fspath(BUNDLE_DIR / "libs"),
-    os.getenv("LS_IMPORT_STRATEGY", "useBundled"),
-)
+configure_bundled_sys_path(BUNDLE_DIR)
 
 
 from vscode_common_python_lsp import (  # noqa: E402

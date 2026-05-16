@@ -183,7 +183,15 @@
                 "category": "Black Formatter",
                 "command": "black-formatter.restart"
             }
-        ]
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "black-formatter.restart",
+                    "when": "black-formatter.activated"
+                }
+            ]
+        }
     },
     "dependencies": {
         "@vscode/python-extension": "^1.0.5",

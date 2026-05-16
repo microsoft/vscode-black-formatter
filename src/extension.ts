@@ -18,6 +18,7 @@ import { registerEmptyFormatter } from './common/nullFormatter';
 let toolContext: ToolExtensionContext | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    await vscode.commands.executeCommand('setContext', 'black-formatter.activated', true);
     const serverInfo = loadServerDefaults(EXTENSION_ROOT_DIR);
     const serverName = `${serverInfo.name} Formatter`;
 
