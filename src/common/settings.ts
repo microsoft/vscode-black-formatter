@@ -44,25 +44,8 @@ export function logDefaultFormatter(): void {
 }
 
 export function logLegacySettings(): void {
-    // Array settings can use the shared helper directly.
     _logLegacySettings('black-formatter', [
         { legacyKey: 'formatting.blackArgs', newKey: 'args', isArray: true },
+        { legacyKey: 'formatting.blackPath', newKey: 'path', defaultValue: 'black' },
     ]);
-
-    // Path needs local handling: suppress warning when the value is the
-    // historical default 'black' (the shared helper doesn't support
-    // defaultValue filtering yet).
-    getWorkspaceFolders().forEach((workspace) => {
-        try {
-            const legacyConfig = getConfiguration('python', workspace.uri);
-            const legacyPath = legacyConfig.get<string>('formatting.blackPath', '');
-            if (legacyPath.length > 0 && legacyPath !== 'black') {
-                traceWarn(`"python.formatting.blackPath" is deprecated. Use "black-formatter.path" instead.`);
-                traceWarn(`"python.formatting.blackPath" for workspace ${workspace.uri.fsPath}:`);
-                traceWarn(`\n${JSON.stringify(legacyPath, null, 4)}`);
-            }
-        } catch (err) {
-            traceWarn(`Error while logging legacy settings: ${err}`);
-        }
-    });
 }

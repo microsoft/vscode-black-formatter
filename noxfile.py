@@ -118,7 +118,7 @@ def install_bundled_libs(session):
         "--no-cache-dir",
         "--no-deps",
         "--upgrade",
-        "vscode-common-python-lsp==0.5.1",
+        "vscode-common-python-lsp==0.6.0",
     )
 
 
