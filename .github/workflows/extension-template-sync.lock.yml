@@ -23,7 +23,7 @@
 #
 # Scheduled and on-demand check to detect unsynced changes from the upstream microsoft/vscode-python-tools-extension-template. Compares recent template PRs against this repo's files and opens an issue for each PR whose changes are not yet present.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"45d7ac5adc29678fb6a2eb28a0aa653e01b72bac636d4f1de70f7b0ef65734bc","compiler_version":"v0.51.6"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"86fb3e2da6558db63304778d0efb2b96d848b28f23d9967640c5fdb6095f0a66","compiler_version":"v0.51.6"}
 
 name: 'Extension Template Sync'
 'on':
@@ -41,6 +41,7 @@ run-name: 'Extension Template Sync'
 
 jobs:
   activation:
+    if: github.repository_owner == 'microsoft'
     runs-on: ubuntu-slim
     permissions:
       contents: read

@@ -23,7 +23,7 @@
 #
 # Annual check of the latest supported Python versions from peps.python.org. Creates a PR to add newly released versions and remove end-of-life versions from CI workflows, actions, Azure Pipelines, and source code.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"bb962f8e02a0b044f2a7f184807c71f4bd237159c4e6fdbf55a16dbc05c241ad","compiler_version":"v0.51.6"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"3f488bcea73ddbb890344cfa917bef7faa6924c2282f5a573b92d34236ec5e61","compiler_version":"v0.51.6"}
 
 name: 'Annual Python Version Update'
 'on':
@@ -40,6 +40,7 @@ run-name: 'Annual Python Version Update'
 
 jobs:
   activation:
+    if: github.repository_owner == 'microsoft'
     runs-on: ubuntu-slim
     permissions:
       contents: read

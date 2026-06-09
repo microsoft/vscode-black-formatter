@@ -4,6 +4,7 @@ description: >
   upstream microsoft/vscode-python-tools-extension-template. Compares
   recent template PRs against this repo's files and opens an issue
   for each PR whose changes are not yet present.
+if: github.repository_owner == 'microsoft'
 on:
   schedule:
     - cron: daily
