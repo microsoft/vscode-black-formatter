@@ -21,9 +21,9 @@
 #
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
-# When a new issue is opened — or when a maintainer comments `/triage-issue` on an existing issue — analyze its root cause, check whether the same issue could affect other extensions built from the microsoft/vscode-python-tools-extension-template, and look for related open issues on the upstream Black repository (psf/black). If applicable, suggest an upstream fix and surface relevant Black issues to the reporter.
+# When a new issue is opened — or when a maintainer comments `/triage-issue` on an existing issue — analyze its root cause, check whether the same issue could affect other extensions built from the microsoft/vscode-python-tools-extension-template or originate from the microsoft/vscode-common-python-lsp shared package, and look for related open issues on the upstream Black repository (psf/black). If applicable, suggest an upstream fix and surface relevant Black issues to the reporter.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"1bff13461402900f53b3ac363f6b7db7408173aafd616604a32fd85a92710790","compiler_version":"v0.51.6"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"914bc4c51543ca1422674d463880bcabba92c5da9433b146c9412fceaa145e1e","compiler_version":"v0.51.6"}
 
 name: 'Issue Triage'
 'on':
@@ -44,7 +44,7 @@ run-name: 'Issue Triage'
 jobs:
   activation:
     needs: pre_activation
-    if: needs.pre_activation.outputs.activated == 'true'
+    if: (needs.pre_activation.outputs.activated == 'true') && (github.repository_owner == 'microsoft')
     runs-on: ubuntu-slim
     permissions:
       contents: read
@@ -283,6 +283,12 @@ jobs:
           path: template
           persist-credentials: false
           repository: microsoft/vscode-python-tools-extension-template
+      - name: Checkout shared package repo
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          path: shared-package
+          persist-credentials: false
+          repository: microsoft/vscode-common-python-lsp
 
       - name: Configure Git credentials
         env:
@@ -807,7 +813,7 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           WORKFLOW_NAME: 'Issue Triage'
-          WORKFLOW_DESCRIPTION: 'When a new issue is opened — or when a maintainer comments `/triage-issue` on an existing issue — analyze its root cause, check whether the same issue could affect other extensions built from the microsoft/vscode-python-tools-extension-template, and look for related open issues on the upstream Black repository (psf/black). If applicable, suggest an upstream fix and surface relevant Black issues to the reporter.'
+          WORKFLOW_DESCRIPTION: 'When a new issue is opened — or when a maintainer comments `/triage-issue` on an existing issue — analyze its root cause, check whether the same issue could affect other extensions built from the microsoft/vscode-python-tools-extension-template or originate from the microsoft/vscode-common-python-lsp shared package, and look for related open issues on the upstream Black repository (psf/black). If applicable, suggest an upstream fix and surface relevant Black issues to the reporter.'
           HAS_PATCH: ${{ steps.collect_output.outputs.has_patch }}
         with:
           script: |
@@ -985,6 +991,7 @@ jobs:
             await main();
 
   pre_activation:
+    if: github.repository_owner == 'microsoft'
     runs-on: ubuntu-slim
     outputs:
       activated: ${{ steps.check_membership.outputs.is_team_member == 'true' }}

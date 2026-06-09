@@ -6,6 +6,7 @@ description: >
 strict: false
 engine:
   id: copilot
+if: github.repository_owner == 'microsoft'
 on:
   schedule:
     - cron: "0 12 15 10 *"
