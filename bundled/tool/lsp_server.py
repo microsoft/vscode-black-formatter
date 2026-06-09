@@ -148,9 +148,9 @@ def range_formatting(
     """LSP handler for textDocument/rangeFormatting request."""
     document = LSP_SERVER.workspace.get_text_document(params.text_document.uri)
     settings = tool_server.get_settings_by_document(document)
-    version = VERSION_LOOKUP[settings["workspaceFS"]]
+    version = VERSION_LOOKUP.get(settings["workspaceFS"])
 
-    if version >= LINE_RANGES_MIN_VERSION:
+    if version is not None and version >= LINE_RANGES_MIN_VERSION:
         return _formatting_helper(
             document,
             args=[
@@ -159,9 +159,10 @@ def range_formatting(
             ],
         )
 
-    tool_server.log_warning(
-        "Black version earlier than 23.11.0 does not support range formatting. Formatting entire document."
-    )
+    if version is not None:
+        tool_server.log_warning(
+            "Black version earlier than 23.11.0 does not support range formatting. Formatting entire document."
+        )
     return _formatting_helper(document)
 
 
@@ -172,17 +173,18 @@ def ranges_formatting(
     """LSP handler for textDocument/rangesFormatting request."""
     document = LSP_SERVER.workspace.get_text_document(params.text_document.uri)
     settings = tool_server.get_settings_by_document(document)
-    version = VERSION_LOOKUP[settings["workspaceFS"]]
+    version = VERSION_LOOKUP.get(settings["workspaceFS"])
 
-    if version >= LINE_RANGES_MIN_VERSION:
+    if version is not None and version >= LINE_RANGES_MIN_VERSION:
         args = []
         for r in params.ranges:
             args += ["--line-ranges", f"{r.start.line + 1}-{r.end.line + 1}"]
         return _formatting_helper(document, args=args)
 
-    tool_server.log_warning(
-        "Black version earlier than 23.11.0 does not support range formatting. Formatting entire document."
-    )
+    if version is not None:
+        tool_server.log_warning(
+            "Black version earlier than 23.11.0 does not support range formatting. Formatting entire document."
+        )
     return _formatting_helper(document)
 
 
@@ -271,7 +273,7 @@ def initialize(params: lsp.InitializeParams) -> None:
     tool_server.apply_settings(params)
     settings = (params.initialization_options or {}).get("settings")
     tool_server.log_startup_info(settings)
-    _update_workspace_settings_with_version_info(WORKSPACE_SETTINGS)
+    _update_workspace_settings_with_version_info(tool_server.workspace_settings)
 
 
 @LSP_SERVER.feature(lsp.EXIT)
