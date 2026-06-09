@@ -29,14 +29,15 @@ def update_sys_path(path_to_add: str, strategy: str) -> None:
             sys.path.append(path_to_add)
 
 
+def configure_bundled_sys_path(bundle_dir: pathlib.Path) -> None:
+    """Ensure the server's runtime dependencies always come from the bundle."""
+    update_sys_path(os.fspath(bundle_dir / "tool"), "useBundled")
+    update_sys_path(os.fspath(bundle_dir / "libs"), "useBundled")
+
+
 # Ensure that we can import LSP libraries, and other bundled libraries.
 BUNDLE_DIR = pathlib.Path(__file__).parent.parent
-# Always use bundled server files.
-update_sys_path(os.fspath(BUNDLE_DIR / "tool"), "useBundled")
-update_sys_path(
-    os.fspath(BUNDLE_DIR / "libs"),
-    os.getenv("LS_IMPORT_STRATEGY", "useBundled"),
-)
+configure_bundled_sys_path(BUNDLE_DIR)
 
 # **********************************************************
 # Imports needed for the language server goes below this.
@@ -487,8 +488,8 @@ def get_cwd(settings: Dict[str, Any], document: Optional[TextDocument]) -> str:
             "${fileExtname}": file_ext,
             "${fileDirname}": file_dir,
             "${fileDirnameBasename}": os.path.basename(file_dir),
-            "${relativeFile}": os.path.relpath(file_path, workspace_fs),
-            "${relativeFileDirname}": os.path.relpath(file_dir, workspace_fs),
+            "${relativeFile}": _safe_relpath(file_path, workspace_fs, file_path),
+            "${relativeFileDirname}": _safe_relpath(file_dir, workspace_fs, file_dir),
             "${fileWorkspaceFolder}": workspace_fs,
         }
 
@@ -501,6 +502,14 @@ def get_cwd(settings: Dict[str, Any], document: Optional[TextDocument]) -> str:
             cwd = workspace_fs
 
     return cwd
+
+
+def _safe_relpath(path_value: str, start_value: str, fallback: str) -> str:
+    """Return a relative path when possible, otherwise fall back safely."""
+    try:
+        return os.path.relpath(path_value, start_value)
+    except ValueError:
+        return fallback
 
 
 # pylint: disable=too-many-branches

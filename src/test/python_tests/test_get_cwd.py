@@ -127,3 +127,35 @@ def test_document_with_no_path_falls_back_to_workspace():
     doc = types.SimpleNamespace(path="", uri="file://")
     settings = _make_settings(cwd="${fileDirname}")
     assert lsp_server.get_cwd(settings, doc) == WORKSPACE
+
+
+def test_relative_file_variable_falls_back_to_absolute_path_on_mount_mismatch(monkeypatch):
+    """Different mounts should not crash relative substitutions on Windows."""
+    doc_path = r"X:\proj\src\foo.py"
+    doc = _make_doc(doc_path)
+    settings = {"workspaceFS": r"\\server\where_X_is_pointing_to", "cwd": "${relativeFile}"}
+
+    def fake_relpath(path_value, start_value):
+        raise ValueError(
+            f"path is on mount '{path_value.split(os.sep)[0]}', start on mount '{start_value}'"
+        )
+
+    monkeypatch.setattr(os.path, "relpath", fake_relpath)
+
+    assert lsp_server.get_cwd(settings, doc) == doc_path
+
+
+def test_relative_file_dirname_variable_falls_back_to_absolute_dir_on_mount_mismatch(monkeypatch):
+    """Different mounts should fall back to the document directory."""
+    doc_path = r"X:\proj\src\foo.py"
+    doc = _make_doc(doc_path)
+    settings = {"workspaceFS": r"\\server\where_X_is_pointing_to", "cwd": "${relativeFileDirname}"}
+
+    def fake_relpath(path_value, start_value):
+        raise ValueError(
+            f"path is on mount '{path_value.split(os.sep)[0]}', start on mount '{start_value}'"
+        )
+
+    monkeypatch.setattr(os.path, "relpath", fake_relpath)
+
+    assert lsp_server.get_cwd(settings, doc) == os.path.dirname(doc_path)
