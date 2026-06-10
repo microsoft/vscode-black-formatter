@@ -190,7 +190,7 @@
         "dotenv": "^17.4.0",
         "fs-extra": "^11.3.4",
         "vscode-languageclient": "^9.0.1",
-        "@vscode/common-python-lsp": "0.5.1"
+        "@vscode/common-python-lsp": "0.5.2"
     },
     "devDependencies": {
         "@eslint/js": "^9.33.0",
