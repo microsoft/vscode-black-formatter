@@ -30,13 +30,19 @@ export function unregisterEmptyFormatter(): void {
     }
 }
 
-// Interval used to detect when the language client becomes available. The
-// language client is created asynchronously by the shared activation library,
-// so the extension cannot hook into its creation directly.
+// How often (ms) to check whether the language client object has been created.
+// The client is created asynchronously by the shared activation library, so the
+// extension cannot hook into its creation directly. 500ms keeps the placeholder
+// removal responsive without adding meaningful overhead during the brief startup
+// window.
 const SERVER_POLL_INTERVAL = 500;
-// Stop a polling burst after this many attempts (~60s). Polling only needs to
-// run until the language client object exists; once attached, a state listener
-// takes over. A fresh burst is started on every interpreter change.
+// Stop a polling burst after this many attempts (120 * 500ms ≈ 60s). Polling
+// only needs to run until the language client object exists; once attached, a
+// state listener takes over and catches the transition to `Running` whenever it
+// happens. If the budget is exhausted (e.g. no interpreter is configured), the
+// placeholder formatter intentionally stays registered — there is no second
+// formatter yet, so no duplicate — and a fresh burst is started on the next
+// interpreter change.
 const SERVER_POLL_MAX_ATTEMPTS = 120;
 
 /**
