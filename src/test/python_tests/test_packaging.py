@@ -10,6 +10,7 @@ accidentally excluded.
 """
 
 import importlib.metadata
+import importlib.util
 import pathlib
 import sys
 
@@ -36,3 +37,10 @@ def test_black_metadata_version():
     assert version, "black version string should not be empty"
     parts = version.split(".")
     assert len(parts) >= 2, f"Unexpected version format: {version}"
+
+
+def test_common_lsp_package_is_bundled():
+    """The server imports this package before it can start."""
+    spec = importlib.util.find_spec("vscode_common_python_lsp")
+    assert spec is not None
+    assert pathlib.Path(spec.origin).is_relative_to(BUNDLED_LIBS)
