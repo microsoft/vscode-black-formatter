@@ -13,7 +13,7 @@ import {
 } from '@vscode/common-python-lsp';
 import { EXTENSION_ROOT_DIR, BLACK_TOOL_CONFIG } from './common/constants';
 import { logDefaultFormatter, logLegacySettings } from './common/settings';
-import { registerEmptyFormatter } from './common/nullFormatter';
+import { registerEmptyFormatter, unregisterEmptyFormatterOnServerStart } from './common/nullFormatter';
 
 let toolContext: ToolExtensionContext | undefined;
 
@@ -46,6 +46,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     });
 
     registerEmptyFormatter();
+    // Remove the placeholder formatter once the language server registers its
+    // own formatter, so VS Code does not see two Black formatters (issue #752).
+    context.subscriptions.push(unregisterEmptyFormatterOnServerStart(toolContext, pythonProvider));
     logDefaultFormatter();
     logLegacySettings();
 
