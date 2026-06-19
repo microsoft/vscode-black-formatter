@@ -13,7 +13,6 @@ import {
 } from '@vscode/common-python-lsp';
 import { EXTENSION_ROOT_DIR, BLACK_TOOL_CONFIG } from './common/constants';
 import { logDefaultFormatter, logLegacySettings } from './common/settings';
-import { registerEmptyFormatter } from './common/nullFormatter';
 
 let toolContext: ToolExtensionContext | undefined;
 
@@ -45,7 +44,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         pythonProvider,
     });
 
-    registerEmptyFormatter();
     logDefaultFormatter();
     logLegacySettings();
 

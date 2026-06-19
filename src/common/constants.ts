@@ -23,4 +23,5 @@ export const BLACK_TOOL_CONFIG: ToolConfig = {
         serverTransport: 'stdio',
     },
     trackedSettings: ['args', 'cwd', 'path', 'interpreter', 'importStrategy', 'showNotifications', 'serverTransport'],
+    isFormatter: true,
 };
