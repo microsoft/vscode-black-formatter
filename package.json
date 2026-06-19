@@ -186,7 +186,7 @@
         ]
     },
     "dependencies": {
-        "@vscode/common-python-lsp": "^0.6.0",
+        "@vscode/common-python-lsp": "^0.7.0",
         "@vscode/python-extension": "^1.0.5",
         "dotenv": "^17.4.0",
         "fs-extra": "^11.3.4",
