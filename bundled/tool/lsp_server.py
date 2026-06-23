@@ -373,7 +373,7 @@ def _update_workspace_settings_with_version_info(
                     f"FOUND {TOOL_MODULE}=={actual_version}\r\n"
                 )
 
-        except:  # pylint: disable=bare-except
+        except (ImportError, OSError, subprocess.SubprocessError, ValueError, IndexError, AttributeError):
             log_to_output(
                 f"Error while detecting black version:\r\n{traceback.format_exc()}"
             )
