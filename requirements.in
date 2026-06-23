@@ -8,4 +8,4 @@
 pygls
 packaging
 black
-vscode-common-python-lsp==0.6.0
+vscode-common-python-lsp==0.7.0
