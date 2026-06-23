@@ -21,6 +21,8 @@ network:
 safe-outputs:
   create-issue:
     max: 10
+  noop:
+    report-as-issue: false
 steps:
 - name: Checkout repository
   uses: actions/checkout@v5

@@ -27,6 +27,7 @@ safe-outputs:
     draft: true
   noop:
     max: 1
+    report-as-issue: false
 ---
 
 # Annual Python Version Update
