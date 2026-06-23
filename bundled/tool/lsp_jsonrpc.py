@@ -181,7 +181,8 @@ class ProcessManager:
                     del self._processes[workspace]
                     rpc = self._rpc.pop(workspace)
                     rpc.close()
-                except:  # pylint: disable=bare-except
+                except KeyError:
+                    # KeyError is sufficient because the process is already dead
                     pass
 
         self._thread_pool.submit(_monitor_process)
