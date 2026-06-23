@@ -9,7 +9,7 @@ on:
       - 'release-*'
 
 env:
-  NODE_VERSION: 22.23.0
+  NODE_VERSION: 24.17.0
   PYTHON_VERSION: '3.10'
   TEST_RESULTS_DIRECTORY: .
   # Force a path with spaces and unicode chars to test extension works in these scenarios
