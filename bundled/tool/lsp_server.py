@@ -88,6 +88,66 @@ LSP_SERVER = LanguageServer(
 )
 
 
+TOOL_MODULE = "black"
+TOOL_DISPLAY = "Black Formatter"
+
+# Default arguments always passed to black.
+TOOL_ARGS = []
+
+# Minimum version of black supported.
+MIN_VERSION = "22.3.0"
+
+BLACK_CONFIG = ToolServerConfig(
+    tool_module=TOOL_MODULE,
+    tool_display=TOOL_DISPLAY,
+    tool_args=TOOL_ARGS,
+    min_version=MIN_VERSION,
+    runner_script=str(RUNNER),
+)
+
+tool_server = ToolServer(BLACK_CONFIG, server=LSP_SERVER)
+
+WORKSPACE_SETTINGS = tool_server.workspace_settings
+GLOBAL_SETTINGS = tool_server.global_settings
+
+# Minimum version of black that supports the `--line-ranges` CLI option.
+LINE_RANGES_MIN_VERSION = (23, 11, 0)
+
+# Timeout in seconds for formatting operations to prevent indefinite blocking.
+FORMATTING_TIMEOUT = 120
+
+# Versions of black found by workspace
+VERSION_LOOKUP: Dict[str, Tuple[int, int, int]] = {}
+
+
+def _parse_tool_version(stdout: str) -> str:
+    """Extract the actual tool version from the --version stdout.
+
+    Black prints lines like "black, 22.3.0 (compiled: yes)"; a CPython banner
+    like "Python 3.12.0" can also appear on the first line in some
+    environments. We scan the first line for any token matching the
+    version-shape "X.Y..." and return the leftmost such token, so a real
+    "24.3.0" wins over a stray "3.12" in a Python banner. Returns "0.0.0" when
+    no candidate is found so the existing >= 22.3.0 path can still report
+    "NOT supported" with a clear message instead of crashing.
+
+    Pre-release versions ("24.3.0rc1") are returned as-is; parse_version
+    handles them.
+    """
+    if not stdout:
+        return "0.0.0"
+    lines = stdout.splitlines()
+    if not lines:
+        return "0.0.0"
+    first_line = lines[0]
+    candidates = re.findall(r"\d+\.\d+(?:\.\d+)?[A-Za-z0-9.+-]*", first_line)
+    if not candidates:
+        return "0.0.0"
+    # When multiple version-shaped tokens are present, prefer the leftmost so
+    # the real tool version beats any "Python 3.12" fragment in parentheses.
+    return candidates[0]
+
+
 def _get_document_path(document: TextDocument) -> str:
     """Returns the filesystem path for a document.
 
@@ -344,14 +404,7 @@ def _update_workspace_settings_with_version_info(
                     'Install black in your environment and set "black-formatter.importStrategy": "fromEnvironment"'
                 )
 
-            # This is text we get from running `black --version`
-            # black, 22.3.0 (compiled: yes) <--- This is the version we want.
-            first_line = result.stdout.splitlines(keepends=False)[0]
-            parts = [v for v in first_line.split(" ") if re.match(r"\d+\.\d+\S*", v)]
-            if len(parts) == 1:
-                actual_version = parts[0]
-            else:
-                actual_version = "0.0.0"
+            actual_version = _parse_tool_version(result.stdout)
 
             version = parse_version(actual_version)
             min_version = parse_version(MIN_VERSION)
