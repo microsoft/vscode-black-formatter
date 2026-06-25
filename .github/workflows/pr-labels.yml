@@ -10,6 +10,7 @@ on:
 
 jobs:
   add-pr-label:
+    if: github.repository_owner == 'microsoft'
     name: 'Ensure Required Labels'
     runs-on: ubuntu-latest
     steps:

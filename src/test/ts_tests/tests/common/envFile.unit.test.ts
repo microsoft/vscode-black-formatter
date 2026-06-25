@@ -5,9 +5,8 @@ import { assert } from 'chai';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as sinon from 'sinon';
-import { Uri, WorkspaceFolder } from 'vscode';
-import { getEnvFileVars } from '../../../../common/envFile';
-import * as vscodeapi from '../../../../common/vscodeapi';
+import { Uri, workspace, WorkspaceFolder } from 'vscode';
+import { getEnvFileVars } from '@vscode/common-python-lsp';
 
 // Use real files instead of stubbing fs-extra (whose exports are non-configurable).
 suite('getEnvFileVars Tests', () => {
@@ -23,7 +22,7 @@ suite('getEnvFileVars Tests', () => {
 
     setup(async () => {
         await fs.ensureDir(fixtureDir);
-        getConfigurationStub = sinon.stub(vscodeapi, 'getConfiguration');
+        getConfigurationStub = sinon.stub(workspace, 'getConfiguration');
     });
 
     teardown(async () => {

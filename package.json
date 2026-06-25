@@ -2,7 +2,7 @@
     "name": "black-formatter",
     "displayName": "Black Formatter",
     "description": "%extension.description%",
-    "version": "2026.3.0-dev",
+    "version": "2026.7.0-dev",
     "preview": true,
     "serverInfo": {
         "name": "Black",
@@ -186,11 +186,10 @@
         ]
     },
     "dependencies": {
-        "@vscode/python-environments": "https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/@vscode/python-environments/-/python-environments-1.0.0.tgz",
+        "@vscode/common-python-lsp": "^0.7.0",
         "@vscode/python-extension": "^1.0.5",
         "dotenv": "^17.4.0",
         "fs-extra": "^11.3.4",
-        "semver": "^7.7.4",
         "vscode-languageclient": "^9.0.1"
     },
     "devDependencies": {
@@ -200,11 +199,11 @@
         "@types/glob": "^9.0.0",
         "@types/mocha": "^10.0.10",
         "@types/node": "22.x",
-        "@types/semver": "^7.7.1",
         "@types/sinon": "^21.0.0",
         "@types/vscode": "^1.74.0",
         "@typescript-eslint/eslint-plugin": "^8.57.0",
         "@typescript-eslint/parser": "^8.57.0",
+        "@vscode/python-environments": "https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/@vscode/python-environments/-/python-environments-1.0.0.tgz",
         "@vscode/test-electron": "^2.5.2",
         "@vscode/vsce": "^3.7.1-1",
         "chai": "^4.3.10",

@@ -10,6 +10,7 @@ permissions:
 jobs:
   # From https://github.com/marketplace/actions/github-script#apply-a-label-to-an-issue.
   add-triage-label:
+    if: github.repository_owner == 'microsoft'
     name: "Add 'triage-needed'"
     runs-on: ubuntu-latest
     steps:

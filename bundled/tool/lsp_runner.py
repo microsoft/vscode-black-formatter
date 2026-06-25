@@ -7,7 +7,6 @@ Runner to use when running under a different interpreter.
 import os
 import pathlib
 import sys
-import traceback
 
 
 # **********************************************************
@@ -32,43 +31,15 @@ update_sys_path(
 )
 
 
-# pylint: disable=wrong-import-position,import-error
-import lsp_jsonrpc as jsonrpc
-import lsp_utils as utils
+from vscode_common_python_lsp import (  # noqa: E402
+    JsonRpc,
+    RunResult,
+    run_message_loop,
+    run_module,
+)
 
-RPC = jsonrpc.create_json_rpc(sys.stdin.buffer, sys.stdout.buffer)
-
-EXIT_NOW = False
-while not EXIT_NOW:
-    msg = RPC.receive_data()
-
-    method = msg["method"]
-    if method == "exit":
-        EXIT_NOW = True
-        continue
-
-    if method == "run":
-        is_exception = False  # pylint: disable=invalid-name
-        # This is needed to preserve sys.path, pylint modifies
-        # sys.path and that might not work for this scenario
-        # next time around.
-        with utils.substitute_attr(sys, "path", [""] + sys.path[:]):
-            try:
-                result = utils.run_module(
-                    module=msg["module"],
-                    argv=msg["argv"],
-                    use_stdin=msg["useStdin"],
-                    cwd=msg["cwd"],
-                    source=msg["source"] if "source" in msg else None,
-                )
-            except Exception:  # pylint: disable=broad-except
-                result = utils.RunResult("", traceback.format_exc(chain=True))
-                is_exception = True  # pylint: disable=invalid-name
-
-        response = {"id": msg["id"], "error": result.stderr}
-        if is_exception:
-            response["exception"] = is_exception
-        elif result.stdout:
-            response["result"] = result.stdout
-
-        RPC.send_data(response)
+RPC = JsonRpc(sys.stdin.buffer, sys.stdout.buffer)
+# run_message_loop handles the sys.path manipulation internally:
+# it wraps each run_module call with substitute_attr(sys, "path", [""] + sys.path[:])
+# so tool modules can import from CWD.
+run_message_loop(RPC, run_module, RunResult)

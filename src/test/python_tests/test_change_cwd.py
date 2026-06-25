@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-"""Unit tests for the change_cwd() context manager in lsp_utils.
+"""Unit tests for the change_cwd() context manager from vscode_common_python_lsp.
 
 Mock LSP dependencies and sys.path setup are provided by conftest.py.
 """
@@ -9,7 +9,7 @@ import logging
 import os
 from unittest.mock import patch
 
-import lsp_utils
+from vscode_common_python_lsp import SERVER_CWD, change_cwd
 
 
 def test_change_cwd_happy_path(tmp_path):
@@ -17,12 +17,12 @@ def test_change_cwd_happy_path(tmp_path):
     original_cwd = os.getcwd()
     target = str(tmp_path)
 
-    with lsp_utils.change_cwd(target):
+    with change_cwd(target):
         inside_cwd = os.getcwd()
 
     assert os.path.normcase(inside_cwd) == os.path.normcase(target)
     # After the context manager exits the working directory is restored.
-    assert os.path.normcase(os.getcwd()) == os.path.normcase(lsp_utils.SERVER_CWD)
+    assert os.path.normcase(os.getcwd()) == os.path.normcase(SERVER_CWD)
 
     # Restore for other tests.
     os.chdir(original_cwd)
@@ -34,9 +34,12 @@ def test_change_cwd_permission_error_does_not_crash(caplog):
     original_cwd = os.getcwd()
     body_executed = False
 
-    with patch("lsp_utils.os.chdir", side_effect=PermissionError("Access denied")):
+    with patch(
+        "vscode_common_python_lsp.context.os.chdir",
+        side_effect=PermissionError("Access denied"),
+    ):
         with caplog.at_level(logging.WARNING):
-            with lsp_utils.change_cwd("/restricted/path"):
+            with change_cwd("/restricted/path"):
                 body_executed = True
                 # The working directory must not have changed.
                 assert os.path.normcase(os.getcwd()) == os.path.normcase(original_cwd)
@@ -54,9 +57,12 @@ def test_change_cwd_oserror_does_not_crash(caplog):
     original_cwd = os.getcwd()
     body_executed = False
 
-    with patch("lsp_utils.os.chdir", side_effect=OSError("Some OS error")):
+    with patch(
+        "vscode_common_python_lsp.context.os.chdir",
+        side_effect=OSError("Some OS error"),
+    ):
         with caplog.at_level(logging.WARNING):
-            with lsp_utils.change_cwd("/inaccessible"):
+            with change_cwd("/inaccessible"):
                 body_executed = True
                 assert os.path.normcase(os.getcwd()) == os.path.normcase(original_cwd)
 

@@ -9,7 +9,7 @@ on:
       - 'release-*'
 
 env:
-  NODE_VERSION: 22.17.0
+  NODE_VERSION: 24.17.0
   PYTHON_VERSION: '3.10'
   TEST_RESULTS_DIRECTORY: .
   # Force a path with spaces and unicode chars to test extension works in these scenarios
@@ -18,6 +18,7 @@ env:
 
 jobs:
   build-vsix:
+    if: github.repository_owner == 'microsoft'
     name: Create VSIX
     runs-on: ubuntu-latest
     steps:
@@ -31,6 +32,7 @@ jobs:
           python_version: ${{ env.PYTHON_VERSION }}
 
   lint:
+    if: github.repository_owner == 'microsoft'
     name: Lint
     runs-on: ubuntu-latest
     steps:
@@ -44,6 +46,7 @@ jobs:
           python_version: ${{ env.PYTHON_VERSION }}
 
   tests:
+    if: github.repository_owner == 'microsoft'
     name: Tests
     runs-on: ${{ matrix.os }}
     defaults:
@@ -97,6 +100,7 @@ jobs:
         shell: bash
 
   ts-tests:
+    if: github.repository_owner == 'microsoft'
     name: TypeScript Tests
     runs-on: ${{ matrix.os }}
     defaults:

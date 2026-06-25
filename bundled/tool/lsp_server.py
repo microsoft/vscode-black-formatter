@@ -6,13 +6,11 @@ from __future__ import annotations
 
 import ast
 import copy
-import json
 import os
 import pathlib
 import re
 import subprocess
 import sys
-import sysconfig
 import traceback
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from urllib.parse import urlparse, urlunparse
@@ -30,26 +28,6 @@ def update_sys_path(path_to_add: str, strategy: str) -> None:
             sys.path.append(path_to_add)
 
 
-# **********************************************************
-# Update PATH before running anything.
-# **********************************************************
-def update_environ_path() -> None:
-    """Update PATH environment variable with the 'scripts' directory.
-    Windows: .venv/Scripts
-    Linux/MacOS: .venv/bin
-    """
-    scripts = sysconfig.get_path("scripts")
-    paths_variants = ["Path", "PATH"]
-
-    for var_name in paths_variants:
-        if var_name in os.environ:
-            paths = os.environ[var_name].split(os.pathsep)
-            if scripts not in paths:
-                paths.insert(0, scripts)
-                os.environ[var_name] = os.pathsep.join(paths)
-                break
-
-
 # Ensure that we can import LSP libraries, and other bundled libraries.
 BUNDLE_DIR = pathlib.Path(__file__).parent.parent
 # Always use bundled server files.
@@ -58,7 +36,6 @@ update_sys_path(
     os.fspath(BUNDLE_DIR / "libs"),
     os.getenv("LS_IMPORT_STRATEGY", "useBundled"),
 )
-update_environ_path()
 
 # **********************************************************
 # Imports needed for the language server goes below this.
@@ -66,16 +43,24 @@ update_environ_path()
 # pylint: disable=wrong-import-position,import-error
 import lsp_edit_utils as edit_utils
 import lsp_io
-import lsp_jsonrpc as jsonrpc
 import lsp_notebook as notebook
 import lsp_utils as utils
 from lsprotocol import types as lsp
 from pygls import uris
 from pygls.lsp.server import LanguageServer
 from pygls.workspace import TextDocument
+from vscode_common_python_lsp import (
+    RunResult,
+    ToolServer,
+    ToolServerConfig,
+    is_current_interpreter,
+    match_line_endings,
+    strip_trailing_newline,
+    update_environ_path,
+)
 
-WORKSPACE_SETTINGS = {}
-GLOBAL_SETTINGS = {}
+update_environ_path()
+
 RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
@@ -86,6 +71,38 @@ LSP_SERVER = LanguageServer(
     max_workers=MAX_WORKERS,
     notebook_document_sync=notebook.NOTEBOOK_SYNC_OPTIONS,
 )
+
+
+TOOL_MODULE = "black"
+TOOL_DISPLAY = "Black Formatter"
+
+# Default arguments always passed to black.
+TOOL_ARGS = []
+
+# Minimum version of black supported.
+MIN_VERSION = "22.3.0"
+
+BLACK_CONFIG = ToolServerConfig(
+    tool_module=TOOL_MODULE,
+    tool_display=TOOL_DISPLAY,
+    tool_args=TOOL_ARGS,
+    min_version=MIN_VERSION,
+    runner_script=str(RUNNER),
+)
+
+tool_server = ToolServer(BLACK_CONFIG, server=LSP_SERVER)
+
+WORKSPACE_SETTINGS = tool_server.workspace_settings
+GLOBAL_SETTINGS = tool_server.global_settings
+
+# Minimum version of black that supports the `--line-ranges` CLI option.
+LINE_RANGES_MIN_VERSION = (23, 11, 0)
+
+# Timeout in seconds for formatting operations to prevent indefinite blocking.
+FORMATTING_TIMEOUT = 120
+
+# Versions of black found by workspace
+VERSION_LOOKUP: Dict[str, Tuple[int, int, int]] = {}
 
 
 def _get_document_path(document: TextDocument) -> str:
@@ -107,23 +124,6 @@ def _get_document_path(document: TextDocument) -> str:
 # **********************************************************
 # Tool specific code goes below this.
 # **********************************************************
-TOOL_MODULE = "black"
-TOOL_DISPLAY = "Black Formatter"
-
-# Default arguments always passed to black.
-TOOL_ARGS = []
-
-# Minimum version of black supported.
-MIN_VERSION = "22.3.0"
-
-# Minimum version of black that supports the `--line-ranges` CLI option.
-LINE_RANGES_MIN_VERSION = (23, 11, 0)
-
-# Timeout in seconds for formatting operations to prevent indefinite blocking.
-FORMATTING_TIMEOUT = 120
-
-# Versions of black found by workspace
-VERSION_LOOKUP: Dict[str, Tuple[int, int, int]] = {}
 
 # **********************************************************
 # Formatting features start here
@@ -147,10 +147,10 @@ def range_formatting(
 ) -> list[lsp.TextEdit] | None:
     """LSP handler for textDocument/rangeFormatting request."""
     document = LSP_SERVER.workspace.get_text_document(params.text_document.uri)
-    settings = _get_settings_by_document(document)
-    version = VERSION_LOOKUP[settings["workspaceFS"]]
+    settings = tool_server.get_settings_by_document(document)
+    version = VERSION_LOOKUP.get(settings["workspaceFS"])
 
-    if version >= LINE_RANGES_MIN_VERSION:
+    if version is not None and version >= LINE_RANGES_MIN_VERSION:
         return _formatting_helper(
             document,
             args=[
@@ -158,11 +158,12 @@ def range_formatting(
                 f"{params.range.start.line + 1}-{params.range.end.line + 1}",
             ],
         )
-    else:
-        log_warning(
+
+    if version is not None:
+        tool_server.log_warning(
             "Black version earlier than 23.11.0 does not support range formatting. Formatting entire document."
         )
-        return _formatting_helper(document)
+    return _formatting_helper(document)
 
 
 @LSP_SERVER.feature(lsp.TEXT_DOCUMENT_RANGES_FORMATTING)
@@ -171,19 +172,20 @@ def ranges_formatting(
 ) -> list[lsp.TextEdit] | None:
     """LSP handler for textDocument/rangesFormatting request."""
     document = LSP_SERVER.workspace.get_text_document(params.text_document.uri)
-    settings = _get_settings_by_document(document)
-    version = VERSION_LOOKUP[settings["workspaceFS"]]
+    settings = tool_server.get_settings_by_document(document)
+    version = VERSION_LOOKUP.get(settings["workspaceFS"])
 
-    if version >= LINE_RANGES_MIN_VERSION:
+    if version is not None and version >= LINE_RANGES_MIN_VERSION:
         args = []
         for r in params.ranges:
             args += ["--line-ranges", f"{r.start.line + 1}-{r.end.line + 1}"]
         return _formatting_helper(document, args=args)
-    else:
-        log_warning(
+
+    if version is not None:
+        tool_server.log_warning(
             "Black version earlier than 23.11.0 does not support range formatting. Formatting entire document."
         )
-        return _formatting_helper(document)
+    return _formatting_helper(document)
 
 
 def is_python(code: str, file_path: str) -> bool:
@@ -191,7 +193,7 @@ def is_python(code: str, file_path: str) -> bool:
     try:
         ast.parse(code, file_path)
     except SyntaxError:
-        log_error(f"Syntax error in code: {traceback.format_exc()}")
+        tool_server.log_error(f"Syntax error in code: {traceback.format_exc()}")
         return False
     return True
 
@@ -200,18 +202,18 @@ def _formatting_helper(
     document: TextDocument, args: Sequence[str] = None
 ) -> list[lsp.TextEdit] | None:
     args = [] if args is None else args
-    extra_args = args + _get_args_by_file_extension(document)
+    extra_args = list(args) + _get_args_by_file_extension(document)
     extra_args += ["--stdin-filename", _get_filename_for_black(document)]
     try:
         result = _run_tool_on_document(document, use_stdin=True, extra_args=extra_args)
     except (subprocess.TimeoutExpired, TimeoutError):
-        log_warning(
+        tool_server.log_warning(
             f"Formatting timed out after {FORMATTING_TIMEOUT}s for {document.uri}"
         )
         return None
     if result and result.stdout:
         if LSP_SERVER.protocol.trace == lsp.TraceValue.Verbose:
-            log_to_output(
+            tool_server.log_to_output(
                 f"{document.uri} :\r\n"
                 + ("*" * 100)
                 + "\r\n"
@@ -220,23 +222,16 @@ def _formatting_helper(
                 + "\r\n"
             )
 
-        new_source = _match_line_endings(document, result.stdout)
+        new_source = match_line_endings(document.source, result.stdout)
 
-        # Skip last line ending in a notebook cell
         if document.uri.startswith("vscode-notebook-cell"):
-            if new_source.endswith("\r\n"):
-                new_source = new_source[:-2]
-            elif new_source.endswith("\n"):
-                new_source = new_source[:-1]
+            new_source = strip_trailing_newline(new_source)
 
-        # If code is already formatted, then no need to send any edits.
         if new_source != document.source:
             edits = edit_utils.get_text_edits(
                 document.source, new_source, lsp.PositionEncodingKind.Utf16
             )
             if edits:
-                # NOTE: If you provide [] array, VS Code will clear the file of all contents.
-                # To indicate no changes to file return None.
                 return edits
     return None
 
@@ -245,28 +240,8 @@ def _get_filename_for_black(document: TextDocument) -> str:
     """Gets or generates a file name to use with black when formatting."""
     doc_path = _get_document_path(document)
     if document.uri.startswith("vscode-notebook-cell") and doc_path.endswith(".ipynb"):
-        # Treat the cell like a python file
         return str(pathlib.Path(doc_path).with_suffix(".py"))
     return doc_path
-
-
-def _get_line_endings(lines: list[str]) -> str:
-    """Returns line endings used in the text."""
-    try:
-        if lines[0][-2:] == "\r\n":
-            return "\r\n"
-        return "\n"
-    except Exception:  # pylint: disable=broad-except
-        return None
-
-
-def _match_line_endings(document: TextDocument, text: str) -> str:
-    """Ensures that the edited text line endings matches the document line endings."""
-    expected = _get_line_endings(document.source.splitlines(keepends=True))
-    actual = _get_line_endings(text.splitlines(keepends=True))
-    if actual == expected or actual is None or expected is None:
-        return text
-    return text.replace(actual, expected)
 
 
 def _get_args_by_file_extension(document: TextDocument) -> List[str]:
@@ -277,9 +252,9 @@ def _get_args_by_file_extension(document: TextDocument) -> List[str]:
     p = _get_document_path(document).lower()
     if p.endswith(".py"):
         return []
-    elif p.endswith(".pyi"):
+    if p.endswith(".pyi"):
         return ["--pyi"]
-    elif p.endswith(".ipynb"):
+    if p.endswith(".ipynb"):
         return ["--ipynb"]
     return []
 
@@ -295,35 +270,22 @@ def _get_args_by_file_extension(document: TextDocument) -> List[str]:
 @LSP_SERVER.feature(lsp.INITIALIZE)
 def initialize(params: lsp.InitializeParams) -> None:
     """LSP handler for initialize request."""
-    log_to_output(f"CWD Server: {os.getcwd()}")
-
-    GLOBAL_SETTINGS.update(**params.initialization_options.get("globalSettings", {}))
-
-    settings = params.initialization_options["settings"]
-    _update_workspace_settings(settings)
-    log_to_output(
-        f"Settings received on server:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
-    )
-    log_to_output(
-        f"Global settings received on server:\r\n{json.dumps(GLOBAL_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
-    )
-
-    paths = "\r\n   ".join(sys.path)
-    log_to_output(f"sys.path used to run Server:\r\n   {paths}")
-
-    _update_workspace_settings_with_version_info(WORKSPACE_SETTINGS)
+    tool_server.apply_settings(params)
+    settings = (params.initialization_options or {}).get("settings")
+    tool_server.log_startup_info(settings)
+    _update_workspace_settings_with_version_info(tool_server.workspace_settings)
 
 
 @LSP_SERVER.feature(lsp.EXIT)
 def on_exit(_params: Optional[Any] = None) -> None:
     """Handle clean up on exit."""
-    jsonrpc.shutdown_json_rpc()
+    tool_server.handle_exit()
 
 
 @LSP_SERVER.feature(lsp.SHUTDOWN)
 def on_shutdown(_params: Optional[Any] = None) -> None:
     """Handle clean up on shutdown."""
-    jsonrpc.shutdown_json_rpc()
+    tool_server.handle_shutdown()
 
 
 VERSION_RE = re.compile(r"\d+\.\d+(?:\.\d+)?\S*")
@@ -357,12 +319,12 @@ def _update_workspace_settings_with_version_info(
 
             result = _run_tool(["--version"], copy.deepcopy(settings))
             code_workspace = settings["workspaceFS"]
-            log_to_output(
+            tool_server.log_to_output(
                 f"Version info for formatter running for {code_workspace}:\r\n{result.stdout}"
             )
 
             if "The typed_ast package is required but not installed" in result.stdout:
-                log_to_output(
+                tool_server.log_to_output(
                     'Install black in your environment and set "black-formatter.importStrategy": "fromEnvironment"'
                 )
 
@@ -386,166 +348,31 @@ def _update_workspace_settings_with_version_info(
             )
 
             if version < min_version:
-                log_error(
+                tool_server.log_error(
                     f"Version of formatter running for {code_workspace} is NOT supported:\r\n"
                     f"SUPPORTED {TOOL_MODULE}>={min_version}\r\n"
                     f"FOUND {TOOL_MODULE}=={actual_version}\r\n"
                 )
             else:
-                log_to_output(
+                tool_server.log_to_output(
                     f"SUPPORTED {TOOL_MODULE}>={min_version}\r\n"
                     f"FOUND {TOOL_MODULE}=={actual_version}\r\n"
                 )
 
         except:  # pylint: disable=bare-except
-            log_to_output(
+            tool_server.log_to_output(
                 f"Error while detecting black version:\r\n{traceback.format_exc()}"
             )
 
 
 # *****************************************************
-# Internal functional and settings management APIs.
-# *****************************************************
-def _get_global_defaults():
-    return {
-        "path": GLOBAL_SETTINGS.get("path", []),
-        "interpreter": GLOBAL_SETTINGS.get("interpreter", [sys.executable]),
-        "args": GLOBAL_SETTINGS.get("args", []),
-        "importStrategy": GLOBAL_SETTINGS.get("importStrategy", "useBundled"),
-        "showNotifications": GLOBAL_SETTINGS.get("showNotifications", "off"),
-    }
-
-
-def _update_workspace_settings(settings):
-    if not settings:
-        key = utils.normalize_path(os.getcwd())
-        WORKSPACE_SETTINGS[key] = {
-            "cwd": key,
-            "workspaceFS": key,
-            "workspace": uris.from_fs_path(key),
-            **_get_global_defaults(),
-        }
-        return
-
-    for setting in settings:
-        key = utils.normalize_path(uris.to_fs_path(setting["workspace"]))
-        WORKSPACE_SETTINGS[key] = {
-            **setting,
-            "workspaceFS": key,
-        }
-
-
-def _get_settings_by_path(file_path: pathlib.Path):
-    workspaces = {s["workspaceFS"] for s in WORKSPACE_SETTINGS.values()}
-
-    while file_path != file_path.parent:
-        str_file_path = utils.normalize_path(file_path)
-        if str_file_path in workspaces:
-            return WORKSPACE_SETTINGS[str_file_path]
-        file_path = file_path.parent
-
-    setting_values = list(WORKSPACE_SETTINGS.values())
-    return setting_values[0]
-
-
-def _get_document_key(document: TextDocument):
-    if WORKSPACE_SETTINGS:
-        document_workspace = pathlib.Path(_get_document_path(document))
-        workspaces = {s["workspaceFS"] for s in WORKSPACE_SETTINGS.values()}
-
-        # Find workspace settings for the given file.
-        while document_workspace != document_workspace.parent:
-            norm_path = utils.normalize_path(document_workspace)
-            if norm_path in workspaces:
-                return norm_path
-            document_workspace = document_workspace.parent
-
-    return None
-
-
-def _get_settings_by_document(document: TextDocument | None):
-    if document is None or document.path is None:
-        return list(WORKSPACE_SETTINGS.values())[0]
-
-    key = _get_document_key(document)
-    if key is None:
-        # This is either a non-workspace file or there is no workspace.
-        key = utils.normalize_path(pathlib.Path(_get_document_path(document)).parent)
-        return {
-            "cwd": key,
-            "workspaceFS": key,
-            "workspace": uris.from_fs_path(key),
-            **_get_global_defaults(),
-        }
-
-    return WORKSPACE_SETTINGS[str(key)]
-
-
-# *****************************************************
 # Internal execution APIs.
 # *****************************************************
-def get_cwd(settings: Dict[str, Any], document: Optional[TextDocument]) -> str:
-    """Returns the working directory for running the tool.
-
-    Resolves the following VS Code file-related variable substitutions when
-    a document is available:
-
-    - ``${file}`` – absolute path of the current document.
-    - ``${fileBasename}`` – file name with extension (e.g. ``foo.py``).
-    - ``${fileBasenameNoExtension}`` – file name without extension (e.g. ``foo``).
-    - ``${fileExtname}`` – file extension including the dot (e.g. ``.py``).
-    - ``${fileDirname}`` – directory containing the current document.
-    - ``${fileDirnameBasename}`` – name of the directory containing the document.
-    - ``${relativeFile}`` – document path relative to the workspace root.
-    - ``${relativeFileDirname}`` – document directory relative to the workspace root.
-    - ``${fileWorkspaceFolder}`` – workspace root folder for the document.
-
-    Variables that do not depend on the document (``${workspaceFolder}``,
-    ``${userHome}``, ``${cwd}``) are pre-resolved by the TypeScript client.
-
-    If no document is available and the value contains any unresolvable
-    file-variable, the workspace root is returned as a fallback.
-
-    See https://code.visualstudio.com/docs/reference/variables-reference
-    """
-    cwd = settings.get("cwd", settings["workspaceFS"])
-    workspace_fs = settings["workspaceFS"]
-
-    file_path = _get_document_path(document) if document else ""
-    if document and file_path:
-        file_dir = os.path.dirname(file_path)
-        file_basename = os.path.basename(file_path)
-        file_stem, file_ext = os.path.splitext(file_basename)
-
-        substitutions = {
-            "${file}": file_path,
-            "${fileBasename}": file_basename,
-            "${fileBasenameNoExtension}": file_stem,
-            "${fileExtname}": file_ext,
-            "${fileDirname}": file_dir,
-            "${fileDirnameBasename}": os.path.basename(file_dir),
-            "${relativeFile}": os.path.relpath(file_path, workspace_fs),
-            "${relativeFileDirname}": os.path.relpath(file_dir, workspace_fs),
-            "${fileWorkspaceFolder}": workspace_fs,
-        }
-
-        for token, value in substitutions.items():
-            cwd = cwd.replace(token, value)
-    else:
-        # Without a document we cannot resolve file-related variables.
-        # Fall back to workspace root if any remain.
-        if "${file" in cwd or "${relativeFile" in cwd:
-            cwd = workspace_fs
-
-    return cwd
-
-
-# pylint: disable=too-many-branches
 def _run_tool_on_document(
     document: TextDocument,
     use_stdin: bool = False,
-    extra_args: Sequence[str] = [],
-) -> utils.RunResult | None:
+    extra_args: Sequence[str] = (),
+) -> RunResult | None:
     """Runs tool on the given document.
 
     if use_stdin is true then contents of the document is passed to the
@@ -553,239 +380,152 @@ def _run_tool_on_document(
     """
     doc_path = _get_document_path(document)
     if utils.is_stdlib_file(doc_path):
-        log_warning(f"Skipping standard library file: {doc_path}")
+        tool_server.log_warning(f"Skipping standard library file: {doc_path}")
         return None
 
     if not is_python(document.source, doc_path):
-        log_warning(f"Skipping non python code or code with syntax errors: {doc_path}")
+        tool_server.log_warning(
+            f"Skipping non python code or code with syntax errors: {doc_path}"
+        )
         return None
 
-    # deep copy here to prevent accidentally updating global settings.
-    settings = copy.deepcopy(_get_settings_by_document(document))
-
+    settings = copy.deepcopy(tool_server.get_settings_by_document(document))
     code_workspace = settings["workspaceFS"]
-    cwd = get_cwd(settings, document)
+    cwd = tool_server.get_cwd(settings, document, document_path=doc_path)
 
-    use_path = False
-    use_rpc = False
     if settings["path"]:
-        # 'path' setting takes priority over everything.
-        use_path = True
-        argv = settings["path"]
-    elif settings["interpreter"] and not utils.is_current_interpreter(
+        mode = "path"
+        argv = list(settings["path"])
+    elif settings["interpreter"] and not is_current_interpreter(
         settings["interpreter"][0]
     ):
-        # If there is a different interpreter set use JSON-RPC to the subprocess
-        # running under that interpreter.
+        mode = "rpc"
         argv = [TOOL_MODULE]
-        use_rpc = True
     else:
-        # if the interpreter is same as the interpreter running this
-        # process then run as module.
+        mode = "module"
         argv = [TOOL_MODULE]
 
-    argv += TOOL_ARGS + settings["args"] + extra_args
+    argv += TOOL_ARGS + settings["args"] + list(extra_args)
 
     if use_stdin:
         argv += ["-"]
 
-    if use_path:
-        # This mode is used when running executables.
-        log_to_output(" ".join(argv))
-        log_to_output(f"CWD Server: {cwd}")
-        result = utils.run_path(
-            argv=argv,
-            use_stdin=use_stdin,
-            cwd=cwd,
-            source=document.source.replace("\r\n", "\n"),
-            timeout=FORMATTING_TIMEOUT,
-        )
-        if result.stderr:
-            log_to_output(result.stderr)
-    elif use_rpc:
-        # This mode is used if the interpreter running this server is different from
-        # the interpreter used for running this server.
-        log_to_output(" ".join(settings["interpreter"] + ["-m"] + argv))
-        log_to_output(f"CWD formatter: {cwd}")
+    source = document.source
+    if mode == "path" and use_stdin:
+        source = source.replace("\r\n", "\n")
 
-        result = jsonrpc.run_over_json_rpc(
-            workspace=code_workspace,
-            interpreter=settings["interpreter"],
-            module=TOOL_MODULE,
-            argv=argv,
-            use_stdin=use_stdin,
-            cwd=cwd,
-            source=document.source,
-            env={
-                "LS_IMPORT_STRATEGY": settings["importStrategy"],
-            },
-            timeout=FORMATTING_TIMEOUT,
-        )
-        result = _to_run_result_with_logging(result)
-    else:
-        # In this mode the tool is run as a module in the same process as the language server.
-        log_to_output(" ".join([sys.executable, "-m"] + argv))
-        log_to_output(f"CWD formatter: {cwd}")
-        # This is needed to preserve sys.path, in cases where the tool modifies
-        # sys.path and that might not work for this scenario next time around.
-        with utils.substitute_attr(sys, "path", [""] + sys.path[:]):
-            try:
-                result = utils.run_module(
-                    module=TOOL_MODULE,
-                    argv=argv,
-                    use_stdin=use_stdin,
-                    cwd=cwd,
-                    source=document.source,
-                    timeout=FORMATTING_TIMEOUT,
-                )
-            except Exception:
-                log_error(traceback.format_exc(chain=True))
-                raise
-        if result.stderr:
-            log_to_output(result.stderr)
-
-    return result
+    return tool_server.execute_tool(
+        argv=argv,
+        mode=mode,
+        settings=settings,
+        use_stdin=use_stdin,
+        cwd=cwd,
+        workspace=code_workspace,
+        source=source,
+        env=(
+            {"LS_IMPORT_STRATEGY": settings["importStrategy"]}
+            if mode == "rpc"
+            else None
+        ),
+        timeout=FORMATTING_TIMEOUT,
+    )
 
 
-def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> utils.RunResult:
+def _run_tool(extra_args: Sequence[str], settings: Dict[str, Any]) -> RunResult:
     """Runs tool."""
     code_workspace = settings["workspaceFS"]
-    cwd = get_cwd(settings, None)
+    cwd = tool_server.get_cwd(settings, None)
 
-    use_path = False
-    use_rpc = False
-    if len(settings["path"]) > 0:
-        # 'path' setting takes priority over everything.
-        use_path = True
-        argv = settings["path"]
-    elif len(settings["interpreter"]) > 0 and not utils.is_current_interpreter(
+    if settings["path"]:
+        mode = "path"
+        argv = list(settings["path"])
+    elif settings["interpreter"] and not is_current_interpreter(
         settings["interpreter"][0]
     ):
-        # If there is a different interpreter set use JSON-RPC to the subprocess
-        # running under that interpreter.
+        mode = "rpc"
         argv = [TOOL_MODULE]
-        use_rpc = True
     else:
-        # if the interpreter is same as the interpreter running this
-        # process then run as module.
+        mode = "module"
         argv = [TOOL_MODULE]
 
-    argv += extra_args
+    argv += list(extra_args)
 
-    if use_path:
-        # This mode is used when running executables.
-        log_to_output(" ".join(argv))
-        log_to_output(f"CWD Server: {cwd}")
-        try:
-            result = utils.run_path(
-                argv=argv, use_stdin=True, cwd=cwd, timeout=FORMATTING_TIMEOUT
+    try:
+        result = tool_server.execute_tool(
+            argv=argv,
+            mode=mode,
+            settings=settings,
+            use_stdin=True,
+            cwd=cwd,
+            workspace=code_workspace,
+            env=(
+                {"LS_IMPORT_STRATEGY": settings["importStrategy"]}
+                if mode == "rpc"
+                else None
+            ),
+            timeout=FORMATTING_TIMEOUT,
+        )
+    except (subprocess.TimeoutExpired, TimeoutError):
+        if mode == "rpc":
+            tool_server.log_warning(
+                f"JSON-RPC execution timed out after {FORMATTING_TIMEOUT}s"
             )
-        except (subprocess.TimeoutExpired, TimeoutError):
-            log_warning(f"Tool execution timed out after {FORMATTING_TIMEOUT}s")
-            return utils.RunResult("", f"Timed out after {FORMATTING_TIMEOUT}s")
-        if result.stderr:
-            log_to_output(result.stderr)
-    elif use_rpc:
-        # This mode is used if the interpreter running this server is different from
-        # the interpreter used for running this server.
-        log_to_output(" ".join(settings["interpreter"] + ["-m"] + argv))
-        log_to_output(f"CWD formatter: {cwd}")
-        try:
-            result = jsonrpc.run_over_json_rpc(
-                workspace=code_workspace,
-                interpreter=settings["interpreter"],
-                module=TOOL_MODULE,
-                argv=argv,
-                use_stdin=True,
-                cwd=cwd,
-                env={
-                    "LS_IMPORT_STRATEGY": settings["importStrategy"],
-                },
-                timeout=FORMATTING_TIMEOUT,
+        else:
+            tool_server.log_warning(
+                f"Tool execution timed out after {FORMATTING_TIMEOUT}s"
             )
-        except (subprocess.TimeoutExpired, TimeoutError):
-            log_warning(f"JSON-RPC execution timed out after {FORMATTING_TIMEOUT}s")
-            return utils.RunResult("", f"Timed out after {FORMATTING_TIMEOUT}s")
-        result = _to_run_result_with_logging(result)
-    else:
-        # In this mode the tool is run as a module in the same process as the language server.
-        log_to_output(" ".join([sys.executable, "-m"] + argv))
-        log_to_output(f"CWD formatter: {cwd}")
-        # This is needed to preserve sys.path, in cases where the tool modifies
-        # sys.path and that might not work for this scenario next time around.
-        with utils.substitute_attr(sys, "path", [""] + sys.path[:]):
-            try:
-                result = utils.run_module(
-                    module=TOOL_MODULE,
-                    argv=argv,
-                    use_stdin=True,
-                    cwd=cwd,
-                    timeout=FORMATTING_TIMEOUT,
-                )
-            except Exception:
-                log_error(traceback.format_exc(chain=True))
-                raise
-        if result.stderr:
-            log_to_output(result.stderr)
+        return RunResult("", f"Timed out after {FORMATTING_TIMEOUT}s")
 
     if LSP_SERVER.protocol.trace == lsp.TraceValue.Verbose:
-        log_to_output(f"\r\n{result.stdout}\r\n")
+        tool_server.log_to_output(f"\r\n{result.stdout}\r\n")
 
     return result
 
 
-def _to_run_result_with_logging(rpc_result: jsonrpc.RpcRunResult) -> utils.RunResult:
-    error = ""
-    if rpc_result.exception:
-        log_error(rpc_result.exception)
-        error = rpc_result.exception
-    elif rpc_result.stderr:
-        log_to_output(rpc_result.stderr)
-        error = rpc_result.stderr
-    return utils.RunResult(rpc_result.stdout, error)
+# *****************************************************
+# Internal settings management APIs.
+# Thin wrappers delegating to ToolServer for backward compatibility.
+# *****************************************************
+def _get_global_defaults():
+    return tool_server.get_global_defaults()
+
+
+# *****************************************************
+# Internal execution APIs (wrapper).
+# *****************************************************
+def get_cwd(settings: Dict[str, Any], document: Optional[TextDocument]) -> str:
+    """Returns the working directory for running the tool."""
+    if document:
+        return tool_server.get_cwd(
+            settings, document, document_path=_get_document_path(document)
+        )
+    return tool_server.get_cwd(settings, document)
 
 
 # *****************************************************
 # Logging and notification.
+# Thin wrappers delegating to ToolServer for backward compatibility.
 # *****************************************************
 def log_to_output(
     message: str, msg_type: lsp.MessageType = lsp.MessageType.Log
 ) -> None:
     """Logs messages to Output > Black Formatter channel only."""
-    LSP_SERVER.window_log_message(lsp.LogMessageParams(type=msg_type, message=message))
+    tool_server.log_to_output(message, msg_type)
 
 
 def log_error(message: str) -> None:
     """Logs messages with notification on error."""
-    LSP_SERVER.window_log_message(
-        lsp.LogMessageParams(type=lsp.MessageType.Error, message=message)
-    )
-    if os.getenv("LS_SHOW_NOTIFICATION", "off") in ["onError", "onWarning", "always"]:
-        LSP_SERVER.window_show_message(
-            lsp.ShowMessageParams(type=lsp.MessageType.Error, message=message)
-        )
+    tool_server.log_error(message)
 
 
 def log_warning(message: str) -> None:
     """Logs messages with notification on warning."""
-    LSP_SERVER.window_log_message(
-        lsp.LogMessageParams(type=lsp.MessageType.Warning, message=message)
-    )
-    if os.getenv("LS_SHOW_NOTIFICATION", "off") in ["onWarning", "always"]:
-        LSP_SERVER.window_show_message(
-            lsp.ShowMessageParams(type=lsp.MessageType.Warning, message=message)
-        )
+    tool_server.log_warning(message)
 
 
 def log_always(message: str) -> None:
     """Logs messages with notification."""
-    LSP_SERVER.window_log_message(
-        lsp.LogMessageParams(type=lsp.MessageType.Info, message=message)
-    )
-    if os.getenv("LS_SHOW_NOTIFICATION", "off") in ["always"]:
-        LSP_SERVER.window_show_message(
-            lsp.ShowMessageParams(type=lsp.MessageType.Info, message=message)
-        )
+    tool_server.log_always(message)
 
 
 # *****************************************************

@@ -23,7 +23,7 @@
 #
 # Scheduled and on-demand check to detect unsynced changes from the upstream microsoft/vscode-python-tools-extension-template. Compares recent template PRs against this repo's files and opens an issue for each PR whose changes are not yet present.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"45d7ac5adc29678fb6a2eb28a0aa653e01b72bac636d4f1de70f7b0ef65734bc","compiler_version":"v0.51.6"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"6ee45cb8ae37efb989a43099b8a4738f90b07a406d1f7f9b96efbd36dcdfc4d3","compiler_version":"v0.51.6"}
 
 name: 'Extension Template Sync'
 'on':
@@ -41,6 +41,7 @@ run-name: 'Extension Template Sync'
 
 jobs:
   activation:
+    if: github.repository_owner == 'microsoft'
     runs-on: ubuntu-slim
     permissions:
       contents: read
@@ -992,7 +993,7 @@ jobs:
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_NOOP_MESSAGE: ${{ steps.noop.outputs.noop_message }}
-          GH_AW_NOOP_REPORT_AS_ISSUE: 'true'
+          GH_AW_NOOP_REPORT_AS_ISSUE: 'false'
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |

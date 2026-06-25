@@ -13,6 +13,9 @@ updates:
       npm-minor-patch:
         patterns:
           - '*'
+        # Exclude @vscode/common-python-lsp so it gets its own standalone PR (weekly).
+        exclude-patterns:
+          - '@vscode/common-python-lsp'
         update-types:
           - 'minor'
           - 'patch'
@@ -36,6 +39,9 @@ updates:
       pip-minor-patch:
         patterns:
           - '*'
+        # Exclude vscode-common-python-lsp so it gets its own standalone PR (weekly).
+        exclude-patterns:
+          - 'vscode-common-python-lsp'
         update-types:
           - 'minor'
           - 'patch'
