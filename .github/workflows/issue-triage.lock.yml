@@ -23,7 +23,7 @@
 #
 # When a new issue is opened — or when a maintainer comments `/triage-issue` on an existing issue — analyze its root cause, check whether the same issue could affect other extensions built from the microsoft/vscode-python-tools-extension-template or originate from the microsoft/vscode-common-python-lsp shared package, and look for related open issues on the upstream Black repository (psf/black). If applicable, suggest an upstream fix and surface relevant Black issues to the reporter.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"914bc4c51543ca1422674d463880bcabba92c5da9433b146c9412fceaa145e1e","compiler_version":"v0.51.6"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"866b19feda85875d1ff44e91a44271bc8794a100bc70ddc421c81e5dd9bfcb5a","compiler_version":"v0.51.6"}
 
 name: 'Issue Triage'
 'on':
@@ -981,7 +981,7 @@ jobs:
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_NOOP_MESSAGE: ${{ steps.noop.outputs.noop_message }}
-          GH_AW_NOOP_REPORT_AS_ISSUE: 'true'
+          GH_AW_NOOP_REPORT_AS_ISSUE: 'false'
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
