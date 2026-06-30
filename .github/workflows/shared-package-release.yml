@@ -1,0 +1,129 @@
+name: Shared Package Release Handler
+
+on:
+  repository_dispatch:
+    types: [shared-package-release]
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  NODE_VERSION: 24.17.0
+  PYTHON_VERSION: '3.x'
+
+jobs:
+  update-shared-packages:
+    name: Update shared packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Normalize release tag
+        id: release_version
+        env:
+          RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create branch for this release
+        env:
+          RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+        run: |
+          set -euo pipefail
+          BRANCH="shared-package-v${RELEASE_TAG#v}"
+          git fetch origin main
+          git checkout -B "$BRANCH" origin/main
+
+      - name: Update npm dependency
+        env:
+          NPM_DEP: ${{ github.event.client_payload.npm_dependency }}
+          RELEASE_VERSION: ${{ steps.release_version.outputs.value }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NPM_DEP}" ]; then
+            echo 'No npm dependency in payload; skipping.'
+            exit 0
+          fi
+          npm install "${NPM_DEP}@${RELEASE_VERSION}"
+
+      - name: Update pip dependency
+        env:
+          PIP_DEP: ${{ github.event.client_payload.pip_dependency }}
+          RELEASE_VERSION: ${{ steps.release_version.outputs.value }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PIP_DEP}" ]; then
+            echo 'No pip dependency in payload; skipping.'
+            exit 0
+          fi
+          if [ ! -f requirements.in ]; then
+            echo 'No requirements.in found; skipping.'
+            exit 0
+          fi
+          python -m pip install --upgrade uv
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          dep = os.environ["PIP_DEP"]
+          version = os.environ["RELEASE_VERSION"]
+          pinned = f"{dep}=={version}"
+          req_in = Path("requirements.in")
+          txt = req_in.read_text(encoding="utf-8")
+          updated = re.sub(
+              rf"^{re.escape(dep)}([<>=!~].*)?$",
+              pinned,
+              txt,
+              flags=re.MULTILINE,
+          )
+          req_in.write_text(updated, encoding="utf-8")
+          PY
+          uv pip compile --generate-hashes ./requirements.in -o requirements.txt
+
+      - name: Commit branch and open tracking issue if changed
+        env:
+          RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+          RELEASE_URL: ${{ github.event.client_payload.release_url }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet; then
+            echo 'No changes detected.'
+            exit 0
+          fi
+          BRANCH="shared-package-v${RELEASE_TAG#v}"
+          git add -A
+          git commit -m "Upgrade shared package to ${RELEASE_TAG}"
+          git push --set-upstream origin "$BRANCH"
+          COMPARE_URL="https://github.com/${REPO}/compare/main...${BRANCH}?expand=1"
+          BODY_FILE="$(mktemp)"
+          cat > "$BODY_FILE" <<EOF
+          Branch \`${BRANCH}\` has been pushed with the shared package upgrade to ${RELEASE_TAG}.
+
+          Organization settings prevent this workflow from opening pull requests automatically. Please open the PR manually:
+
+          ${COMPARE_URL}
+
+          Source release: ${RELEASE_URL}
+          EOF
+          gh issue create \
+            --title "[Shared Package] Open PR to upgrade to ${RELEASE_TAG}" \
+            --body-file "$BODY_FILE"

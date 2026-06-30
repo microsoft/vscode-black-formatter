@@ -13,14 +13,14 @@ updates:
       npm-minor-patch:
         patterns:
           - '*'
-        # Exclude @vscode/common-python-lsp so it gets its own standalone PR (weekly).
-        exclude-patterns:
-          - '@vscode/common-python-lsp'
         update-types:
           - 'minor'
           - 'patch'
     open-pull-requests-limit: 10
     ignore:
+      # @vscode/common-python-lsp is handled by the shared-package-release
+      # dispatch workflow, so ignore it here to avoid duplicate PRs.
+      - dependency-name: '@vscode/common-python-lsp'
       - dependency-name: '@types/vscode'
       - dependency-name: '@types/node'
       - dependency-name: 'vscode-languageclient'
@@ -39,12 +39,13 @@ updates:
       pip-minor-patch:
         patterns:
           - '*'
-        # Exclude vscode-common-python-lsp so it gets its own standalone PR (weekly).
-        exclude-patterns:
-          - 'vscode-common-python-lsp'
         update-types:
           - 'minor'
           - 'patch'
+    ignore:
+      # vscode-common-python-lsp is handled by the shared-package-release
+      # dispatch workflow, so ignore it here to avoid duplicate PRs.
+      - dependency-name: 'vscode-common-python-lsp'
 
   # Python test dependencies are updated weekly, minor updates are grouped (1 PR "pip-test-minor-patch").
   - package-ecosystem: 'pip'
