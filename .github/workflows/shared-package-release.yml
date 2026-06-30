@@ -75,25 +75,8 @@ jobs:
             exit 0
           fi
           python -m pip install --upgrade uv
-          python - <<'PY'
-          from pathlib import Path
-          import os
-          import re
-
-          dep = os.environ["PIP_DEP"]
-          version = os.environ["RELEASE_VERSION"]
-          pinned = f"{dep}=={version}"
-          req_in = Path("requirements.in")
-          txt = req_in.read_text(encoding="utf-8")
-          updated = re.sub(
-              rf"^{re.escape(dep)}([<>=!~].*)?$",
-              pinned,
-              txt,
-              flags=re.MULTILINE,
-          )
-          req_in.write_text(updated, encoding="utf-8")
-          PY
-          uv pip compile --generate-hashes ./requirements.in -o requirements.txt
+          sed -i -E "s/^${PIP_DEP}([<>=!~].*)?\$/${PIP_DEP}==${RELEASE_VERSION}/" requirements.in
+          uv pip compile --generate-hashes --upgrade -o requirements.txt requirements.in
 
       - name: Commit branch and open tracking issue if changed
         env:
