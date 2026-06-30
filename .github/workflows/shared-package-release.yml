@@ -8,9 +8,15 @@ permissions:
   contents: write
   issues: write
 
+concurrency:
+  group: 'shared-package-release-${{ github.event.client_payload.release_tag }}'
+  cancel-in-progress: false
+
 env:
   NODE_VERSION: 24.17.0
-  PYTHON_VERSION: '3.x'
+  # Match the Python version documented in requirements.in so the regenerated
+  # lockfile stays valid across the supported Python range.
+  PYTHON_VERSION: '3.10'
 
 jobs:
   update-shared-packages:
@@ -30,6 +36,20 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Validate dispatch payload
+        env:
+          RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RELEASE_TAG}" ]; then
+            echo 'release_tag is missing from the dispatch payload.' >&2
+            exit 1
+          fi
+          if ! printf '%s' "${RELEASE_TAG}" | grep -Eq '^v?[0-9A-Za-z][0-9A-Za-z.+-]*$'; then
+            echo "release_tag '${RELEASE_TAG}' is not a valid version/ref." >&2
+            exit 1
+          fi
+
       - name: Normalize release tag
         id: release_version
         env:
@@ -46,6 +66,8 @@ jobs:
           set -euo pipefail
           BRANCH="shared-package-v${RELEASE_TAG#v}"
           git fetch origin main
+          # Fetch any pre-existing remote branch so --force-with-lease has a ref.
+          git fetch origin "+refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}" 2>/dev/null || true
           git checkout -B "$BRANCH" origin/main
 
       - name: Update npm dependency
@@ -75,10 +97,20 @@ jobs:
             exit 0
           fi
           python -m pip install --upgrade uv
-          sed -i -E "s/^${PIP_DEP}([<>=!~].*)?\$/${PIP_DEP}==${RELEASE_VERSION}/" requirements.in
-          uv pip compile --generate-hashes --upgrade -o requirements.txt requirements.in
+          # Rewrite the pin (case-insensitive) for the shared package only.
+          sed -i -E "s/^${PIP_DEP}([<>=!~].*)?\$/${PIP_DEP}==${RELEASE_VERSION}/I" requirements.in
+          if ! grep -iEq "^${PIP_DEP}==${RELEASE_VERSION}([[:space:];].*)?\$" requirements.in; then
+            echo "Failed to pin ${PIP_DEP}==${RELEASE_VERSION} in requirements.in." >&2
+            exit 1
+          fi
+          # Scope the re-resolve to the shared package and pin to the documented
+          # Python version so unrelated deps and version markers are preserved.
+          uv pip compile --generate-hashes \
+            --upgrade-package "${PIP_DEP}" \
+            --python-version "${PYTHON_VERSION}" \
+            -o requirements.txt requirements.in
 
-      - name: Commit branch and open tracking issue if changed
+      - name: Push branch and open tracking issue if changed
         env:
           RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
           RELEASE_URL: ${{ github.event.client_payload.release_url }}
@@ -95,8 +127,18 @@ jobs:
           BRANCH="shared-package-v${RELEASE_TAG#v}"
           git add -A
           git commit -m "Upgrade shared package to ${RELEASE_TAG}"
-          git push --set-upstream origin "$BRANCH"
+          git push --force-with-lease --set-upstream origin "$BRANCH"
           COMPARE_URL="https://github.com/${REPO}/compare/main...${BRANCH}?expand=1"
+          TITLE="[Shared Package] Open PR to upgrade to ${RELEASE_TAG}"
+          {
+            echo "### Shared package upgrade ready"
+            echo ''
+            echo "Branch \`${BRANCH}\` has been pushed."
+            echo ''
+            echo "[Open the pull request](${COMPARE_URL})"
+            echo ''
+            echo "Source release: ${RELEASE_URL}"
+          } >> "$GITHUB_STEP_SUMMARY"
           BODY_FILE="$(mktemp)"
           cat > "$BODY_FILE" <<EOF
           Branch \`${BRANCH}\` has been pushed with the shared package upgrade to ${RELEASE_TAG}.
@@ -107,6 +149,13 @@ jobs:
 
           Source release: ${RELEASE_URL}
           EOF
-          gh issue create \
-            --title "[Shared Package] Open PR to upgrade to ${RELEASE_TAG}" \
-            --body-file "$BODY_FILE"
+          # Reuse an existing open tracking issue for this release if present.
+          EXISTING="$(gh issue list --repo "$REPO" --state open --search "in:title ${TITLE}" --json number,title --jq "map(select(.title == \"${TITLE}\")) | .[0].number // empty" 2>/dev/null || true)"
+          if [ -n "${EXISTING}" ]; then
+            echo "Reusing existing tracking issue #${EXISTING}."
+            gh issue comment "${EXISTING}" --repo "$REPO" --body-file "$BODY_FILE" \
+              || echo 'Could not comment on issue; compare URL is in the job summary.'
+          else
+            gh issue create --repo "$REPO" --title "${TITLE}" --body-file "$BODY_FILE" \
+              || echo 'Could not create issue (Issues may be disabled); compare URL is in the job summary.'
+          fi
