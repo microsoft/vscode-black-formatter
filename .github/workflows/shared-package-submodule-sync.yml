@@ -27,6 +27,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
       - name: Update submodule and open tracking issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -48,9 +53,9 @@ jobs:
             done
           }
 
-          # 1. Validate the dispatch payload.
-          if ! printf '%s' "${RELEASE_TAG}" | grep -Eq '^v?[0-9A-Za-z][0-9A-Za-z.+-]*$'; then
-            echo "::error::release_tag '${RELEASE_TAG:-<empty>}' is missing or not a valid version/ref."
+          # 1. Validate the dispatch payload (require a real dotted version).
+          if ! printf '%s' "${RELEASE_TAG}" | grep -Eq '^v?[0-9]+\.[0-9]+\.[0-9]+([-+.][0-9A-Za-z.+-]+)*$'; then
+            echo "::error::release_tag '${RELEASE_TAG:-<empty>}' is missing or not a valid semver release."
             exit 1
           fi
           VERSION="${RELEASE_TAG#v}"
@@ -59,8 +64,10 @@ jobs:
           # 2. Recreate the release branch from the latest main.
           retry git fetch origin main
           MAIN_SHA="$(git rev-parse FETCH_HEAD)"
-          # Make any pre-existing remote branch available so --force-with-lease has a ref.
+          # Record the current remote branch tip (if any) as an explicit lease
+          # baseline, so a concurrent update is not silently overwritten.
           git fetch origin "+refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}" 2>/dev/null || true
+          PRIOR_REMOTE="$(git rev-parse -q --verify "refs/remotes/origin/${BRANCH}" || true)"
           git checkout -B "${BRANCH}" "${MAIN_SHA}"
           git submodule update --init --recursive "${SUBMODULE_PATH}"
 
@@ -89,12 +96,18 @@ jobs:
             exit 0
           fi
 
-          # 5. Commit and push the branch.
+          # 5. Refresh the lockfile so the branch stays `npm ci`-mergeable, then
+          #    commit both the submodule pointer and the regenerated lockfile.
+          npm install --package-lock-only --ignore-scripts
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add "${SUBMODULE_PATH}"
+          git add "${SUBMODULE_PATH}" package-lock.json
           git commit -m "Update shared package submodule to ${RELEASE_TAG}"
-          retry git push --force-with-lease --set-upstream origin "${BRANCH}"
+          if [ -n "${PRIOR_REMOTE}" ]; then
+            retry git push --force-with-lease="${BRANCH}:${PRIOR_REMOTE}" --set-upstream origin "${BRANCH}"
+          else
+            retry git push --set-upstream origin "${BRANCH}"
+          fi
 
           # 6. Point a maintainer at the compare page via the job summary and a tracking issue.
           COMPARE_URL="https://github.com/${REPO}/compare/main...${BRANCH}?expand=1"

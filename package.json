@@ -55,7 +55,7 @@
     "main": "./dist/extension.js",
     "l10n": "./l10n",
     "scripts": {
-        "postinstall": "npm --prefix external/vscode-common-python-lsp/typescript run build",
+        "postinstall": "node ./build/postinstall.js",
         "compile": "webpack",
         "compile-tests": "tsc -p . --outDir out",
         "format-check": "prettier --check \"src/**/*.ts\" \"build/**/*.yml\" \".github/**/*.yml\"",
