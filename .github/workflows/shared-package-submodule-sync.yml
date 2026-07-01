@@ -14,6 +14,8 @@ concurrency:
 
 env:
   SUBMODULE_PATH: external/vscode-common-python-lsp
+  RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+  RELEASE_URL: ${{ github.event.client_payload.release_url }}
 
 jobs:
   update-submodule:
@@ -24,102 +26,101 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: recursive
-          fetch-depth: 0
 
-      - name: Validate dispatch payload
+      - name: Update submodule and open tracking issue
         env:
-          RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          if [ -z "${RELEASE_TAG}" ]; then
-            echo 'release_tag is missing from the dispatch payload.' >&2
-            exit 1
-          fi
+
+          # Retry wrapper for flaky network operations (fetch/push).
+          retry() {
+            local attempt=1
+            until "$@"; do
+              if [ "${attempt}" -ge 3 ]; then
+                echo "::error::Command failed after ${attempt} attempts: $*"
+                return 1
+              fi
+              echo "Attempt ${attempt} failed: $* — retrying..." >&2
+              attempt=$((attempt + 1))
+              sleep $((attempt * 5))
+            done
+          }
+
+          # 1. Validate the dispatch payload.
           if ! printf '%s' "${RELEASE_TAG}" | grep -Eq '^v?[0-9A-Za-z][0-9A-Za-z.+-]*$'; then
-            echo "release_tag '${RELEASE_TAG}' is not a valid version/ref." >&2
+            echo "::error::release_tag '${RELEASE_TAG:-<empty>}' is missing or not a valid version/ref."
             exit 1
           fi
+          VERSION="${RELEASE_TAG#v}"
+          BRANCH="shared-package-v${VERSION}"
 
-      - name: Create branch for this release
-        env:
-          RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
-        run: |
-          set -euo pipefail
-          BRANCH="shared-package-v${RELEASE_TAG#v}"
-          git fetch origin main
-          # Fetch any pre-existing remote branch so --force-with-lease has a ref.
+          # 2. Recreate the release branch from the latest main.
+          retry git fetch origin main
+          MAIN_SHA="$(git rev-parse FETCH_HEAD)"
+          # Make any pre-existing remote branch available so --force-with-lease has a ref.
           git fetch origin "+refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}" 2>/dev/null || true
-          git checkout -B "$BRANCH" origin/main
-          # Re-sync the submodule to whatever the freshly checked-out main records.
+          git checkout -B "${BRANCH}" "${MAIN_SHA}"
           git submodule update --init --recursive "${SUBMODULE_PATH}"
 
-      - name: Move submodule to the released commit
-        env:
-          RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
-        run: |
-          set -euo pipefail
-          cd "${SUBMODULE_PATH}"
-          git fetch --tags --force origin
-          STRIPPED="${RELEASE_TAG#v}"
-          if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}" >/dev/null; then
-            TARGET="refs/tags/${RELEASE_TAG}"
-          elif git rev-parse -q --verify "refs/tags/v${STRIPPED}^{commit}" >/dev/null; then
-            TARGET="refs/tags/v${STRIPPED}"
-          else
-            echo "Release tag '${RELEASE_TAG}' not found upstream; falling back to origin/main." >&2
-            git fetch origin main
-            TARGET="origin/main"
-          fi
-          echo "Checking out submodule at ${TARGET}."
-          git checkout --detach "${TARGET}"
+          # 3. Move the submodule to the released commit (fail if the tag is unknown).
+          (
+            cd "${SUBMODULE_PATH}"
+            retry git fetch --tags --force origin
+            TARGET=''
+            for CANDIDATE in "refs/tags/${RELEASE_TAG}" "refs/tags/v${VERSION}"; do
+              if git rev-parse -q --verify "${CANDIDATE}^{commit}" >/dev/null; then
+                TARGET="${CANDIDATE}"
+                break
+              fi
+            done
+            if [ -z "${TARGET}" ]; then
+              echo "::error::Release tag '${RELEASE_TAG}' was not found in the shared package repository."
+              exit 1
+            fi
+            echo "Checking out submodule at ${TARGET}."
+            git checkout --detach "${TARGET}"
+          )
 
-      - name: Push branch and open tracking issue if changed
-        env:
-          RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
-          RELEASE_URL: ${{ github.event.client_payload.release_url }}
-          REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
-          # Only the submodule gitlink should have moved.
+          # 4. Stop early if the submodule pointer did not move.
           if git diff --quiet -- "${SUBMODULE_PATH}"; then
-            echo 'Submodule already at the released commit; nothing to do.'
+            echo "Submodule already at ${RELEASE_TAG}; nothing to do."
             exit 0
           fi
-          BRANCH="shared-package-v${RELEASE_TAG#v}"
+
+          # 5. Commit and push the branch.
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add "${SUBMODULE_PATH}"
           git commit -m "Update shared package submodule to ${RELEASE_TAG}"
-          git push --force-with-lease --set-upstream origin "$BRANCH"
+          retry git push --force-with-lease --set-upstream origin "${BRANCH}"
+
+          # 6. Point a maintainer at the compare page via the job summary and a tracking issue.
           COMPARE_URL="https://github.com/${REPO}/compare/main...${BRANCH}?expand=1"
           TITLE="[Shared Package] Open PR to update submodule to ${RELEASE_TAG}"
+          BODY_FILE="$(mktemp)"
           {
             echo "### Shared package submodule update ready"
             echo ''
-            echo "Branch \`${BRANCH}\` has been pushed."
+            echo "Branch \`${BRANCH}\` has been pushed, moving \`${SUBMODULE_PATH}\` to ${RELEASE_TAG}."
+            echo ''
+            echo 'Organization settings prevent this workflow from opening pull requests automatically. Please open it manually:'
             echo ''
             echo "[Open the pull request](${COMPARE_URL})"
             echo ''
-            echo "Source release: ${RELEASE_URL}"
-          } >> "$GITHUB_STEP_SUMMARY"
-          BODY_FILE="$(mktemp)"
-          cat > "$BODY_FILE" <<EOF
-          Branch \`${BRANCH}\` has been pushed, moving the \`${SUBMODULE_PATH}\` submodule to ${RELEASE_TAG}.
+            echo "Source release: ${RELEASE_URL:-n/a}"
+          } | tee -a "$GITHUB_STEP_SUMMARY" >"$BODY_FILE"
 
-          Organization settings prevent this workflow from opening pull requests automatically. Please open the PR manually:
-
-          ${COMPARE_URL}
-
-          Source release: ${RELEASE_URL}
-          EOF
           # Reuse an existing open tracking issue for this release if present.
-          EXISTING="$(gh issue list --repo "$REPO" --state open --search "in:title ${TITLE}" --json number,title --jq "map(select(.title == \"${TITLE}\")) | .[0].number // empty" 2>/dev/null || true)"
+          EXISTING="$(gh issue list --repo "$REPO" --state open \
+            --search "in:title ${TITLE}" --json number,title \
+            --jq "map(select(.title == \"${TITLE}\")) | .[0].number // empty" 2>/dev/null || true)"
           if [ -n "${EXISTING}" ]; then
             echo "Reusing existing tracking issue #${EXISTING}."
             gh issue comment "${EXISTING}" --repo "$REPO" --body-file "$BODY_FILE" \
-              || echo 'Could not comment on issue; compare URL is in the job summary.'
+              || echo 'Could not comment on the tracking issue; the compare URL is in the job summary.'
           else
             gh issue create --repo "$REPO" --title "${TITLE}" --body-file "$BODY_FILE" \
-              || echo 'Could not create issue (Issues may be disabled); compare URL is in the job summary.'
+              || echo 'Could not create the tracking issue; the compare URL is in the job summary.'
           fi
