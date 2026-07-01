@@ -35,7 +35,7 @@ black==26.1.0 \
     --hash=sha256:eb07665d9a907a1a645ee41a0df8a25ffac8ad9c26cdb557b7b88eeeeec934e0 \
     --hash=sha256:f016baaadc423dc960cdddf9acae679e71ee02c4c341f78f3179d7e4819c095f \
     --hash=sha256:fb1dafbbaa3b1ee8b4550a84425aac8874e5f390200f5502cf3aee4a2acb2f14
-    # via -r ./requirements.in
+    # via -r requirements.in
 cattrs==26.1.0 \
     --hash=sha256:d1e0804c42639494d469d08d4f26d6b9de9b8ab26b446db7b5f8c2e97f7c3096 \
     --hash=sha256:fa239e0f0ec0715ba34852ce813986dfed1e12117e209b816ab87401271cdd40
@@ -46,10 +46,6 @@ click==8.3.1 \
     --hash=sha256:12ff4785d337a1bb490bb7e9c2b1ee5da3112e94a8622f26a6c77f5d2fc6842a \
     --hash=sha256:981153a64e25f12d547d3426c367a4857371575ee7ad18df2a6183ab0545b2a6
     # via black
-colorama==0.4.6 \
-    --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
-    --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
-    # via click
 exceptiongroup==1.3.1 \
     --hash=sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219 \
     --hash=sha256:a7a39a3bd276781e98394987d3a5701d0c4edffb633bb7a5144577f82c773598
@@ -68,7 +64,7 @@ packaging==26.0 \
     --hash=sha256:00243ae351a257117b6a241061796684b084ed1c516a08c48a3f7e147a9d80b4 \
     --hash=sha256:b36f1fef9334a5588b4166f8bcd26a14e521f2b55e6b9de3aaa80d3ff7a37529
     # via
-    #   -r ./requirements.in
+    #   -r requirements.in
     #   black
     #   vscode-common-python-lsp
 pathspec==1.0.4 \
@@ -83,7 +79,7 @@ pygls==2.0.1 \
     --hash=sha256:2f774a669fbe2ece977d302786f01f9b0c5df7d0204ea0fa371ecb08288d6b86 \
     --hash=sha256:d29748042cea5bedc98285eb3e2c0c60bf3fc73786319519001bf72bbe8f36cc
     # via
-    #   -r ./requirements.in
+    #   -r requirements.in
     #   vscode-common-python-lsp
 pytokens==0.4.1 \
     --hash=sha256:0fc71786e629cef478cbf29d7ea1923299181d0699dbe7c3c0f4a583811d9fc1 \
@@ -185,7 +181,7 @@ typing-extensions==4.15.0 \
     #   black
     #   cattrs
     #   exceptiongroup
-vscode-common-python-lsp==0.6.0 \
-    --hash=sha256:499bf066372ed86a62f140a668a4b0f72328cdf8d08057df45892fc1c5b627f6 \
-    --hash=sha256:6892a401311217f501d9b2f86a82a9629c89d565082330adb77bf8cddf634a72
-    # via -r ./requirements.in
+vscode-common-python-lsp==0.8.0 \
+    --hash=sha256:b38277459e190b1c29e524e289ecb44e641632063a6e68db3aa67ce5a799d5fb \
+    --hash=sha256:f5c6e132b9197d999508a8d14d4c41c407cdb187defa547a8dccc30c896cca96
+    # via -r requirements.in
