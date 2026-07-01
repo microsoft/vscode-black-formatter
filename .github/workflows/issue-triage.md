@@ -26,6 +26,8 @@ safe-outputs:
     run-started: "⏳ **Triage Issue Agent**: I will analyze this issue and determine if related issues exist in this repo, the upstream Python tool, or similar extensions. This may take a couple of minutes."
   add-comment:
     max: 1
+  noop:
+    report-as-issue: false
 steps:
 - name: Checkout repository
   uses: actions/checkout@v5

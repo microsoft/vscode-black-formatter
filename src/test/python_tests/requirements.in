@@ -3,10 +3,12 @@
 # Use `uv` with Python 3.10 (or earliest supported version) when creating the environment.
 #
 # Run following command:
-# uv pip compile --generate-hashes --upgrade -o ./src/test/python_tests/requirements.txt ./src/test/python_tests/requirements.in
+# uv pip compile --universal --python-version 3.9 --generate-hashes --upgrade -o ./src/test/python_tests/requirements.txt ./src/test/python_tests/requirements.in
 
 pygls
 pytest
 PyHamcrest
 python-jsonrpc-server
 colorama # required for windows machines
+ujson==5.11.0; python_version < "3.10"
+ujson==5.13.0; python_version >= "3.10"
