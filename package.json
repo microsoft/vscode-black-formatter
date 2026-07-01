@@ -55,6 +55,7 @@
     "main": "./dist/extension.js",
     "l10n": "./l10n",
     "scripts": {
+        "postinstall": "npm --prefix external/vscode-common-python-lsp/typescript run build",
         "compile": "webpack",
         "compile-tests": "tsc -p . --outDir out",
         "format-check": "prettier --check \"src/**/*.ts\" \"build/**/*.yml\" \".github/**/*.yml\"",
@@ -186,7 +187,7 @@
         ]
     },
     "dependencies": {
-        "@vscode/common-python-lsp": "^0.7.0",
+        "@vscode/common-python-lsp": "file:external/vscode-common-python-lsp/typescript",
         "@vscode/python-extension": "^1.0.5",
         "dotenv": "^17.4.0",
         "fs-extra": "^11.3.4",

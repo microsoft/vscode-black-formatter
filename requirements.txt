@@ -185,7 +185,3 @@ typing-extensions==4.15.0 \
     #   black
     #   cattrs
     #   exceptiongroup
-vscode-common-python-lsp==0.6.0 \
-    --hash=sha256:499bf066372ed86a62f140a668a4b0f72328cdf8d08057df45892fc1c5b627f6 \
-    --hash=sha256:6892a401311217f501d9b2f86a82a9629c89d565082330adb77bf8cddf634a72
-    # via -r ./requirements.in
