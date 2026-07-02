@@ -111,13 +111,28 @@ jobs:
             git checkout --detach "${TARGET}"
           )
 
-          # 4. Stop early if the submodule pointer did not move.
+          # 4. Guard against Python-version drift: the extension must not claim
+          #    support for an older Python than the shared package requires, or
+          #    the bundled library would fail to import at runtime.
+          EXT_MIN="$(sed -n 's/^python-\([0-9]\+\.[0-9]\+\).*/\1/p' runtime.txt | head -n1)"
+          PKG_FLOOR="$(sed -n 's/.*requires-python[^0-9]*\([0-9]\+\.[0-9]\+\).*/\1/p' "${SUBMODULE_PATH}/python/pyproject.toml" | head -n1)"
+          if [ -z "${EXT_MIN}" ] || [ -z "${PKG_FLOOR}" ]; then
+            echo "::error::Could not determine Python versions (extension runtime.txt='${EXT_MIN:-?}', shared package requires-python='${PKG_FLOOR:-?}')."
+            exit 1
+          fi
+          if [ "$(printf '%s\n%s\n' "${PKG_FLOOR}" "${EXT_MIN}" | sort -V | head -n1)" != "${PKG_FLOOR}" ]; then
+            echo "::error::Extension minimum Python (${EXT_MIN}, from runtime.txt) is older than the shared package floor (>=${PKG_FLOOR}). Raise runtime.txt, src/common/constants.ts and noxfile.py, or investigate the shared release before syncing."
+            exit 1
+          fi
+          echo "Python floors compatible: extension ${EXT_MIN} >= shared package ${PKG_FLOOR}."
+
+          # 5. Stop early if the submodule pointer did not move.
           if git diff --quiet -- "${SUBMODULE_PATH}"; then
             echo "Submodule already at ${RELEASE_TAG}; nothing to do."
             exit 0
           fi
 
-          # 5. Refresh the lockfile so the branch stays `npm ci`-mergeable, then
+          # 6. Refresh the lockfile so the branch stays `npm ci`-mergeable, then
           #    commit both the submodule pointer and the regenerated lockfile.
           npm install --package-lock-only --ignore-scripts
           git config user.name 'github-actions[bot]'
@@ -127,7 +142,7 @@ jobs:
           # New branch only (guarded above), so a plain push cannot overwrite work.
           retry git push --set-upstream origin "${BRANCH}"
 
-          # 6. Point a maintainer at the compare page via the job summary and a tracking issue.
+          # 7. Point a maintainer at the compare page via the job summary and a tracking issue.
           COMPARE_URL="https://github.com/${REPO}/compare/main...${BRANCH}?expand=1"
           TITLE="[Shared Package] Open PR to update submodule to ${RELEASE_TAG}"
           BODY_FILE="$(mktemp)"
