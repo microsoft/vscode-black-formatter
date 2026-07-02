@@ -62,11 +62,13 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - name: Update submodule and open tracking issue
+      # Expose a `retry` helper to every later bash step via BASH_ENV so the
+      # network operations below (fetch/push) stay readable one-liners.
+      - name: Set up the git retry helper
         run: |
           set -euo pipefail
-
-          # Retry wrapper for flaky network operations (fetch/push).
+          HELPER="${RUNNER_TEMP}/helpers.sh"
+          cat >"${HELPER}" <<'SH'
           retry() {
             local attempt=1
             until "$@"; do
@@ -79,41 +81,56 @@ jobs:
               sleep $((attempt * 5))
             done
           }
+          SH
+          echo "BASH_ENV=${HELPER}" >>"${GITHUB_ENV}"
 
-          # 1. Never clobber an existing release branch: once it exists a
-          #    maintainer may be editing it, so this workflow leaves it alone.
+      # Once the release branch exists a maintainer may be editing it, so the
+      # remaining steps are skipped to avoid clobbering their work.
+      - name: Check whether the release branch already exists
+        id: guard
+        run: |
+          set -euo pipefail
           if git ls-remote --exit-code --heads origin "refs/heads/${BRANCH}" >/dev/null 2>&1; then
             echo "Branch ${BRANCH} already exists; leaving it untouched."
-            exit 0
+            echo 'exists=true' >>"${GITHUB_OUTPUT}"
+          else
+            echo 'exists=false' >>"${GITHUB_OUTPUT}"
           fi
 
-          # 2. Build the release branch from the latest main.
+      - name: Create the release branch from the latest main
+        if: steps.guard.outputs.exists == 'false'
+        run: |
+          set -euo pipefail
           retry git fetch origin main
           git checkout -B "${BRANCH}" FETCH_HEAD
           git submodule update --init --recursive "${SUBMODULE_PATH}"
 
-          # 3. Move the submodule to the released commit (fail if the tag is unknown).
-          (
-            cd "${SUBMODULE_PATH}"
-            retry git fetch --tags --force origin
-            TARGET=''
-            for CANDIDATE in "refs/tags/${RELEASE_TAG}" "refs/tags/v${VERSION}"; do
-              if git rev-parse -q --verify "${CANDIDATE}^{commit}" >/dev/null; then
-                TARGET="${CANDIDATE}"
-                break
-              fi
-            done
-            if [ -z "${TARGET}" ]; then
-              echo "::error::Release tag '${RELEASE_TAG}' was not found in the shared package repository."
-              exit 1
+      - name: Point the submodule at the released commit
+        if: steps.guard.outputs.exists == 'false'
+        working-directory: ${{ env.SUBMODULE_PATH }}
+        run: |
+          set -euo pipefail
+          retry git fetch --tags --force origin
+          TARGET=''
+          for CANDIDATE in "refs/tags/${RELEASE_TAG}" "refs/tags/v${VERSION}"; do
+            if git rev-parse -q --verify "${CANDIDATE}^{commit}" >/dev/null; then
+              TARGET="${CANDIDATE}"
+              break
             fi
-            echo "Checking out submodule at ${TARGET}."
-            git checkout --detach "${TARGET}"
-          )
+          done
+          if [ -z "${TARGET}" ]; then
+            echo "::error::Release tag '${RELEASE_TAG}' was not found in the shared package repository."
+            exit 1
+          fi
+          echo "Checking out submodule at ${TARGET}."
+          git checkout --detach "${TARGET}"
 
-          # 4. Guard against Python-version drift: the extension must not claim
-          #    support for an older Python than the shared package requires, or
-          #    the bundled library would fail to import at runtime.
+      # The extension must not claim support for an older Python than the shared
+      # package requires, or the bundled library would fail to import at runtime.
+      - name: Verify Python version compatibility
+        if: steps.guard.outputs.exists == 'false'
+        run: |
+          set -euo pipefail
           EXT_MIN="$(sed -n 's/^python-\([0-9]\+\.[0-9]\+\).*/\1/p' runtime.txt | head -n1)"
           PKG_FLOOR="$(sed -n 's/.*requires-python[^0-9]*\([0-9]\+\.[0-9]\+\).*/\1/p' "${SUBMODULE_PATH}/python/pyproject.toml" | head -n1)"
           if [ -z "${EXT_MIN}" ] || [ -z "${PKG_FLOOR}" ]; then
@@ -126,23 +143,38 @@ jobs:
           fi
           echo "Python floors compatible: extension ${EXT_MIN} >= shared package ${PKG_FLOOR}."
 
-          # 5. Stop early if the submodule pointer did not move.
+      - name: Detect whether the submodule pointer moved
+        id: detect
+        if: steps.guard.outputs.exists == 'false'
+        run: |
+          set -euo pipefail
           if git diff --quiet -- "${SUBMODULE_PATH}"; then
             echo "Submodule already at ${RELEASE_TAG}; nothing to do."
-            exit 0
+            echo 'changed=false' >>"${GITHUB_OUTPUT}"
+          else
+            echo 'changed=true' >>"${GITHUB_OUTPUT}"
           fi
 
-          # 6. Refresh the lockfile so the branch stays `npm ci`-mergeable, then
-          #    commit both the submodule pointer and the regenerated lockfile.
+      # Refresh the lockfile so the branch stays `npm ci`-mergeable, then commit
+      # both the submodule pointer and the regenerated lockfile. The branch is
+      # new (guarded above), so a plain push cannot overwrite anyone's work.
+      - name: Commit and push the update
+        if: steps.guard.outputs.exists == 'false' && steps.detect.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
           npm install --package-lock-only --ignore-scripts
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add "${SUBMODULE_PATH}" package-lock.json
           git commit -m "Update shared package submodule to ${RELEASE_TAG}"
-          # New branch only (guarded above), so a plain push cannot overwrite work.
           retry git push --set-upstream origin "${BRANCH}"
 
-          # 7. Point a maintainer at the compare page via the job summary and a tracking issue.
+      # Organization settings prevent opening PRs automatically, so point a
+      # maintainer at the compare page via the job summary and a tracking issue.
+      - name: Open or update the tracking issue
+        if: steps.guard.outputs.exists == 'false' && steps.detect.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
           COMPARE_URL="https://github.com/${REPO}/compare/main...${BRANCH}?expand=1"
           TITLE="[Shared Package] Open PR to update submodule to ${RELEASE_TAG}"
           BODY_FILE="$(mktemp)"
@@ -158,7 +190,6 @@ jobs:
             echo "Source release: ${RELEASE_URL:-n/a}"
           } | tee -a "$GITHUB_STEP_SUMMARY" >"$BODY_FILE"
 
-          # Reuse an existing open tracking issue for this release if present.
           EXISTING="$(gh issue list --repo "$REPO" --state open \
             --search "in:title ${TITLE}" --json number,title \
             --jq "map(select(.title == \"${TITLE}\")) | .[0].number // empty" 2>/dev/null || true)"
