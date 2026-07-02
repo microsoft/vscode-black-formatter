@@ -18,7 +18,7 @@ updates:
           - 'patch'
     open-pull-requests-limit: 10
     ignore:
-      # @vscode/common-python-lsp is handled by the shared-package-release
+      # @vscode/common-python-lsp is handled by the shared-package-submodule-sync
       # dispatch workflow, so ignore it here to avoid duplicate PRs.
       - dependency-name: '@vscode/common-python-lsp'
       - dependency-name: '@types/vscode'
@@ -43,7 +43,7 @@ updates:
           - 'minor'
           - 'patch'
     ignore:
-      # vscode-common-python-lsp is handled by the shared-package-release
+      # vscode-common-python-lsp is handled by the shared-package-submodule-sync
       # dispatch workflow, so ignore it here to avoid duplicate PRs.
       - dependency-name: 'vscode-common-python-lsp'
 

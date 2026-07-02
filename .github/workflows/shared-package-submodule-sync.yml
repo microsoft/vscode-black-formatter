@@ -8,22 +8,52 @@ permissions:
   contents: write
   issues: write
 
-concurrency:
-  group: 'shared-package-submodule-${{ github.event.client_payload.release_tag }}'
-  cancel-in-progress: false
-
 env:
   SUBMODULE_PATH: external/vscode-common-python-lsp
-  RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
-  RELEASE_URL: ${{ github.event.client_payload.release_url }}
 
 jobs:
-  update-submodule:
-    name: Update shared package submodule
+  prepare:
+    name: Validate and normalize the release
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.normalize.outputs.version }}
+      branch: ${{ steps.normalize.outputs.branch }}
+    steps:
+      - name: Normalize release tag
+        id: normalize
+        env:
+          RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+        run: |
+          set -euo pipefail
+          # Require a real dotted release so a branch/ref name can never be malformed.
+          if ! printf '%s' "${RELEASE_TAG}" | grep -Eq '^v?[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.]+)*$'; then
+            echo "::error::release_tag '${RELEASE_TAG:-<empty>}' is missing or not a valid semver release."
+            exit 1
+          fi
+          VERSION="${RELEASE_TAG#v}"
+          {
+            echo "version=${VERSION}"
+            echo "branch=shared-package-v${VERSION}"
+          } >>"$GITHUB_OUTPUT"
+
+  sync:
+    name: Update shared package submodule
+    needs: prepare
+    runs-on: ubuntu-latest
+    # Key on the normalized branch so `v1.2.3` and `1.2.3` share one group.
+    concurrency:
+      group: shared-package-submodule-${{ needs.prepare.outputs.branch }}
+      cancel-in-progress: false
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      BRANCH: ${{ needs.prepare.outputs.branch }}
+      RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+      RELEASE_URL: ${{ github.event.client_payload.release_url }}
+      REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -33,9 +63,6 @@ jobs:
           node-version-file: .nvmrc
 
       - name: Update submodule and open tracking issue
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
 
@@ -53,22 +80,16 @@ jobs:
             done
           }
 
-          # 1. Validate the dispatch payload (require a real dotted version).
-          if ! printf '%s' "${RELEASE_TAG}" | grep -Eq '^v?[0-9]+\.[0-9]+\.[0-9]+([-+.][0-9A-Za-z.+-]+)*$'; then
-            echo "::error::release_tag '${RELEASE_TAG:-<empty>}' is missing or not a valid semver release."
-            exit 1
+          # 1. Never clobber an existing release branch: once it exists a
+          #    maintainer may be editing it, so this workflow leaves it alone.
+          if git ls-remote --exit-code --heads origin "refs/heads/${BRANCH}" >/dev/null 2>&1; then
+            echo "Branch ${BRANCH} already exists; leaving it untouched."
+            exit 0
           fi
-          VERSION="${RELEASE_TAG#v}"
-          BRANCH="shared-package-v${VERSION}"
 
-          # 2. Recreate the release branch from the latest main.
+          # 2. Build the release branch from the latest main.
           retry git fetch origin main
-          MAIN_SHA="$(git rev-parse FETCH_HEAD)"
-          # Record the current remote branch tip (if any) as an explicit lease
-          # baseline, so a concurrent update is not silently overwritten.
-          git fetch origin "+refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}" 2>/dev/null || true
-          PRIOR_REMOTE="$(git rev-parse -q --verify "refs/remotes/origin/${BRANCH}" || true)"
-          git checkout -B "${BRANCH}" "${MAIN_SHA}"
+          git checkout -B "${BRANCH}" FETCH_HEAD
           git submodule update --init --recursive "${SUBMODULE_PATH}"
 
           # 3. Move the submodule to the released commit (fail if the tag is unknown).
@@ -103,11 +124,8 @@ jobs:
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add "${SUBMODULE_PATH}" package-lock.json
           git commit -m "Update shared package submodule to ${RELEASE_TAG}"
-          if [ -n "${PRIOR_REMOTE}" ]; then
-            retry git push --force-with-lease="${BRANCH}:${PRIOR_REMOTE}" --set-upstream origin "${BRANCH}"
-          else
-            retry git push --set-upstream origin "${BRANCH}"
-          fi
+          # New branch only (guarded above), so a plain push cannot overwrite work.
+          retry git push --set-upstream origin "${BRANCH}"
 
           # 6. Point a maintainer at the compare page via the job summary and a tracking issue.
           COMPARE_URL="https://github.com/${REPO}/compare/main...${BRANCH}?expand=1"

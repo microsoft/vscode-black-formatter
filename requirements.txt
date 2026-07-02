@@ -59,7 +59,6 @@ lsprotocol==2025.0.0 \
     --hash=sha256:f9d78f25221f2a60eaa4a96d3b4ffae011b107537facee61d3da3313880995c7
     # via
     #   pygls
-    #   vscode-common-python-lsp
 mypy-extensions==1.1.0 \
     --hash=sha256:1be4cccdb0f2482337c4743e60421de3a356cd97508abadd57d47403e94f5505 \
     --hash=sha256:52e68efc3284861e772bbcd66823fde5ae21fd2fdb51c62a211403730b916558
@@ -70,7 +69,6 @@ packaging==26.0 \
     # via
     #   -r ./requirements.in
     #   black
-    #   vscode-common-python-lsp
 pathspec==1.0.4 \
     --hash=sha256:0210e2ae8a21a9137c0d470578cb0e595af87edaa6ebf12ff176f14a02e0e645 \
     --hash=sha256:fb6ae2fd4e7c921a165808a552060e722767cfa526f99ca5156ed2ce45a5c723
@@ -84,7 +82,6 @@ pygls==2.0.1 \
     --hash=sha256:d29748042cea5bedc98285eb3e2c0c60bf3fc73786319519001bf72bbe8f36cc
     # via
     #   -r ./requirements.in
-    #   vscode-common-python-lsp
 pytokens==0.4.1 \
     --hash=sha256:0fc71786e629cef478cbf29d7ea1923299181d0699dbe7c3c0f4a583811d9fc1 \
     --hash=sha256:11edda0942da80ff58c4408407616a310adecae1ddd22eef8c692fe266fa5009 \
