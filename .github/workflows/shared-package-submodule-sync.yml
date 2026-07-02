@@ -143,6 +143,24 @@ jobs:
           fi
           echo "Python floors compatible: extension ${EXT_MIN} >= shared package ${PKG_FLOOR}."
 
+      # The extension builds the shared package's TypeScript during install, so
+      # its Node toolchain must be at least the version the shared package pins.
+      - name: Verify Node version compatibility
+        if: steps.guard.outputs.exists == 'false'
+        run: |
+          set -euo pipefail
+          EXT_NODE="$(sed -n 's/^[[:space:]]*v\?\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p' .nvmrc | head -n1)"
+          PKG_NODE="$(sed -n 's/^[[:space:]]*v\?\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p' "${SUBMODULE_PATH}/.nvmrc" | head -n1)"
+          if [ -z "${EXT_NODE}" ] || [ -z "${PKG_NODE}" ]; then
+            echo "::error::Could not determine Node versions (extension .nvmrc='${EXT_NODE:-?}', shared package .nvmrc='${PKG_NODE:-?}')."
+            exit 1
+          fi
+          if [ "$(printf '%s\n%s\n' "${PKG_NODE}" "${EXT_NODE}" | sort -V | head -n1)" != "${PKG_NODE}" ]; then
+            echo "::error::Extension Node version (${EXT_NODE}, from .nvmrc) is older than the shared package's pinned Node (${PKG_NODE}). Update .nvmrc, or investigate the shared release before syncing."
+            exit 1
+          fi
+          echo "Node versions compatible: extension ${EXT_NODE} >= shared package ${PKG_NODE}."
+
       - name: Detect whether the submodule pointer moved
         id: detect
         if: steps.guard.outputs.exists == 'false'
