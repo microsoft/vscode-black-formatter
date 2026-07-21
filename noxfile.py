@@ -65,6 +65,7 @@ def _update_npm_packages(session: nox.Session) -> None:
         "vscode-languageclient",
         "@types/vscode",
         "@types/node",
+        "@vscode/common-python-lsp",
         "chai",
     }
     package_json_path = pathlib.Path(__file__).parent / "package.json"
