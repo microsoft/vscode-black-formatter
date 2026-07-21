@@ -114,6 +114,12 @@ def install_bundled_libs(session):
     _install_bundle(session)
     # Source the shared Python library from the git submodule instead of the
     # published package so the bundled copy matches the pinned submodule commit.
+    shared_python_lib = pathlib.Path("external/vscode-common-python-lsp/python")
+    if not shared_python_lib.exists():
+        session.error(
+            f"Shared package submodule missing at {shared_python_lib}. "
+            "Run 'git submodule update --init --recursive' before building."
+        )
     session.install(
         "-t",
         "./bundled/libs",
