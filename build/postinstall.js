@@ -1,8 +1,11 @@
 // Builds the shared package that lives in the git submodule after install.
 //
-// The build is skipped (with guidance) when the submodule has not been
-// checked out, so a clone made without `--recurse-submodules` does not fail
-// `npm install`/`npm ci` at the postinstall step with a confusing error.
+// Note: a clone made without `--recurse-submodules` actually fails earlier,
+// when npm resolves the `file:` dependency during the install phase, before
+// this postinstall script runs. The guard below only adds a friendlier message
+// on the rarer paths that still reach postinstall (e.g. the submodule was
+// removed after a prior install); it is not a substitute for initializing the
+// submodule.
 const { existsSync } = require("fs");
 const { execSync } = require("child_process");
 
