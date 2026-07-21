@@ -190,7 +190,7 @@ jobs:
           # spec (e.g. "<3.14" or "==3.11.*") must not be misread as a floor, so
           # leave PKG_FLOOR empty (→ warn-and-skip below) when no lower bound exists.
           REQUIRES_PYTHON="$(sed -n 's/.*requires-python[[:space:]]*=[[:space:]]*["'\'']\([^"'\'']*\)["'\''].*/\1/p' "${SUBMODULE_PATH}/python/pyproject.toml" | head -n1)"
-          PKG_FLOOR="$(printf '%s' "${REQUIRES_PYTHON}" | grep -Eo '(>=|~=)[[:space:]]*[0-9]+\.[0-9]+' | grep -Eo '[0-9]+\.[0-9]+' | head -n1)"
+          PKG_FLOOR="$(printf '%s' "${REQUIRES_PYTHON}" | grep -Eo '(>=|~=)[[:space:]]*[0-9]+\.[0-9]+' | grep -Eo '[0-9]+\.[0-9]+' | head -n1 || true)"
           if [ -z "${PKG_FLOOR}" ]; then
             echo "::warning::Could not parse requires-python from the shared package; skipping the Python compatibility check."
           elif [ -z "${EXT_MIN}" ]; then
@@ -210,9 +210,9 @@ jobs:
         if: steps.guard.outputs.exists == 'false' && steps.detect.outputs.changed == 'true'
         run: |
           set -euo pipefail
-          EXT_NODE="$(grep -Eo '[0-9]+(\.[0-9]+)*' .nvmrc | head -n1)"
+          EXT_NODE="$(grep -Eo '[0-9]+(\.[0-9]+)*' .nvmrc | head -n1 || true)"
           PKG_RANGE="$(node -p "(require('./${SUBMODULE_PATH}/typescript/package.json').engines || {}).node || ''" 2>/dev/null || true)"
-          PKG_NODE="$(printf '%s' "${PKG_RANGE}" | grep -Eo '[0-9]+(\.[0-9]+)*' | head -n1)"
+          PKG_NODE="$(printf '%s' "${PKG_RANGE}" | grep -Eo '[0-9]+(\.[0-9]+)*' | head -n1 || true)"
           if [ -z "${PKG_NODE}" ]; then
             echo "::warning::Could not parse engines.node from the shared package; skipping the Node compatibility check."
           elif [ -z "${EXT_NODE}" ]; then
