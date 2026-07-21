@@ -228,8 +228,12 @@ jobs:
 
       # Organization settings prevent opening PRs automatically, so point a
       # maintainer at the compare page via the job summary and a tracking issue.
+      # This also runs when the branch already exists so a re-dispatch after a
+      # partial failure (branch pushed but the notification never landed, or the
+      # issue was closed) re-ensures the maintainer notification instead of
+      # silently skipping it — the step is idempotent (it reuses any open issue).
       - name: Open or update the tracking issue
-        if: steps.guard.outputs.exists == 'false' && steps.detect.outputs.changed == 'true'
+        if: steps.guard.outputs.exists == 'true' || steps.detect.outputs.changed == 'true'
         run: |
           set -euo pipefail
           COMPARE_URL="https://github.com/${REPO}/compare/main...${BRANCH}?expand=1"
