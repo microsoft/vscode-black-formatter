@@ -18,8 +18,10 @@ updates:
           - 'patch'
     open-pull-requests-limit: 10
     ignore:
-      # @vscode/common-python-lsp is handled by the shared-package-submodule-sync
-      # dispatch workflow, so ignore it here to avoid duplicate PRs.
+      # Defensive no-op: @vscode/common-python-lsp is a `file:` submodule dep,
+      # which Dependabot never bumps. It is synced by the
+      # shared-package-submodule-sync dispatch workflow instead. Kept here to
+      # document intent should the dependency form ever change.
       - dependency-name: '@vscode/common-python-lsp'
       - dependency-name: '@types/vscode'
       - dependency-name: '@types/node'
@@ -43,8 +45,9 @@ updates:
           - 'minor'
           - 'patch'
     ignore:
-      # vscode-common-python-lsp is handled by the shared-package-submodule-sync
-      # dispatch workflow, so ignore it here to avoid duplicate PRs.
+      # Defensive no-op: the pip `vscode-common-python-lsp` pin was removed from
+      # requirements when the shared package moved to the git submodule, so
+      # Dependabot has nothing to bump. Kept to document intent.
       - dependency-name: 'vscode-common-python-lsp'
 
   # Python test dependencies are updated weekly, minor updates are grouped (1 PR "pip-test-minor-patch").
