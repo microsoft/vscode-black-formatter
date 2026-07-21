@@ -249,12 +249,15 @@ jobs:
         run: |
           set -euo pipefail
           COMPARE_URL="https://github.com/${REPO}/compare/main...${BRANCH}?expand=1"
-          TITLE="[Shared Package] Open PR to update submodule to ${RELEASE_TAG}"
+          TITLE="[Shared Package] Open PR to update submodule to v${VERSION}"
           BODY_FILE="$(mktemp)"
           {
-            echo "### Shared package submodule update ready"
+            echo "### Shared package submodule update ready for review"
             echo ''
             echo "Branch \`${BRANCH}\` has been pushed, moving \`${SUBMODULE_PATH}\` to ${RELEASE_TAG}."
+            echo ''
+            echo '> [!IMPORTANT]'
+            echo '> This branch only bumps the submodule pointer and refreshes the lockfile; it has not been built or tested by this workflow. Open the pull request and let the normal PR checks (build, lint, tests) validate it before merging.'
             echo ''
             echo 'Organization settings prevent this workflow from opening pull requests automatically. Please open it manually:'
             echo ''
