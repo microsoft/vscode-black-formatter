@@ -127,7 +127,7 @@ jobs:
           set -euo pipefail
           retry git fetch --tags --force origin
           TARGET=''
-          for CANDIDATE in "refs/tags/${RELEASE_TAG}" "refs/tags/v${VERSION}"; do
+          for CANDIDATE in "refs/tags/${RELEASE_TAG}" "refs/tags/v${VERSION}" "refs/tags/${VERSION}"; do
             if git rev-parse -q --verify "${CANDIDATE}^{commit}" >/dev/null; then
               TARGET="${CANDIDATE}"
               break
