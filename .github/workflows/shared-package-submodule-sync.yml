@@ -31,9 +31,18 @@ jobs:
             exit 1
           fi
           VERSION="${RELEASE_TAG#v}"
+          BRANCH="shared-package-v${VERSION}"
+          # The regex above matches per line, so a multi-line tag (or a "+build"
+          # segment containing "..") can slip through and taint the branch/ref
+          # name. Reject anything git itself considers a malformed ref before it
+          # is emitted as an output.
+          if ! git check-ref-format "refs/heads/${BRANCH}"; then
+            echo "::error::Computed branch name 'refs/heads/${BRANCH}' is not a valid git ref."
+            exit 1
+          fi
           {
             echo "version=${VERSION}"
-            echo "branch=shared-package-v${VERSION}"
+            echo "branch=${BRANCH}"
           } >>"$GITHUB_OUTPUT"
 
   sync:
