@@ -247,14 +247,16 @@ jobs:
             echo "Source release: ${RELEASE_URL:-n/a}"
           } | tee -a "$GITHUB_STEP_SUMMARY" >"$BODY_FILE"
 
+          # Quote the title in the search so the bracketed "[Shared Package]"
+          # prefix is matched as a phrase rather than tokenized, and do not
+          # swallow gh errors: a failed lookup must surface (set -e) rather than
+          # silently fall through and create a duplicate tracking issue.
           EXISTING="$(gh issue list --repo "$REPO" --state open \
-            --search "in:title ${TITLE}" --json number,title \
-            --jq "map(select(.title == \"${TITLE}\")) | .[0].number // empty" 2>/dev/null || true)"
+            --search "\"${TITLE}\" in:title" --json number,title \
+            --jq "map(select(.title == \"${TITLE}\")) | .[0].number // empty")"
           if [ -n "${EXISTING}" ]; then
             echo "Reusing existing tracking issue #${EXISTING}."
-            gh issue comment "${EXISTING}" --repo "$REPO" --body-file "$BODY_FILE" \
-              || echo 'Could not comment on the tracking issue; the compare URL is in the job summary.'
+            gh issue comment "${EXISTING}" --repo "$REPO" --body-file "$BODY_FILE"
           else
-            gh issue create --repo "$REPO" --title "${TITLE}" --body-file "$BODY_FILE" \
-              || echo 'Could not create the tracking issue; the compare URL is in the job summary.'
+            gh issue create --repo "$REPO" --title "${TITLE}" --body-file "$BODY_FILE"
           fi
