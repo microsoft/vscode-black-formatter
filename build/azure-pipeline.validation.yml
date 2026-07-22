@@ -32,6 +32,8 @@ parameters:
   - name: buildSteps
     type: stepList
     default:
+      - script: git submodule update --init --recursive
+        displayName: Checkout submodules
       - script: npm ci
         displayName: Install NPM dependencies
 

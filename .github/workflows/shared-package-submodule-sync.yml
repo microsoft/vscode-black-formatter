@@ -1,0 +1,281 @@
+name: Shared Package Submodule Sync
+
+on:
+  repository_dispatch:
+    types: [shared-package-release]
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  SUBMODULE_PATH: external/vscode-common-python-lsp
+
+jobs:
+  prepare:
+    name: Validate and normalize the release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.normalize.outputs.version }}
+      branch: ${{ steps.normalize.outputs.branch }}
+    steps:
+      - name: Normalize release tag
+        id: normalize
+        env:
+          RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+        run: |
+          set -euo pipefail
+          # Require a real dotted release so a branch/ref name can never be malformed.
+          if ! printf '%s' "${RELEASE_TAG}" | grep -Eq '^v?[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.]+)*$'; then
+            echo "::error::release_tag '${RELEASE_TAG:-<empty>}' is missing or not a valid semver release."
+            exit 1
+          fi
+          VERSION="${RELEASE_TAG#v}"
+          BRANCH="shared-package-v${VERSION}"
+          # The regex above matches per line, so a multi-line tag (or a "+build"
+          # segment containing "..") can slip through and taint the branch/ref
+          # name. Reject anything git itself considers a malformed ref before it
+          # is emitted as an output.
+          if ! git check-ref-format "refs/heads/${BRANCH}"; then
+            echo "::error::Computed branch name 'refs/heads/${BRANCH}' is not a valid git ref."
+            exit 1
+          fi
+          {
+            echo "version=${VERSION}"
+            echo "branch=${BRANCH}"
+          } >>"$GITHUB_OUTPUT"
+
+  sync:
+    name: Update shared package submodule
+    needs: prepare
+    runs-on: ubuntu-latest
+    # Key on the normalized branch so `v1.2.3` and `1.2.3` share one group.
+    concurrency:
+      group: shared-package-submodule-${{ needs.prepare.outputs.branch }}
+      cancel-in-progress: false
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      BRANCH: ${{ needs.prepare.outputs.branch }}
+      RELEASE_TAG: ${{ github.event.client_payload.release_tag }}
+      RELEASE_URL: ${{ github.event.client_payload.release_url }}
+      REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # Expose a `retry` helper to every later bash step via BASH_ENV so the
+      # network operations below (fetch/push) stay readable one-liners.
+      - name: Set up the git retry helper
+        run: |
+          set -euo pipefail
+          HELPER="${RUNNER_TEMP}/helpers.sh"
+          cat >"${HELPER}" <<'SH'
+          retry() {
+            local attempt=1
+            until "$@"; do
+              if [ "${attempt}" -ge 3 ]; then
+                echo "::error::Command failed after ${attempt} attempts: $*"
+                return 1
+              fi
+              echo "Attempt ${attempt} failed: $* — retrying..." >&2
+              attempt=$((attempt + 1))
+              sleep $((attempt * 5))
+            done
+          }
+          SH
+          echo "BASH_ENV=${HELPER}" >>"${GITHUB_ENV}"
+
+      # Once the release branch exists a maintainer may be editing it, so the
+      # remaining steps are skipped to avoid clobbering their work. A transient
+      # ls-remote failure must not be mistaken for "branch absent", so retry and
+      # only treat a definitive "no such ref" (exit code 2) as missing.
+      - name: Check whether the release branch already exists
+        id: guard
+        run: |
+          set -euo pipefail
+          exists=''
+          for attempt in 1 2 3; do
+            set +e
+            git ls-remote --exit-code --heads origin "refs/heads/${BRANCH}" >/dev/null 2>&1
+            rc=$?
+            set -e
+            if [ "${rc}" -eq 0 ]; then exists=true; break; fi
+            if [ "${rc}" -eq 2 ]; then exists=false; break; fi
+            echo "ls-remote failed (exit ${rc}); attempt ${attempt}/3..." >&2
+            sleep $((attempt * 5))
+          done
+          if [ -z "${exists}" ]; then
+            echo "::error::Could not reach origin to check for ${BRANCH} after 3 attempts."
+            exit 1
+          fi
+          if [ "${exists}" = 'true' ]; then
+            echo "Branch ${BRANCH} already exists; leaving it untouched."
+          fi
+          echo "exists=${exists}" >>"${GITHUB_OUTPUT}"
+
+      - name: Create the release branch from the latest main
+        if: steps.guard.outputs.exists == 'false'
+        run: |
+          set -euo pipefail
+          retry git fetch origin main
+          git checkout -B "${BRANCH}" FETCH_HEAD
+          git submodule update --init --recursive "${SUBMODULE_PATH}"
+
+      - name: Point the submodule at the released commit
+        if: steps.guard.outputs.exists == 'false'
+        working-directory: ${{ env.SUBMODULE_PATH }}
+        run: |
+          set -euo pipefail
+          retry git fetch --tags --force origin
+          TARGET=''
+          for CANDIDATE in "refs/tags/${RELEASE_TAG}" "refs/tags/v${VERSION}" "refs/tags/${VERSION}"; do
+            if git rev-parse -q --verify "${CANDIDATE}^{commit}" >/dev/null; then
+              TARGET="${CANDIDATE}"
+              break
+            fi
+          done
+          if [ -z "${TARGET}" ]; then
+            echo "::error::Release tag '${RELEASE_TAG}' was not found in the shared package repository."
+            exit 1
+          fi
+          echo "Checking out submodule at ${TARGET}."
+          git checkout --detach "${TARGET}"
+
+      # Determine whether the release actually moves the submodule before running
+      # the compatibility guards, so a no-op re-dispatch exits cleanly instead of
+      # doing extra work or failing loudly with nothing to sync.
+      - name: Detect whether the submodule pointer moved
+        id: detect
+        if: steps.guard.outputs.exists == 'false'
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- "${SUBMODULE_PATH}"; then
+            echo "Submodule already at ${RELEASE_TAG}; nothing to do."
+            echo 'changed=false' >>"${GITHUB_OUTPUT}"
+          else
+            echo 'changed=true' >>"${GITHUB_OUTPUT}"
+          fi
+
+      # The extension must not claim support for an older Python than the shared
+      # package requires, or the bundled library would fail to import at runtime.
+      # Compare the package floor against the extension's *declared* minimum in
+      # src/common/constants.ts (not the bundling interpreter in runtime.txt); an
+      # unparseable floor only warns so upstream repackaging can't wedge the sync.
+      - name: Verify Python version compatibility
+        if: steps.guard.outputs.exists == 'false' && steps.detect.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          EXT_MIN="$(sed -n 's/.*minimumPythonVersion:[[:space:]]*{[[:space:]]*major:[[:space:]]*\([0-9]\+\)[[:space:]]*,[[:space:]]*minor:[[:space:]]*\([0-9]\+\).*/\1.\2/p' src/common/constants.ts | head -n1)"
+          # Some extensions declare the floor with symbolic constants
+          # (minimumPythonVersion: { major: MINIMUM_PYTHON_MAJOR, minor: MINIMUM_PYTHON_MINOR }),
+          # so the inline-literal parse above finds nothing. Fall back to the
+          # numeric MINIMUM_PYTHON_MAJOR/MINOR definitions before giving up, or
+          # the gate silently passes on those repos.
+          if [ -z "${EXT_MIN}" ]; then
+            EXT_MAJOR="$(sed -n 's/.*MINIMUM_PYTHON_MAJOR[[:space:]]*=[[:space:]]*\([0-9]\+\).*/\1/p' src/common/constants.ts | head -n1)"
+            EXT_MINOR="$(sed -n 's/.*MINIMUM_PYTHON_MINOR[[:space:]]*=[[:space:]]*\([0-9]\+\).*/\1/p' src/common/constants.ts | head -n1)"
+            if [ -n "${EXT_MAJOR}" ] && [ -n "${EXT_MINOR}" ]; then
+              EXT_MIN="${EXT_MAJOR}.${EXT_MINOR}"
+            fi
+          fi
+          # Read only a >=/~= lower bound from requires-python; an upper-bound-only
+          # spec (e.g. "<3.14" or "==3.11.*") must not be misread as a floor, so
+          # leave PKG_FLOOR empty (→ warn-and-skip below) when no lower bound exists.
+          REQUIRES_PYTHON="$(sed -n 's/.*requires-python[[:space:]]*=[[:space:]]*["'\'']\([^"'\'']*\)["'\''].*/\1/p' "${SUBMODULE_PATH}/python/pyproject.toml" | head -n1)"
+          PKG_FLOOR="$(printf '%s' "${REQUIRES_PYTHON}" | grep -Eo '(>=|~=)[[:space:]]*[0-9]+\.[0-9]+' | grep -Eo '[0-9]+\.[0-9]+' | head -n1 || true)"
+          if [ -z "${PKG_FLOOR}" ]; then
+            echo "::warning::Could not parse requires-python from the shared package; skipping the Python compatibility check."
+          elif [ -z "${EXT_MIN}" ]; then
+            echo "::warning::Could not parse minimumPythonVersion from src/common/constants.ts; skipping the Python compatibility check."
+          elif [ "$(printf '%s\n%s\n' "${PKG_FLOOR}" "${EXT_MIN}" | sort -V | head -n1)" != "${PKG_FLOOR}" ]; then
+            echo "::error::Extension minimum Python (${EXT_MIN}, from src/common/constants.ts) is older than the shared package floor (>=${PKG_FLOOR}). Raise the minimum in src/common/constants.ts, runtime.txt and noxfile.py, or investigate the shared release before syncing."
+            exit 1
+          else
+            echo "Python floors compatible: extension ${EXT_MIN} >= shared package ${PKG_FLOOR}."
+          fi
+
+      # The extension builds the shared package's TypeScript during install, so its
+      # Node toolchain must satisfy the package's declared build floor
+      # (engines.node), not the exact dev pin in the submodule .nvmrc. An
+      # unparseable floor only warns rather than failing every future sync.
+      - name: Verify Node version compatibility
+        if: steps.guard.outputs.exists == 'false' && steps.detect.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          EXT_NODE="$(grep -Eo '[0-9]+(\.[0-9]+)*' .nvmrc | head -n1 || true)"
+          PKG_RANGE="$(node -p "(require('./${SUBMODULE_PATH}/typescript/package.json').engines || {}).node || ''" 2>/dev/null || true)"
+          PKG_NODE="$(printf '%s' "${PKG_RANGE}" | grep -Eo '[0-9]+(\.[0-9]+)*' | head -n1 || true)"
+          if [ -z "${PKG_NODE}" ]; then
+            echo "::warning::Could not parse engines.node from the shared package; skipping the Node compatibility check."
+          elif [ -z "${EXT_NODE}" ]; then
+            echo "::warning::Could not parse a Node version from .nvmrc; skipping the Node compatibility check."
+          elif [ "$(printf '%s\n%s\n' "${PKG_NODE}" "${EXT_NODE}" | sort -V | head -n1)" != "${PKG_NODE}" ]; then
+            echo "::error::Extension Node version (${EXT_NODE}, from .nvmrc) is older than the shared package's required build floor (>=${PKG_NODE}, from engines.node). Update .nvmrc, or investigate the shared release before syncing."
+            exit 1
+          else
+            echo "Node versions compatible: extension ${EXT_NODE} >= shared package build floor ${PKG_NODE}."
+          fi
+
+      # Refresh the lockfile so the branch stays `npm ci`-mergeable, then commit
+      # both the submodule pointer and the regenerated lockfile. The branch is
+      # new (guarded above), so a plain push cannot overwrite anyone's work.
+      - name: Commit and push the update
+        if: steps.guard.outputs.exists == 'false' && steps.detect.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          retry npm install --package-lock-only --ignore-scripts
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add "${SUBMODULE_PATH}" package-lock.json
+          git commit -m "Update shared package submodule to ${RELEASE_TAG}"
+          retry git push --set-upstream origin "${BRANCH}"
+
+      # Organization settings prevent opening PRs automatically, so point a
+      # maintainer at the compare page via the job summary and a tracking issue.
+      # This also runs when the branch already exists so a re-dispatch after a
+      # partial failure (branch pushed but the notification never landed, or the
+      # issue was closed) re-ensures the maintainer notification instead of
+      # silently skipping it — the step is idempotent (it reuses any open issue).
+      - name: Open or update the tracking issue
+        if: steps.guard.outputs.exists == 'true' || steps.detect.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          COMPARE_URL="https://github.com/${REPO}/compare/main...${BRANCH}?expand=1"
+          TITLE="[Shared Package] Open PR to update submodule to v${VERSION}"
+          BODY_FILE="$(mktemp)"
+          {
+            echo "### Shared package submodule update ready for review"
+            echo ''
+            echo "Branch \`${BRANCH}\` has been pushed, moving \`${SUBMODULE_PATH}\` to ${RELEASE_TAG}."
+            echo ''
+            echo '> [!IMPORTANT]'
+            echo '> This branch only bumps the submodule pointer and refreshes the lockfile; it has not been built or tested by this workflow. Open the pull request and let the normal PR checks (build, lint, tests) validate it before merging.'
+            echo ''
+            echo 'Organization settings prevent this workflow from opening pull requests automatically. Please open it manually:'
+            echo ''
+            echo "[Open the pull request](${COMPARE_URL})"
+            echo ''
+            echo "Source release: ${RELEASE_URL:-n/a}"
+          } | tee -a "$GITHUB_STEP_SUMMARY" >"$BODY_FILE"
+
+          # Quote the title in the search so the bracketed "[Shared Package]"
+          # prefix is matched as a phrase rather than tokenized, and do not
+          # swallow gh errors: a failed lookup must surface (set -e) rather than
+          # silently fall through and create a duplicate tracking issue.
+          EXISTING="$(gh issue list --repo "$REPO" --state open \
+            --search "\"${TITLE}\" in:title" --json number,title \
+            --jq "map(select(.title == \"${TITLE}\")) | .[0].number // empty")"
+          if [ -n "${EXISTING}" ]; then
+            echo "Reusing existing tracking issue #${EXISTING}."
+            gh issue comment "${EXISTING}" --repo "$REPO" --body-file "$BODY_FILE"
+          else
+            gh issue create --repo "$REPO" --title "${TITLE}" --body-file "$BODY_FILE"
+          fi

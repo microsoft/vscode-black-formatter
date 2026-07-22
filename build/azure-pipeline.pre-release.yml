@@ -48,6 +48,8 @@ extends:
           architecture: 'x64'
         displayName: Select Python version
 
+      - script: git submodule update --init --recursive
+        displayName: Checkout submodules
       - script: npm ci
         displayName: Install NPM dependencies
 

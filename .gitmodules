@@ -1,0 +1,3 @@
+[submodule "external/vscode-common-python-lsp"]
+	path = external/vscode-common-python-lsp
+	url = https://github.com/microsoft/vscode-common-python-lsp.git

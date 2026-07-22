@@ -13,14 +13,16 @@ updates:
       npm-minor-patch:
         patterns:
           - '*'
-        # Exclude @vscode/common-python-lsp so it gets its own standalone PR (weekly).
-        exclude-patterns:
-          - '@vscode/common-python-lsp'
         update-types:
           - 'minor'
           - 'patch'
     open-pull-requests-limit: 10
     ignore:
+      # Defensive no-op: @vscode/common-python-lsp is a `file:` submodule dep,
+      # which Dependabot never bumps. It is synced by the
+      # shared-package-submodule-sync dispatch workflow instead. Kept here to
+      # document intent should the dependency form ever change.
+      - dependency-name: '@vscode/common-python-lsp'
       - dependency-name: '@types/vscode'
       - dependency-name: '@types/node'
       - dependency-name: 'vscode-languageclient'
@@ -39,12 +41,14 @@ updates:
       pip-minor-patch:
         patterns:
           - '*'
-        # Exclude vscode-common-python-lsp so it gets its own standalone PR (weekly).
-        exclude-patterns:
-          - 'vscode-common-python-lsp'
         update-types:
           - 'minor'
           - 'patch'
+    ignore:
+      # Defensive no-op: the pip `vscode-common-python-lsp` pin was removed from
+      # requirements when the shared package moved to the git submodule, so
+      # Dependabot has nothing to bump. Kept to document intent.
+      - dependency-name: 'vscode-common-python-lsp'
 
   # Python test dependencies are updated weekly, minor updates are grouped (1 PR "pip-test-minor-patch").
   - package-ecosystem: 'pip'

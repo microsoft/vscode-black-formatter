@@ -128,3 +128,25 @@ In this section, you will find some common issues you might encounter and how to
 
     -   Set the `black-formatter.importStrategy` setting to `useBundled` and the `black-formatter.path` setting to point to the custom binary of Black you want to use; or
     -   Install Black in the selected environment.
+
+## Development
+
+This extension bundles the shared [`vscode-common-python-lsp`](https://github.com/microsoft/vscode-common-python-lsp) library as a git submodule at `external/vscode-common-python-lsp`. The submodule must be initialized before installing dependencies, because `npm install` builds the shared library from it.
+
+When cloning the repository, pull the submodule at the same time:
+
+```bash
+git clone --recurse-submodules https://github.com/microsoft/vscode-black-formatter.git
+```
+
+If you already cloned without `--recurse-submodules`, initialize (or update) the submodule from the repository root:
+
+```bash
+git submodule update --init --recursive
+```
+
+Then install dependencies:
+
+```bash
+npm install
+```

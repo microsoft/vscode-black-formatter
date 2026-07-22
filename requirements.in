@@ -5,7 +5,10 @@
 # Run following command:
 # uv pip compile --generate-hashes --upgrade -o ./requirements.txt ./requirements.in
 
+# NOTE: pygls and packaging are also runtime dependencies of the bundled shared
+# package (external/vscode-common-python-lsp), which is installed with --no-deps.
+# Keep them pinned here so the submodule's Python lib stays installable.
+# lsprotocol is pulled in transitively via pygls.
 pygls
 packaging
 black
-vscode-common-python-lsp==0.6.0
