@@ -66,7 +66,7 @@ There are several settings you can configure to customize the behavior of this e
     <tr>
       <td>black-formatter.path</td>
       <td><code>[]</code></td>
-      <td>Path or command to be used by the extension to format Python files with Black. Accepts an array of a single or multiple strings. If passing a command, each argument should be provided as a separate string in the array. If set to <code>["black"]</code>, it will use the version of Black available in the <code>PATH</code> environment variable. Note: Using this option may slowdown formatting. <br> Examples: <br> <code>["~/global_env/black"]</code> <br> <code>["conda", "run", "-n", "lint_env", "python", "-m", "black"]</code></td>
+      <td>Path or command to be used by the extension to format Python files with Black. Accepts an array of a single or multiple strings. If passing a command, each argument should be provided as a separate string in the array. If set to <code>["black"]</code>, it will use the version of Black available in the <code>PATH</code> environment variable. Note: Using this option may slow down formatting. <br> Examples: <br> <code>["~/global_env/black"]</code> <br> <code>["conda", "run", "-n", "lint_env", "python", "-m", "black"]</code></td>
     </tr>
     <tr>
       <td>black-formatter.interpreter</td>
