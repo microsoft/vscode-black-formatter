@@ -13,19 +13,19 @@ runs:
   using: 'composite'
   steps:
     - name: Install Node
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
       with:
         node-version: ${{ inputs.node_version }}
         cache: 'npm'
 
     # Minimum supported version is Python 3.10
     - name: Use Python ${{ inputs.python_version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: ${{ inputs.python_version }}
 
     - name: Pip cache
-      uses: actions/cache@v3
+      uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-build-vsix-${{ hashFiles('**/requirements.txt') }}
@@ -65,7 +65,7 @@ runs:
       shell: bash
 
     - name: Upload VSIX
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: formatter-package
         path: |
