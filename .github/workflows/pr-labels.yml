@@ -20,3 +20,9 @@ jobs:
           mode: minimum
           count: 1
           labels: 'bug, debt, feature-request, no-changelog, dependencies'
+      - name: 'PR is mergeable'
+        uses: mheap/github-action-required-labels@v5
+        with:
+          mode: maximum
+          count: 0
+          labels: 'no-merge'
