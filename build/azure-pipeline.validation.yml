@@ -25,8 +25,6 @@ variables:
     value: VSCode-black-formatter
   - name: VsixName
     value: black-formatter.vsix
-  - name: PythonVersion
-    value: '3.10'
   - name: AZURE_ARTIFACTS_FEED
     value: 'https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/'
 
@@ -36,10 +34,6 @@ parameters:
     default:
       - script: git submodule update --init --recursive
         displayName: Checkout submodules
-      - task: UsePythonVersion@0
-        displayName: Use Python $(PythonVersion)
-        inputs:
-          versionSpec: $(PythonVersion)
       - script: npm ci
         displayName: Install NPM dependencies
 
@@ -80,3 +74,4 @@ extends:
               isPreRelease: false
               standardizedVersioning: true
               customNPMRegistry: $(AZURE_ARTIFACTS_FEED)
+              pythonVersion: '3.10'
