@@ -18,11 +18,6 @@ updates:
           - 'patch'
     open-pull-requests-limit: 10
     ignore:
-      # Defensive no-op: @vscode/common-python-lsp is a `file:` submodule dep,
-      # which Dependabot never bumps. It is synced by the
-      # shared-package-submodule-sync dispatch workflow instead. Kept here to
-      # document intent should the dependency form ever change.
-      - dependency-name: '@vscode/common-python-lsp'
       - dependency-name: '@types/vscode'
       - dependency-name: '@types/node'
       - dependency-name: 'vscode-languageclient'
@@ -44,11 +39,6 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
-    ignore:
-      # Defensive no-op: the pip `vscode-common-python-lsp` pin was removed from
-      # requirements when the shared package moved to the git submodule, so
-      # Dependabot has nothing to bump. Kept to document intent.
-      - dependency-name: 'vscode-common-python-lsp'
 
   # Python test dependencies are updated weekly, minor updates are grouped (1 PR "pip-test-minor-patch").
   - package-ecosystem: 'pip'
@@ -67,6 +57,17 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
+
+  # The shared package submodule is updated daily in a standalone PR.
+  - package-ecosystem: 'gitsubmodule'
+    labels:
+      - 'dependencies'
+      - 'debt'
+      - 'no-changelog'
+    directory: '/'
+    schedule:
+      interval: 'daily'
+    open-pull-requests-limit: 10
 
   # GitHub Actions dependencies are updated weekly, minor updates are grouped (1 PR "github-actions-minor-patch").
   - package-ecosystem: 'github-actions'
