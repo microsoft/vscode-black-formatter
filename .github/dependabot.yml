@@ -65,6 +65,8 @@ updates:
       - 'debt'
       - 'no-changelog'
     directory: '/'
+    allow:
+      - dependency-name: 'external/vscode-common-python-lsp'
     schedule:
       interval: 'daily'
     open-pull-requests-limit: 10
