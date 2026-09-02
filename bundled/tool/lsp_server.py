@@ -288,6 +288,28 @@ def on_shutdown(_params: Optional[Any] = None) -> None:
     tool_server.handle_shutdown()
 
 
+VERSION_RE = re.compile(r"\d+\.\d+(?:\.\d+)?\S*")
+
+
+def _parse_tool_version(stdout: str) -> str:
+    """Extract the tool version from the first line of `black --version` output.
+
+    Returns the longest token on the first line that looks like a SemVer-ish
+    version (digits, dots, optional pre-release / build suffix).  Raises
+    ValueError when no candidate is found or the output is empty.
+    """
+    lines = stdout.splitlines(keepends=False)
+    if not lines:
+        raise ValueError("empty --version output")
+    parts = [v for v in lines[0].split(" ") if VERSION_RE.fullmatch(v)]
+    if not parts:
+        raise ValueError(f"no version candidate in --version output: {lines[0]!r}")
+    # If the first line contains multiple version-shaped tokens (e.g. black
+    # with an embedded 'X.Y.Z' and '24.3.0'), pick the longest so a
+    # pre-release suffix like '24.3.0rc1' wins over a stray short match.
+    return max(parts, key=len)
+
+
 def _update_workspace_settings_with_version_info(
     workspace_settings: dict[str, Any],
 ) -> None:
@@ -306,12 +328,16 @@ def _update_workspace_settings_with_version_info(
                     'Install black in your environment and set "black-formatter.importStrategy": "fromEnvironment"'
                 )
 
-            first_line = result.stdout.splitlines(keepends=False)[0]
-            parts = [v for v in first_line.split(" ") if re.match(r"\d+\.\d+\S*", v)]
-            if len(parts) == 1:
-                actual_version = parts[0]
-            else:
-                actual_version = "0.0.0"
+            # This is text we get from running `black --version`
+            # black, 22.3.0 (compiled: yes) <--- This is the version we want.
+            try:
+                actual_version = _parse_tool_version(result.stdout)
+            except ValueError as ve:
+                log_error(
+                    f"Could not parse version of formatter running for "
+                    f"{code_workspace}: {ve}\r\n"
+                )
+                continue
 
             version = parse_version(actual_version)
             min_version = parse_version(MIN_VERSION)
