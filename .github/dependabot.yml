@@ -9,6 +9,8 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+    cooldown:
+      default-days: 10
     groups:
       npm-minor-patch:
         patterns:
@@ -31,6 +33,8 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+    cooldown:
+      default-days: 10
     open-pull-requests-limit: 10
     groups:
       pip-minor-patch:
@@ -49,6 +53,8 @@ updates:
     directory: '/src/test/python_tests'
     schedule:
       interval: 'weekly'
+    cooldown:
+      default-days: 10
     open-pull-requests-limit: 10
     groups:
       pip-test-minor-patch:
