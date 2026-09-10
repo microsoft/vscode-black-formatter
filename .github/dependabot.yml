@@ -35,10 +35,30 @@ updates:
     directories:
       - '/'
       - '/src/test/python_tests'
+    # Multi-ecosystem groups only support positive patterns. Keep Black
+    # unmatched so its updates remain standalone.
     patterns:
-      - '*'
-    exclude-patterns:
-      - 'black'
+      - 'attrs'
+      - 'cattrs'
+      - 'click'
+      - 'colorama'
+      - 'exceptiongroup'
+      - 'iniconfig'
+      - 'lsprotocol'
+      - 'mypy-extensions'
+      - 'packaging'
+      - 'pathspec'
+      - 'platformdirs'
+      - 'pluggy'
+      - 'pygls'
+      - 'pygments'
+      - 'pyhamcrest'
+      - 'pytest'
+      - 'python-jsonrpc-server'
+      - 'pytokens'
+      - 'tomli'
+      - 'typing-extensions'
+      - 'ujson'
     multi-ecosystem-group: 'dependencies'
     cooldown:
       default-days: 7
