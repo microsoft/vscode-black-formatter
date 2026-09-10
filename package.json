@@ -188,9 +188,6 @@
     },
     "dependencies": {
         "@vscode/common-python-lsp": "file:external/vscode-common-python-lsp/typescript",
-        "@vscode/python-extension": "^1.0.5",
-        "dotenv": "^17.4.0",
-        "fs-extra": "^11.3.5",
         "vscode-languageclient": "^9.0.1"
     },
     "devDependencies": {
@@ -204,11 +201,11 @@
         "@types/vscode": "^1.74.0",
         "@typescript-eslint/eslint-plugin": "^8.62.0",
         "@typescript-eslint/parser": "^8.62.0",
-        "@vscode/python-environments": "https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/@vscode/python-environments/-/python-environments-1.0.0.tgz",
         "@vscode/test-electron": "^2.5.2",
         "@vscode/vsce": "^3.9.2",
         "chai": "^6.2.2",
         "eslint": "^10.0.0",
+        "fs-extra": "^11.3.5",
         "glob": "^13.0.6",
         "mocha": "^11.7.6",
         "prettier": "^3.8.4",
