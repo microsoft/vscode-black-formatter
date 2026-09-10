@@ -1,68 +1,48 @@
 version: 2
+
+multi-ecosystem-groups:
+  dependencies:
+    schedule:
+      interval: 'weekly'
+    exclude-patterns:
+      - 'black'
+    labels:
+      - 'dependencies'
+      - 'debt'
+      - 'no-changelog'
+
 updates:
-  # NPM dependencies are updated weekly, minor updates are grouped (1 PR "npm-minor-patch").
+  # NPM, Python, and GitHub Actions dependencies are updated together.
   - package-ecosystem: 'npm'
     labels:
       - 'dependencies'
       - 'debt'
       - 'no-changelog'
     directory: '/'
-    schedule:
-      interval: 'weekly'
+    patterns:
+      - '*'
+    multi-ecosystem-group: 'dependencies'
     cooldown:
-      default-days: 10
-    groups:
-      npm-minor-patch:
-        patterns:
-          - '*'
-        update-types:
-          - 'minor'
-          - 'patch'
+      default-days: 7
     open-pull-requests-limit: 10
     ignore:
       - dependency-name: '@types/vscode'
       - dependency-name: '@types/node'
       - dependency-name: 'vscode-languageclient'
 
-  # Python dependencies are updated weekly, minor updates are grouped (1 PR "pip-minor-patch").
-  # The no-changelog label is NOT added here
   - package-ecosystem: 'pip'
     labels:
       - 'dependencies'
       - 'debt'
-    directory: '/'
-    schedule:
-      interval: 'weekly'
+    directories:
+      - '/'
+      - '/src/test/python_tests'
+    patterns:
+      - '*'
+    multi-ecosystem-group: 'dependencies'
     cooldown:
-      default-days: 10
+      default-days: 7
     open-pull-requests-limit: 10
-    groups:
-      pip-minor-patch:
-        patterns:
-          - '*'
-        update-types:
-          - 'minor'
-          - 'patch'
-
-  # Python test dependencies are updated weekly, minor updates are grouped (1 PR "pip-test-minor-patch").
-  - package-ecosystem: 'pip'
-    labels:
-      - 'dependencies'
-      - 'debt'
-      - 'no-changelog'
-    directory: '/src/test/python_tests'
-    schedule:
-      interval: 'weekly'
-    cooldown:
-      default-days: 10
-    open-pull-requests-limit: 10
-    groups:
-      pip-test-minor-patch:
-        patterns:
-          - '*'
-        update-types:
-          - 'minor'
-          - 'patch'
 
   # The shared package submodule is updated daily in a standalone PR.
   - package-ecosystem: 'gitsubmodule'
@@ -77,20 +57,13 @@ updates:
       interval: 'daily'
     open-pull-requests-limit: 10
 
-  # GitHub Actions dependencies are updated weekly, minor updates are grouped (1 PR "github-actions-minor-patch").
   - package-ecosystem: 'github-actions'
     labels:
       - 'dependencies'
       - 'debt'
       - 'no-changelog'
     directory: '/'
-    schedule:
-      interval: 'weekly'
+    patterns:
+      - '*'
+    multi-ecosystem-group: 'dependencies'
     open-pull-requests-limit: 10
-    groups:
-      github-actions-minor-patch:
-        patterns:
-          - '*'
-        update-types:
-          - 'minor'
-          - 'patch'
