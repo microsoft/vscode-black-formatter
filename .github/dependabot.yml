@@ -1,5 +1,13 @@
 version: 2
 
+registries:
+  pylance-public-packages:
+    type: npm-registry
+    url: https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/
+    tenant-id: 72f988bf-86f1-41af-91ab-2d7cd011db47
+    client-id: 92c669e8-02ad-4ce6-ad73-f222fc7177e2
+    replaces-base: true
+
 multi-ecosystem-groups:
   dependencies:
     schedule:
@@ -13,6 +21,7 @@ multi-ecosystem-groups:
 updates:
   # NPM, Python, and GitHub Actions dependencies are updated together.
   - package-ecosystem: 'npm'
+    registries: '*'
     labels:
       - 'dependencies'
       - 'debt'
@@ -21,8 +30,6 @@ updates:
     patterns:
       - '*'
     multi-ecosystem-group: 'dependencies'
-    cooldown:
-      default-days: 7
     ignore:
       - dependency-name: '@types/vscode'
       - dependency-name: '@types/node'
