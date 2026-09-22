@@ -55,7 +55,6 @@
     "main": "./dist/extension.js",
     "l10n": "./l10n",
     "scripts": {
-        "postinstall": "node ./build/postinstall.js",
         "compile": "webpack",
         "compile-tests": "tsc -p . --outDir out",
         "format-check": "prettier --check \"src/**/*.ts\" \"build/**/*.yml\" \".github/**/*.yml\"",
@@ -187,7 +186,7 @@
         ]
     },
     "dependencies": {
-        "@vscode/common-python-lsp": "file:external/vscode-common-python-lsp/typescript",
+        "@vscode/common-python-lsp": "^0.8.2",
         "vscode-languageclient": "^9.0.1"
     },
     "devDependencies": {
