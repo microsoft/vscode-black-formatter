@@ -131,7 +131,7 @@ In this section, you will find some common issues you might encounter and how to
 
 ## Development
 
-This extension bundles the shared [`vscode-common-python-lsp`](https://github.com/microsoft/vscode-common-python-lsp) library as a git submodule at `external/vscode-common-python-lsp`. The submodule must be initialized before installing dependencies, because `npm install` builds the shared library from it.
+This extension depends on the published [`@vscode/common-python-lsp`](https://www.npmjs.com/package/@vscode/common-python-lsp) package. The shared [`vscode-common-python-lsp`](https://github.com/microsoft/vscode-common-python-lsp) repository remains available as a git submodule at `external/vscode-common-python-lsp` for contributors working on the shared package itself, but it is not required for installing or building this extension.
 
 When cloning the repository, pull the submodule at the same time:
 
