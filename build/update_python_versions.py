@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import datetime
 import json
 import pathlib
 import re
@@ -22,15 +23,23 @@ def fetch_release_cycle():
         return json.load(response)
 
 
-def latest_released_version(release_cycle):
+def latest_released_version(release_cycle, today=None):
     """Return the newest released Python 3 series."""
-    versions = [
-        version
-        for version, details in release_cycle.items()
-        if re.fullmatch(r"3\.\d+", version)
-        and isinstance(details, dict)
-        and details.get("status") in RELEASED_STATUSES
-    ]
+    today = today or datetime.datetime.now(datetime.timezone.utc).date()
+    versions = []
+    for version, details in release_cycle.items():
+        if (
+            not re.fullmatch(r"3\.\d+", version)
+            or not isinstance(details, dict)
+            or details.get("status") not in RELEASED_STATUSES
+        ):
+            continue
+        try:
+            release_date = datetime.date.fromisoformat(details["first_release"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid first_release for Python {version}") from exc
+        if release_date <= today:
+            versions.append(version)
     if not versions:
         raise ValueError("The release cycle did not contain a released Python version")
     return max(versions, key=lambda version: tuple(map(int, version.split("."))))
