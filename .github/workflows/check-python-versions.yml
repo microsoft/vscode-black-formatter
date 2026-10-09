@@ -1,0 +1,66 @@
+name: Check supported Python versions
+
+on:
+  schedule:
+    - cron: '0 12 15 10 *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  update:
+    if: github.repository_owner == 'microsoft'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Update supported Python versions
+        run: python build/update_python_versions.py
+      - name: Prepare issue
+        id: changes
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "The supported Python versions have changed according to the"
+            echo "[PEP release cycle API][release-cycle]."
+            echo
+            echo "Apply the following generated changes:"
+            echo
+            echo '```diff'
+            git diff --no-ext-diff
+            echo '```'
+            echo
+            echo "[release-cycle]: https://peps.python.org/api/release-cycle.json"
+          } > "$RUNNER_TEMP/python-version-issue.md"
+      - name: Create or update issue
+        if: steps.changes.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          issue_number="$(
+            gh issue list \
+              --state open \
+              --search '"Update supported Python versions" in:title' \
+              --json number \
+              --jq '.[0].number'
+          )"
+          if [[ -n "$issue_number" ]]; then
+            gh issue comment "$issue_number" \
+              --body-file "$RUNNER_TEMP/python-version-issue.md"
+          else
+            gh issue create \
+              --title "Update supported Python versions" \
+              --label debt \
+              --body-file "$RUNNER_TEMP/python-version-issue.md"
+          fi
