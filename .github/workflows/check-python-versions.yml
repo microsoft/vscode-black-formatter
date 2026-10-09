@@ -2,7 +2,7 @@ name: Check supported Python versions
 
 on:
   schedule:
-    - cron: '0 12 15 10 *'
+    - cron: '0 12 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -10,7 +10,7 @@ permissions:
   issues: write
 
 jobs:
-  update:
+  check:
     if: github.repository_owner == 'microsoft'
     runs-on: ubuntu-latest
     steps:
@@ -18,49 +18,30 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
-      - name: Update supported Python versions
-        run: python build/update_python_versions.py
-      - name: Prepare issue
-        id: changes
+      - name: Check for a new Python version
+        id: check
         shell: bash
         run: |
-          if git diff --quiet; then
-            echo "found=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "found=true" >> "$GITHUB_OUTPUT"
-          {
-            echo "The supported Python versions have changed according to the"
-            echo "[PEP release cycle API][release-cycle]."
-            echo
-            echo "Apply the following generated changes:"
-            echo
-            echo '```diff'
-            git diff --no-ext-diff
-            echo '```'
-            echo
-            echo "[release-cycle]: https://peps.python.org/api/release-cycle.json"
-          } > "$RUNNER_TEMP/python-version-issue.md"
-      - name: Create or update issue
-        if: steps.changes.outputs.found == 'true'
+          version="$(python build/update_python_versions.py)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Create issue
+        if: steps.check.outputs.version != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.check.outputs.version }}
         shell: bash
         run: |
+          title="Update to Python $VERSION"
           issue_number="$(
             gh issue list \
               --state open \
-              --search '"Update supported Python versions" in:title' \
+              --search "\"$title\" in:title" \
               --json number \
               --jq '.[0].number'
           )"
-          if [[ -n "$issue_number" ]]; then
-            gh issue comment "$issue_number" \
-              --body-file "$RUNNER_TEMP/python-version-issue.md"
-          else
+          if [[ -z "$issue_number" ]]; then
             gh issue create \
-              --title "Update supported Python versions" \
+              --title "$title" \
               --label debt \
-              --body-file "$RUNNER_TEMP/python-version-issue.md"
+              --body "Python $VERSION has been released. Update the supported Python versions in this repository."
           fi
