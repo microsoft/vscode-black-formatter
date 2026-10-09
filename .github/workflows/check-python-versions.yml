@@ -31,7 +31,7 @@ jobs:
           VERSION: ${{ steps.check.outputs.version }}
         shell: bash
         run: |
-          title="Update to Python $VERSION"
+          title="CI Python Versions: Update to Python $VERSION"
           issue_number="$(
             gh issue list \
               --state open \
