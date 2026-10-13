@@ -75,11 +75,17 @@ def configured_versions(workflow):
     return versions
 
 
+def unconfigured_version(releases, workflow, now=None):
+    """Return the newest RC series when it is missing from the test matrix."""
+    latest = latest_release_candidate(releases, now)
+    return latest if latest not in configured_versions(workflow) else None
+
+
 def main():
-    latest = latest_release_candidate(fetch_releases())
     workflow = pathlib.Path(__file__).parent.parent / ".github/workflows/pr-check.yml"
-    if latest not in configured_versions(workflow):
-        print(latest)
+    version = unconfigured_version(fetch_releases(), workflow)
+    if version:
+        print(version)
 
 
 if __name__ == "__main__":

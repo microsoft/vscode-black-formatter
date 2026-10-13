@@ -39,7 +39,7 @@ jobs:
           issue_number="$(
             gh api --paginate \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              "/repos/$GITHUB_REPOSITORY/issues?state=open&per_page=100" \
+              "/repos/$GITHUB_REPOSITORY/issues?state=all&per_page=100" \
               --jq ".[] | select(has(\"pull_request\") | not) | select(.title == \"$title\") | .number"
           )"
           if [[ -z "$issue_number" ]]; then
