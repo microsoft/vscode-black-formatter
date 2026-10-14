@@ -363,9 +363,14 @@ def _run_tool_on_document(
         )
         return None
 
-    settings = copy.deepcopy(tool_server.get_settings_by_document(document))
+    settings_doc = (
+        None
+        if (not getattr(document, "path", None) or document.uri.startswith("untitled:"))
+        else document
+    )
+    settings = copy.deepcopy(tool_server.get_settings_by_document(settings_doc))
     code_workspace = settings["workspaceFS"]
-    cwd = tool_server.get_cwd(settings, document, document_path=doc_path)
+    cwd = get_cwd(settings, document)
 
     if settings["path"]:
         mode = "path"
@@ -469,11 +474,15 @@ def _get_global_defaults():
 # *****************************************************
 def get_cwd(settings: Dict[str, Any], document: Optional[TextDocument]) -> str:
     """Returns the working directory for running the tool."""
-    if document:
+    if (
+        document
+        and getattr(document, "path", None)
+        and not getattr(document, "uri", "").startswith("untitled:")
+    ):
         return tool_server.get_cwd(
             settings, document, document_path=_get_document_path(document)
         )
-    return tool_server.get_cwd(settings, document)
+    return tool_server.get_cwd(settings, None)
 
 
 # *****************************************************
