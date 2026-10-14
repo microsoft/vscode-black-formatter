@@ -127,3 +127,21 @@ def test_document_with_no_path_falls_back_to_workspace():
     doc = types.SimpleNamespace(path="", uri="file://")
     settings = _make_settings(cwd="${fileDirname}")
     assert lsp_server.get_cwd(settings, doc) == WORKSPACE
+
+
+def test_untitled_document_falls_back_to_workspace():
+    """An unsaved/untitled document falls back to workspaceFS for file-related cwd variables."""
+    doc = types.SimpleNamespace(path="Untitled-1", uri="untitled:Untitled-1")
+    for token in ["${fileDirname}", "${relativeFileDirname}", "${file}", "${relativeFile}"]:
+        settings = _make_settings(cwd=token)
+        assert lsp_server.get_cwd(settings, doc) == WORKSPACE, f"Failed for {token}"
+
+    default_settings = _make_settings()
+    assert lsp_server.get_cwd(default_settings, doc) == WORKSPACE
+
+
+def test_untitled_document_static_cwd_returned_unchanged():
+    """A static cwd is preserved even for an unsaved/untitled document."""
+    doc = types.SimpleNamespace(path="Untitled-1", uri="untitled:Untitled-1")
+    settings = _make_settings(cwd="/custom/path")
+    assert lsp_server.get_cwd(settings, doc) == "/custom/path"
