@@ -18,8 +18,12 @@ runs:
         node-version: ${{ inputs.node_version }}
         cache: 'npm'
 
+    - name: Test setup and hook scripts (no dependencies required)
+      run: npm run test:setup
+      shell: bash
+
     - name: Install Node dependencies
-      run: npm ci
+      run: npm run ci:msft
       shell: bash
 
     - name: Lint TypeScript code

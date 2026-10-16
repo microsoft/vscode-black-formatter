@@ -4,6 +4,8 @@ on:
   pull_request:
 
 env:
+  NPM_CONFIG_REGISTRY: https://packagefeedproxy.microsoft.io/npm/
+  PIP_INDEX_URL: https://packagefeedproxy.microsoft.io/pypi/simple/
   NODE_VERSION: 24.17.0
   PYTHON_VERSION: '3.10'
   TEST_RESULTS_DIRECTORY: .
@@ -136,7 +138,7 @@ jobs:
         shell: bash
 
       - name: Install Node dependencies
-        run: npm ci
+        run: npm run ci:msft
         shell: bash
 
       - name: Compile TS tests
