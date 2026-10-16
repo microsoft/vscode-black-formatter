@@ -213,7 +213,7 @@ To normalize manually, run `npm run normalize-lockfile`, review the changes, and
 
 ### GitHub Actions package feeds
 
-The PR, push, and CodeQL workflows set `NPM_CONFIG_REGISTRY` to `https://packagefeedproxy.microsoft.io/npm/` and `PIP_INDEX_URL` to `https://packagefeedproxy.microsoft.io/pypi/simple/`. These workflow-level settings also apply to the shared build/lint actions, nested npm commands, and pip installs in nox sessions. The npm endpoint follows the [TypeScript CI package-feed-proxy job](https://github.com/microsoft/TypeScript/blob/main/.github/workflows/ci.yml).
+The PR and push workflows set `PIP_INDEX_URL` to `https://packagefeedproxy.microsoft.io/pypi/simple/` for pip and nox installs. Their Node installation steps select `https://packagefeedproxy.microsoft.io/npm/` explicitly through `npm run ci:msft`, so these workflows do not set `NPM_CONFIG_REGISTRY`. CodeQL retains both environment variables because its autobuild step does not use the install helper. The npm endpoint follows the [TypeScript CI package-feed-proxy job](https://github.com/microsoft/TypeScript/blob/main/.github/workflows/ci.yml).
 
 The shared lint and VSIX build actions and applicable PR/push test jobs use `npm run ci:msft`, rewriting working-copy lockfile URLs before installation and explicitly selecting the proxy for npm requests. Workflows do not commit these rewrites or change local registry configuration or Dependabot configuration. Existing dependency caches are retained; the VSIX build also retains its offline-cache preference. CodeQL retains workflow-level feed settings for its autobuild step.
 
