@@ -20,6 +20,10 @@ on:
   schedule:
     - cron: '15 16 * * 2'
 
+env:
+  NPM_CONFIG_REGISTRY: https://packagefeedproxy.microsoft.io/npm/
+  PIP_INDEX_URL: https://packagefeedproxy.microsoft.io/pypi/simple/
+
 jobs:
   analyze:
     if: github.repository_owner == 'microsoft'
