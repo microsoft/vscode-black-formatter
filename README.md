@@ -131,7 +131,7 @@ In this section, you will find some common issues you might encounter and how to
 
 ## Development
 
-This extension depends on the published [`@vscode/common-python-lsp`](https://www.npmjs.com/package/@vscode/common-python-lsp) package. The shared [`vscode-common-python-lsp`](https://github.com/microsoft/vscode-common-python-lsp) repository remains available as a git submodule at `external/vscode-common-python-lsp` for contributors working on the shared package itself, but it is not required for installing or building this extension.
+The TypeScript client depends on the published [`@vscode/common-python-lsp`](https://www.npmjs.com/package/@vscode/common-python-lsp) package, so npm installation and TypeScript compilation do not require building the shared TypeScript submodule. Python bundling still reads the pinned [`vscode-common-python-lsp`](https://github.com/microsoft/vscode-common-python-lsp) submodule at `external/vscode-common-python-lsp`; the setup commands below initialize it.
 
 When cloning the repository, pull the submodule at the same time:
 
@@ -145,8 +145,82 @@ If you already cloned without `--recurse-submodules`, initialize (or update) the
 git submodule update --init --recursive
 ```
 
-Then install dependencies:
+Then choose the appropriate local package-feed setup below.
+
+### Local package feeds
+
+Use Node.js supported by this repository and Python 3.10 or later. Both setup commands create or reuse `.venv` and install the Python bundling tools. Choose the appropriate setup below before installing dependencies. Committed lockfiles use public npm URLs; Microsoft setup rewrites working copies for proxy installs.
+
+#### Public contributors (non-Microsoft employees)
+
+Use the public setup, which selects `https://registry.npmjs.org/` and `https://pypi.org/simple/` for its child processes. No Microsoft account or internal-feed credentials are needed, and this command works before `node_modules` exists:
+
+From the repository root:
 
 ```bash
-npm install
+npm run setup
 ```
+
+For subsequent npm installs, use `npm ci`. Public contributors do not need the Microsoft feed commands or lockfile hook.
+
+#### Microsoft employees only
+
+> **Microsoft users only:** The commands in this section configure Microsoft package feeds. Public contributors should use the public setup above.
+
+Use the Microsoft setup, which selects `https://packagefeedproxy.microsoft.io/npm/` and `https://packagefeedproxy.microsoft.io/pypi/simple/` for its child processes:
+
+```bash
+npm run setup:msft
+```
+
+Microsoft setup initializes the Python shared-library submodule, then rewrites public npm and Yarn `resolved` URLs in the root `package-lock.json` to the npm proxy before running `npm ci`. Versions, integrity hashes, formatting, and private-feed URLs are preserved. The public setup leaves lockfiles unchanged.
+
+After pulling a new lockfile from GitHub, rerun `npm run setup:msft`, or run the dependency-free rewrite step alone before your next install/build:
+
+```bash
+npm run setup:msft-registry
+```
+
+The standalone step requires the root lockfile to exist; it does not require a shared TypeScript checkout. Rewriting is idempotent and stops on missing or invalid lockfiles. Keep committed lockfile URLs public using the optional pre-commit hook below (or `npm run normalize-lockfile` for the root lockfile).
+
+For subsequent root npm installs, use:
+
+```bash
+npm run ci:msft
+```
+
+This rewrites the root lockfile, then runs root `npm ci` with the proxy registry explicitly selected for package, audit, and metadata requests. Use `npm run setup:msft` for full setup, including Python dependencies.
+
+Local setup, lockfile rewriting, and `ci:msft` share the feed URLs in `build/package-feeds.json`.
+
+Both setup commands use the same implementation, stop on errors, and keep registry overrides scoped to setup's child processes; they do not change your shell environment, edit `.npmrc`, or add credentials. The standalone rewrite step only edits lockfiles; it does not configure the registry for subsequent commands.
+
+After setup, run `npm run compile` to build the extension. For subsequent Python commands, use `.venv\Scripts\python.exe` on Windows or `.venv/bin/python` on macOS/Linux (or activate that virtual environment). Registry overrides are not retained after setup.
+
+#### Microsoft contributor pre-commit hook
+
+If you use the Microsoft feeds and will commit changes, enable the recommended lockfile hook once per clone (no installed npm dependencies are required). It is not needed just to install or build:
+
+```bash
+npm run setup-hooks
+```
+
+The installer sets the clone's local `core.hooksPath` to `.githooks`, which also affects its linked worktrees. It refuses to replace an existing hook or a different hooks configuration. If you already use hooks, add `node build/normalize-package-lock.js --staged` to your existing pre-commit hook instead. Only enable this configuration in worktrees/branches that contain these hook files.
+
+Before a local commit, the hook converts known `Pylance_PublicPackages`, `packagefeedproxy.microsoft.io/npm/`, and named `1es-public/npm-public` mirror tarball URLs in the staged root `package-lock.json` to public npm URLs. It preserves versions, integrity hashes, formatting, and intentional Azure-hosted dependencies such as `msft_consumption`. Unknown feeds are left unchanged. It re-stages only the lockfile; if normalization is needed and the lockfile has unstaged changes, the commit is blocked without modifying it. Stage or stash those changes, then retry.
+
+To normalize manually, run `npm run normalize-lockfile`, review the changes, and stage them. To disable the installed hook, run `git config --local --unset core.hooksPath`. These are local Git hooks: GitHub and Dependabot do not execute them. No workflow writes changes to PR branches.
+
+### GitHub Actions package feeds
+
+The PR and push workflows set `PIP_INDEX_URL` to `https://packagefeedproxy.microsoft.io/pypi/simple/` for pip and nox installs. Their Node installation steps select `https://packagefeedproxy.microsoft.io/npm/` explicitly through `npm run ci:msft`, so these workflows do not set `NPM_CONFIG_REGISTRY`. CodeQL retains both environment variables because its autobuild step does not use the install helper. The npm endpoint follows the [TypeScript CI package-feed-proxy job](https://github.com/microsoft/TypeScript/blob/main/.github/workflows/ci.yml).
+
+The shared lint and VSIX build actions and applicable PR/push test jobs use `npm run ci:msft`, rewriting working-copy lockfile URLs before installation and explicitly selecting the proxy for npm requests. Workflows do not commit these rewrites or change local registry configuration or Dependabot configuration. Existing dependency caches are retained; the VSIX build also retains its offline-cache preference. CodeQL retains workflow-level feed settings for its autobuild step.
+
+### Azure release package feeds
+
+The DevDiv Azure stable/prerelease pipelines pass the npm proxy to their build/publish templates using `customNPMRegistry`. After initializing the Python shared-library submodule, their dependency install steps use `npm run ci:msft` to rewrite the root npm lockfile and install through the proxy.
+
+Each Python bootstrap and bundled-library install step explicitly sets `PIP_INDEX_URL` from `PIP_PROXY_INDEX_URL`, selecting the pip proxy even when a template's authentication setup changes the job-level index. Release triggers, approval gates, signing, and publishing behavior are unchanged.
+
+Dependabot continues to use public registries and its existing update settings. Legacy Azure stable, prerelease, and validation definitions are unchanged.

@@ -30,8 +30,10 @@ variables:
     value: '22.17.0'
   - name: PythonVersion
     value: '3.10'
-  - name: AZURE_ARTIFACTS_FEED
-    value: 'https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/'
+  - name: NPM_CONFIG_REGISTRY
+    value: 'https://packagefeedproxy.microsoft.io/npm/'
+  - name: PIP_PROXY_INDEX_URL
+    value: 'https://packagefeedproxy.microsoft.io/pypi/simple/'
 
 parameters:
   - name: publishExtension
@@ -44,20 +46,28 @@ parameters:
     default:
       - script: git submodule update --init --recursive
         displayName: Checkout submodules
-      - script: npm ci
+      - script: npm run ci:msft
         displayName: Install NPM dependencies
 
       - script: python -m pip install -U pip
         displayName: Upgrade pip
+        env:
+          PIP_INDEX_URL: $(PIP_PROXY_INDEX_URL)
 
       - script: python -m pip install wheel
         displayName: Install wheel
+        env:
+          PIP_INDEX_URL: $(PIP_PROXY_INDEX_URL)
 
       - script: python -m pip install nox
         displayName: Install nox
+        env:
+          PIP_INDEX_URL: $(PIP_PROXY_INDEX_URL)
 
       - script: python -m nox --session install_bundled_libs
         displayName: Install Python dependencies
+        env:
+          PIP_INDEX_URL: $(PIP_PROXY_INDEX_URL)
 
       - script: python ./build/update_ext_version.py --for-publishing
         displayName: Update build number
@@ -89,7 +99,7 @@ extends:
               buildSteps: ${{ parameters.buildSteps }}
               isPreRelease: true
               standardizedVersioning: true
-              customNPMRegistry: $(AZURE_ARTIFACTS_FEED)
+              customNPMRegistry: $(NPM_CONFIG_REGISTRY)
 
       - stage: Publish
         displayName: Publish Extension
@@ -103,4 +113,4 @@ extends:
               ghCreateTag: true
               ghCreateRelease: true
               ghReleaseAddChangeLog: true
-              customNPMRegistry: $(AZURE_ARTIFACTS_FEED)
+              customNPMRegistry: $(NPM_CONFIG_REGISTRY)
