@@ -13,12 +13,9 @@ export function run(): Promise<void> {
     const testsRoot = path.resolve(__dirname, './tests');
 
     return new Promise((c, e) => {
-        let files = [];
-        if (env.SMOKE_TESTS) {
-            files = glob.globSync('**/**.smoke.test.js', { cwd: testsRoot });
-        } else {
-            files = glob.globSync('**/**.unit.test.js', { cwd: testsRoot });
-        }
+        const files = env.SMOKE_TESTS
+            ? glob.globSync('**/**.smoke.test.js', { cwd: testsRoot })
+            : glob.globSync('**/**.unit.test.js', { cwd: testsRoot });
 
         // Add files to the test suite
         files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));

@@ -9,6 +9,8 @@ pygls
 pytest
 PyHamcrest
 python-jsonrpc-server
+exceptiongroup
+tomli
 colorama # required for windows machines
 ujson==5.11.0; python_version < "3.10"
 ujson==5.13.0; python_version >= "3.10"

@@ -17,6 +17,20 @@ export default tseslint.config(
         },
     },
     {
+        files: ['build/setup*.js', 'build/normalize-package-lock*.js'],
+        languageOptions: {
+            sourceType: 'commonjs',
+            globals: {
+                __dirname: 'readonly',
+                console: 'readonly',
+                process: 'readonly',
+            },
+        },
+        rules: {
+            '@typescript-eslint/no-require-imports': 'off',
+        },
+    },
+    {
         ignores: [
             'out/**',
             'dist/**',

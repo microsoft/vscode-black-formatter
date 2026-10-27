@@ -1,0 +1,10 @@
+{
+    "public": {
+        "npm": "https://registry.npmjs.org/",
+        "pip": "https://pypi.org/simple/"
+    },
+    "microsoft": {
+        "npm": "https://packagefeedproxy.microsoft.io/npm/",
+        "pip": "https://packagefeedproxy.microsoft.io/pypi/simple/"
+    }
+}
