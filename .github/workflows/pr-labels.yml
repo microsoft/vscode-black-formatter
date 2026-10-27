@@ -15,13 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'PR impact specified'
-        uses: mheap/github-action-required-labels@v5
+        uses: mheap/github-action-required-labels@23e10fde7e062233401931a0eece796cd9bf3177 # v5.6.0
         with:
           mode: minimum
           count: 1
           labels: 'bug, debt, feature-request, no-changelog, dependencies'
       - name: 'PR is mergeable'
-        uses: mheap/github-action-required-labels@v5
+        uses: mheap/github-action-required-labels@23e10fde7e062233401931a0eece796cd9bf3177 # v5.6.0
         with:
           mode: maximum
           count: 0
