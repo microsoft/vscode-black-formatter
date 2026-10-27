@@ -57,7 +57,7 @@ extends:
   parameters:
     sdl:
       enabled: false
-      sourceAnalysisPool: VSEngSS-MicroBuild2022-1ES
+      sourceAnalysisPool: VSEng-MicroBuildVSStable
     pool:
       name: AzurePipelines-EO
       os: windows
