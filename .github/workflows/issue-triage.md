@@ -16,6 +16,7 @@ on:
 permissions:
   contents: read
   issues: read
+  copilot-requests: write
 tools:
   github:
     toolsets: [repos, issues]
