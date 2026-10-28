@@ -46,5 +46,6 @@ jobs:
             gh issue create \
               --title "$title" \
               --label debt \
+              --label python-version \
               --body "Python $VERSION has a published release candidate according to the [Python.org downloads API](https://www.python.org/api/v2/downloads/release/?is_published=true&pre_release=true&version=3). Update the supported Python versions in this repository."
           fi
