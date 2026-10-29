@@ -46,5 +46,15 @@ jobs:
             gh issue create \
               --title "$title" \
               --label debt \
-              --body "Python $VERSION has a published release candidate according to the [Python.org downloads API](https://www.python.org/api/v2/downloads/release/?is_published=true&pre_release=true&version=3). Update the supported Python versions in this repository."
+              --label python-version \
+              --body "Python $VERSION has a published release candidate according to the [Python.org downloads API](https://www.python.org/api/v2/downloads/release/?is_published=true&pre_release=true&version=3), but is missing from at least one CI test matrix.
+
+          ### Requested changes
+          - [ ] Ensure the \`python\` matrix in \`.github/workflows/pr-check.yml\` includes Python $VERSION.
+          - [ ] Ensure the \`python\` matrix in \`.github/workflows/push-check.yml\` includes Python $VERSION.
+          - [ ] Run the tests on Python $VERSION and resolve any compatibility failures.
+
+          Compare matrix entries by major.minor; patch and prerelease/dev variants of $VERSION already count as coverage. Add the version only where missing and preserve existing entries.
+
+          Keep minimum-supported-version and build-runtime Python pins unchanged; adding CI coverage does not require raising the minimum supported Python version."
           fi
