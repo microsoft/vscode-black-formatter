@@ -42,7 +42,7 @@ variables:
 
 parameters:
   - name: publishExtension
-    displayName: ðŸš€ Publish Extension
+    displayName: 🚀 Publish Extension
     type: boolean
     default: true
 
