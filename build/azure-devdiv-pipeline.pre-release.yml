@@ -19,6 +19,7 @@ resources:
     - repository: translations
       type: github
       name: microsoft/vscode-python-extensions-loc
+      # Temporarily use dev while the localization force-push issue is resolved.
       ref: refs/heads/dev
       endpoint: Github-Pylance
     - repository: localizationTools
