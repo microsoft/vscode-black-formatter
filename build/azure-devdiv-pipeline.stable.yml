@@ -10,7 +10,7 @@ resources:
     - repository: templates
       type: git
       name: DevDiv/Pylance-Eng
-      ref: refs/heads/users/bschnurr/localization-wrapper
+      ref: refs/heads/main
     - repository: translations
       type: github
       name: microsoft/vscode-python-extensions-loc
