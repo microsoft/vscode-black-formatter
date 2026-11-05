@@ -235,4 +235,4 @@ Configure the `PYTHON_LOCALIZATION_APP_ID` Actions variable and `PYTHON_LOCALIZA
 
 Keep English `package.nls.json` tracked. Root `package.nls.<locale>.json` and `l10n/` runtime files are generated, git-ignored release outputs. VSCE must include generated locale files despite Git ignores. Local builds are English-only unless translations are imported explicitly.
 
-Translation is asynchronous. All 14 supported locales must be present, and every required real-language table must contain translation evidence. Individual untranslated strings are allowed. Missing, incomplete, or wholly untranslated handbacks fail before packaging, without falling back to stale translations. Do not publish while onboarding or real translated output is pending.
+Translation is asynchronous. Nonempty manifest and runtime tables must be present for all 14 supported locales. Untranslated strings, including wholly untranslated tables, are allowed; users see English until translations arrive. Missing, empty, malformed, or incomplete handbacks still fail before packaging, without falling back to stale translations.

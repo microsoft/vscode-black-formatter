@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: microsoft/vscode-common-python-lsp/.github/actions/localization@d1877b84bb10ff7caa6bd12ab4e75498ba760790
+      - uses: microsoft/vscode-common-python-lsp/.github/actions/localization@6b4a3573e7e7a9fe1e468e129544432278aec2d6
         with:
           app-id: ${{ vars.PYTHON_LOCALIZATION_APP_ID }}
           private-key: ${{ secrets.PYTHON_LOCALIZATION_PRIVATE_KEY }}
