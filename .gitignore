@@ -9,3 +9,7 @@ bundled/libs/
 **/__pycache__
 **/.pytest_cache
 **/.vs
+
+# Localization is generated from the dev handback during releases.
+/package.nls.*.json
+/l10n/

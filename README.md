@@ -224,3 +224,15 @@ The DevDiv Azure stable/prerelease pipelines pass the npm proxy to their build/p
 Each Python bootstrap and bundled-library install step explicitly sets `PIP_INDEX_URL` from `PIP_PROXY_INDEX_URL`, selecting the pip proxy even when a template's authentication setup changes the job-level index. Release triggers, approval gates, signing, and publishing behavior are unchanged.
 
 Dependabot continues to use public registries and its existing update settings. Legacy Azure stable, prerelease, and validation definitions are unchanged.
+
+### Localization
+
+The **Localization** GitHub workflow submits English strings using the [shared composite action and Python tooling](https://github.com/microsoft/vscode-common-python-lsp#shared-localization-automation). Stable and pre-release DevDiv pipelines independently retrieve translations through Pylance-Eng's `pullLocalization: true`; releases never submit English or create translation-update PRs.
+
+Both paths use `microsoft/vscode-python-extensions-loc`, branch **`dev`**, with canonical extension ID **`ms-python.black-formatter`**. English XLF is stored in `src/en/ms-python.black-formatter` and handbacks in `out/ms-python.black-formatter`. The action and Azure tooling checkout are pinned to the same reviewed revision.
+
+Configure the `PYTHON_LOCALIZATION_APP_ID` Actions variable and `PYTHON_LOCALIZATION_PRIVATE_KEY` secret here, or grant access to organization-level credentials. The app needs Contents write access only to the localization drop; the caller's repository token stays read-only. The shared action uses the Microsoft npm proxy and pinned localization CLI. Authorize the literal `Github-Pylance` service connection for both Azure repository resources and release pipelines.
+
+Keep English `package.nls.json` tracked. Root `package.nls.<locale>.json` and `l10n/` runtime files are generated, git-ignored release outputs. VSCE must include generated locale files despite Git ignores. Local builds are English-only unless translations are imported explicitly.
+
+Translation is asynchronous. All 14 supported locales must be present, and every required real-language table must contain translation evidence. Individual untranslated strings are allowed. Missing, incomplete, or wholly untranslated handbacks fail before packaging, without falling back to stale translations. Do not publish while onboarding or real translated output is pending.
