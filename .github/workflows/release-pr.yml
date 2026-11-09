@@ -1,0 +1,32 @@
+name: Release PR pilot
+
+on:
+  pull_request:
+    branches: [release-pr-plan-pilot-base]
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Release PR / Plan pilot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release candidate
+        id: plan
+        uses: microsoft/vscode-python-ci/actions/release-pr@ad76df43eed2a9bb733add8d5010f7fad5899a25
+        with:
+          mode: plan
+      - name: Verify expected output and unchanged manifest
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+          EXPECTED: ${{ github.event.pull_request.title }}
+        shell: bash
+        run: |
+          if [[ "$EXPECTED" == skip ]]; then
+            test -z "$VERSION"
+          else
+            test "$VERSION" = "$EXPECTED"
+          fi
+          test -z "$(git status --porcelain)"
