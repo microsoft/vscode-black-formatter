@@ -8,9 +8,10 @@ pr: none
 resources:
   repositories:
     - repository: templates
-      type: git
-      name: DevDiv/Pylance-Eng
+      type: github
+      name: microsoft/pylance-eng
       ref: refs/heads/main
+      endpoint: Github-Pylance
     - repository: translations
       type: github
       name: microsoft/vscode-python-extensions-loc
