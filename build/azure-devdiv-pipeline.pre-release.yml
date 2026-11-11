@@ -25,8 +25,8 @@ resources:
       endpoint: Github-Pylance
     - repository: localizationTools
       type: github
-      name: microsoft/vscode-common-python-lsp
-      ref: 6b4a3573e7e7a9fe1e468e129544432278aec2d6
+      name: microsoft/vscode-python-ci
+      ref: f078b68e968b56e0a22d6cf803bb241a6b094994
       endpoint: Github-Pylance
 variables:
   - name: TeamName
