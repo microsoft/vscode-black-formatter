@@ -6,6 +6,10 @@ const { readFileSync, writeFileSync } = require('node:fs');
 const path = require('node:path');
 const { microsoft } = require('./package-feeds.json');
 
+function normalizeRegistry(registry) {
+    return registry.endsWith('/') ? registry : `${registry}/`;
+}
+
 function rewritePackageLock(source, registry = microsoft.npm) {
     const lockfile = JSON.parse(source);
     if (
@@ -17,9 +21,10 @@ function rewritePackageLock(source, registry = microsoft.npm) {
         throw new Error('Expected an npm lockfile with lockfileVersion 2 or 3 and a packages section.');
     }
 
+    const normalizedRegistry = normalizeRegistry(registry);
     return source.replace(/("resolved"\s*:\s*)("(?:\\.|[^"\\])*")/g, (match, prefix, encodedUrl) => {
         const url = JSON.parse(encodedUrl);
-        const rewritten = url.replace(/^https:\/\/registry\.(?:npmjs\.org|yarnpkg\.com)\//, registry);
+        const rewritten = url.replace(/^https:\/\/registry\.(?:npmjs\.org|yarnpkg\.com)\//, normalizedRegistry);
         return rewritten === url ? match : prefix + JSON.stringify(rewritten);
     });
 }
@@ -48,7 +53,9 @@ if (require.main === module) {
         if (install && !process.env.npm_execpath) {
             throw new Error('Run npm install using npm run ci:msft.');
         }
-        const registry = process.env.npm_config_registry || process.env.NPM_CONFIG_REGISTRY || microsoft.npm;
+        const registry = normalizeRegistry(
+            process.env.npm_config_registry || process.env.NPM_CONFIG_REGISTRY || microsoft.npm,
+        );
         rewritePackageLocks(undefined, registry);
         if (install) {
             const result = spawnSync(process.execPath, [process.env.npm_execpath, 'ci', `--registry=${registry}`], {

@@ -41,6 +41,13 @@ test('rewrites public resolved URLs without changing versions, integrity or form
     assert.equal(normalizePackageLock(expected), source.replace('https://registry.yarnpkg.com/', publicRegistry));
 });
 
+test('normalizes slashless registry overrides before rewriting resolved URLs', () => {
+    for (const registry of [publicRegistry, microsoftRegistry]) {
+        const expected = source.replaceAll(publicRegistry, registry).replace('https://registry.yarnpkg.com/', registry);
+        assert.equal(rewritePackageLock(source, registry.slice(0, -1)), expected);
+    }
+});
+
 test('supports version 2 legacy dependencies as well as packages', () => {
     const legacy = JSON.stringify({
         lockfileVersion: 2,
@@ -155,6 +162,8 @@ test('ci:msft preserves template authentication for the configured internal regi
     for (const settings of [
         { NPM_CONFIG_REGISTRY: registry },
         { npm_config_registry: registry },
+        { NPM_CONFIG_REGISTRY: registry.slice(0, -1) },
+        { npm_config_registry: registry.slice(0, -1) },
         { NPM_CONFIG_REGISTRY: 'https://stale.example/npm/', npm_config_registry: registry },
     ]) {
         const env = {
