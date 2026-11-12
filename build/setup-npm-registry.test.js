@@ -100,12 +100,12 @@ test('missing or invalid root lockfile fails explicitly', (t) => {
     assert.throws(() => rewritePackageLocks(root), /Expected an npm lockfile/);
 });
 
-function runCli({ args = ['--ci'], npmCli = 'npm-cli.js', result = { status: 0 } } = {}) {
+function runCli({ args = ['--ci'], npmCli = 'npm-cli.js', result = { status: 0 }, env = {} } = {}) {
     const calls = [];
     const errors = [];
     const process = {
         argv: ['node', 'setup-npm-registry.js', ...args],
-        env: { npm_execpath: npmCli },
+        env: { npm_execpath: npmCli, ...env },
         execPath: 'node',
     };
     const module = { exports: {} };
@@ -113,7 +113,7 @@ function runCli({ args = ['--ci'], npmCli = 'npm-cli.js', result = { status: 0 }
         if (name === 'node:fs') {
             return {
                 readFileSync: () => source,
-                writeFileSync: (file) => calls.push({ file }),
+                writeFileSync: (file, source) => calls.push({ file, source }),
             };
         }
         if (name === 'node:child_process') {
@@ -148,6 +148,31 @@ test('ci:msft rewrites the root lockfile before installing with the shared proxy
     assert.equal(context.errors.length, 0);
     const scripts = JSON.parse(readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).scripts;
     assert.equal(scripts['ci:msft'], 'node ./build/setup-npm-registry.js --ci');
+});
+
+test('ci:msft preserves template authentication for the configured internal registry', () => {
+    const registry = 'https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/';
+    for (const settings of [
+        { NPM_CONFIG_REGISTRY: registry },
+        { npm_config_registry: registry },
+        { NPM_CONFIG_REGISTRY: proxyRegistry, npm_config_registry: registry },
+    ]) {
+        const env = {
+            ...settings,
+            NPM_CONFIG_USERCONFIG: path.join(tmpdir(), 'authenticated.npmrc'),
+            NODE_AUTH_TOKEN: 'test-token',
+        };
+        const context = runCli({ env });
+        const install = context.calls.at(-1);
+        assert.deepEqual(install.args, ['npm-cli.js', 'ci', `--registry=${registry}`]);
+        assert.equal(install.env, undefined);
+        assert.equal(context.process.env.NPM_CONFIG_USERCONFIG, env.NPM_CONFIG_USERCONFIG);
+        assert.equal(context.process.env.NODE_AUTH_TOKEN, env.NODE_AUTH_TOKEN);
+        for (const write of context.calls.slice(0, -1)) {
+            assert.equal(write.source, rewritePackageLock(source, registry));
+        }
+        assert.equal(context.errors.length, 0);
+    }
 });
 
 for (const result of [{ status: 7 }, { status: null, signal: 'SIGTERM' }, { error: new Error('not found') }]) {
