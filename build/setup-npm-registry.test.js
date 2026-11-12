@@ -11,7 +11,7 @@ const { rewritePackageLock, rewritePackageLocks } = require('./setup-npm-registr
 const { normalizePackageLock } = require('./normalize-package-lock');
 
 const publicRegistry = 'https://registry.npmjs.org/';
-const proxyRegistry = 'https://packagefeedproxy.microsoft.io/npm/';
+const microsoftRegistry = 'https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/';
 const source = `${JSON.stringify(
     {
         lockfileVersion: 3,
@@ -34,8 +34,8 @@ const source = `${JSON.stringify(
 
 test('rewrites public resolved URLs without changing versions, integrity or formatting', () => {
     const expected = source
-        .replaceAll(publicRegistry, proxyRegistry)
-        .replace('https://registry.yarnpkg.com/', proxyRegistry);
+        .replaceAll(publicRegistry, microsoftRegistry)
+        .replace('https://registry.yarnpkg.com/', microsoftRegistry);
     assert.equal(rewritePackageLock(source), expected);
     assert.equal(rewritePackageLock(expected), expected);
     assert.equal(normalizePackageLock(expected), source.replace('https://registry.yarnpkg.com/', publicRegistry));
@@ -47,7 +47,7 @@ test('supports version 2 legacy dependencies as well as packages', () => {
         packages: {},
         dependencies: { example: { resolved: `${publicRegistry}example/-/example.tgz` } },
     });
-    assert.equal(rewritePackageLock(legacy), legacy.replace(publicRegistry, proxyRegistry));
+    assert.equal(rewritePackageLock(legacy), legacy.replace(publicRegistry, microsoftRegistry));
 });
 
 test('preserves other fields, private feeds, Git dependencies and lookalike hosts', () => {
@@ -137,12 +137,12 @@ function runCli({ args = ['--ci'], npmCli = 'npm-cli.js', result = { status: 0 }
     return { calls, errors, process };
 }
 
-test('ci:msft rewrites the root lockfile before installing with the shared proxy registry', () => {
+test('ci:msft rewrites the root lockfile before installing with the Microsoft registry', () => {
     const context = runCli();
     assert.equal(context.calls.length, 2);
     assert.ok(context.calls[0].file.endsWith('package-lock.json'));
     assert.equal(context.calls[1].command, 'node');
-    assert.deepEqual(context.calls[1].args, ['npm-cli.js', 'ci', `--registry=${proxyRegistry}`]);
+    assert.deepEqual(context.calls[1].args, ['npm-cli.js', 'ci', `--registry=${microsoftRegistry}`]);
     assert.equal(context.calls[1].cwd, path.resolve(__dirname, '..'));
     assert.equal(context.calls[1].stdio, 'inherit');
     assert.equal(context.errors.length, 0);
@@ -155,7 +155,7 @@ test('ci:msft preserves template authentication for the configured internal regi
     for (const settings of [
         { NPM_CONFIG_REGISTRY: registry },
         { npm_config_registry: registry },
-        { NPM_CONFIG_REGISTRY: proxyRegistry, npm_config_registry: registry },
+        { NPM_CONFIG_REGISTRY: 'https://stale.example/npm/', npm_config_registry: registry },
     ]) {
         const env = {
             ...settings,
