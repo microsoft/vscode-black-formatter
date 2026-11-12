@@ -18,6 +18,11 @@ jobs:
         uses: microsoft/vscode-python-ci/actions/release-pr@4e0c4335bbf6b1a274673e22d9c39cd7efb93ccf
         with:
           mode: plan
+      - name: Check shared submodule freshness
+        if: steps.plan.outputs.version != ''
+        uses: microsoft/vscode-python-ci/actions/check-submodule-updated@066d9e604a509ec5cbc11141280cdfb48d7700b7
+        with:
+          path: external/vscode-common-python-lsp
       - name: Summarize release candidate
         env:
           VERSION: ${{ steps.plan.outputs.version }}
