@@ -4,7 +4,7 @@ on:
   pull_request:
 
 env:
-  PIP_INDEX_URL: https://packagefeedproxy.microsoft.io/pypi/simple/
+  PIP_INDEX_URL: https://pkgs.dev.azure.com/devdiv/DevDiv/_packaging/debugpy/pypi/simple/
   NODE_VERSION: 24.17.0
   PYTHON_VERSION: '3.10'
   TEST_RESULTS_DIRECTORY: .

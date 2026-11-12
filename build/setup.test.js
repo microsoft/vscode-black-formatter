@@ -184,10 +184,11 @@ test('Microsoft entry point selects the shared Microsoft setup implementation', 
 
 test('PR and push installs use the npm helper without a redundant registry environment setting', () => {
     const root = path.join(__dirname, '..');
+    const { microsoft } = require('./package-feeds.json');
     for (const file of ['pr-check.yml', 'push-check.yml']) {
         const workflow = readFileSync(path.join(root, '.github', 'workflows', file), 'utf8');
         assert.doesNotMatch(workflow, /^\s*NPM_CONFIG_REGISTRY:/m);
-        assert.match(workflow, /^\s*PIP_INDEX_URL: https:\/\/packagefeedproxy\.microsoft\.io\/pypi\/simple\//m);
+        assert.ok(workflow.split(/\r?\n/).includes(`  PIP_INDEX_URL: ${microsoft.pip}`));
         assert.doesNotMatch(workflow, /^\s*run: npm ci\b/m);
     }
     for (const action of ['lint', 'build-vsix']) {
@@ -195,5 +196,6 @@ test('PR and push installs use the npm helper without a redundant registry envir
         assert.match(workflow, /^\s*run: npm run ci:msft\s*$/m);
     }
     const codeql = readFileSync(path.join(root, '.github', 'workflows', 'codeql-analysis.yml'), 'utf8');
-    assert.match(codeql, /^\s*NPM_CONFIG_REGISTRY: https:\/\/packagefeedproxy\.microsoft\.io\/npm\//m);
+    assert.ok(codeql.split(/\r?\n/).includes(`  NPM_CONFIG_REGISTRY: ${microsoft.npm}`));
+    assert.ok(codeql.split(/\r?\n/).includes(`  PIP_INDEX_URL: ${microsoft.pip}`));
 });

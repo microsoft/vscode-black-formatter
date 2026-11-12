@@ -21,8 +21,8 @@ on:
     - cron: '15 16 * * 2'
 
 env:
-  NPM_CONFIG_REGISTRY: https://packagefeedproxy.microsoft.io/npm/
-  PIP_INDEX_URL: https://packagefeedproxy.microsoft.io/pypi/simple/
+  NPM_CONFIG_REGISTRY: https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/
+  PIP_INDEX_URL: https://pkgs.dev.azure.com/devdiv/DevDiv/_packaging/debugpy/pypi/simple/
 
 jobs:
   analyze:
