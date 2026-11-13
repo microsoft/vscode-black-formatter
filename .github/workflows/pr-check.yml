@@ -4,7 +4,7 @@ on:
   pull_request:
 
 env:
-  PIP_INDEX_URL: https://pkgs.dev.azure.com/devdiv/DevDiv/_packaging/debugpy/pypi/simple/
+  NPM_CONFIG_REGISTRY: https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/
   NODE_VERSION: 24.17.0
   PYTHON_VERSION: '3.10'
   TEST_RESULTS_DIRECTORY: .
@@ -16,6 +16,9 @@ jobs:
   build-vsix:
     name: Create VSIX
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -28,9 +31,20 @@ jobs:
           node_version: ${{ env.NODE_VERSION}}
           python_version: ${{ env.PYTHON_VERSION }}
 
+      - name: Upload bundled Python libraries
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: bundled-python-libraries
+          path: bundled/libs
+          if-no-files-found: error
+          retention-days: 1
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -45,7 +59,11 @@ jobs:
 
   tests:
     name: Tests
+    needs: build-vsix
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
     defaults:
       run:
         working-directory: ${{ env.special-working-directory }}
@@ -62,30 +80,21 @@ jobs:
           submodules: recursive
           path: ${{ env.special-working-directory-relative }}
 
-      # Install bundled libs using env.PYTHON_VERSION even though you test it on other versions.
-      - name: Use Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      - name: Authenticate package feeds
+        uses: ./testingDir/.github/actions/authenticate-feeds
+
+      - name: Download bundled Python libraries
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          name: bundled-python-libraries
+          path: ${{ env.special-working-directory-relative }}/bundled/libs
 
-      - name: Update pip, install wheel and nox
-        run: python -m pip install -U pip wheel nox
-        shell: bash
-
-      # This will install libraries to a target directory.
-      - name: Install bundled python libraries
-        run: python -m nox --session install_bundled_libs
-        shell: bash
-
-      # Now that the bundle is installed to target using env.PYTHON_VERSION
-      # switch back the python we want to test with
       - name: Use Python ${{ matrix.python }}
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python }}
 
-      # The new python may not have nox so install it again
-      - name: Update pip, install wheel and nox (again)
+      - name: Update pip, install wheel and nox
         run: python -m pip install -U pip wheel nox
         shell: bash
 
@@ -99,7 +108,11 @@ jobs:
 
   ts-tests:
     name: TypeScript Tests
+    needs: build-vsix
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
     defaults:
       run:
         working-directory: ${{ env.special-working-directory }}
@@ -115,6 +128,15 @@ jobs:
           submodules: recursive
           path: ${{ env.special-working-directory-relative }}
 
+      - name: Authenticate package feeds
+        uses: ./testingDir/.github/actions/authenticate-feeds
+
+      - name: Download bundled Python libraries
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: bundled-python-libraries
+          path: ${{ env.special-working-directory-relative }}/bundled/libs
+
       - name: Install Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -129,11 +151,6 @@ jobs:
 
       - name: Update pip, install wheel and nox
         run: python -m pip install -U pip wheel nox
-        shell: bash
-
-        # This will install libraries to a target directory.
-      - name: Install bundled python libraries
-        run: python -m nox --session install_bundled_libs
         shell: bash
 
       - name: Install Node dependencies

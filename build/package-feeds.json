@@ -5,6 +5,6 @@
     },
     "microsoft": {
         "npm": "https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/",
-        "pip": "https://pkgs.dev.azure.com/devdiv/DevDiv/_packaging/debugpy/pypi/simple/"
+        "pip": "https://pkgs.dev.azure.com/devdiv/DevDiv/_packaging/Pylance_PublicPackages/pypi/simple/"
     }
 }

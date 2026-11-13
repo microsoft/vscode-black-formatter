@@ -97,7 +97,7 @@ for (const platform of ['win32', 'linux']) {
                 assert.equal(
                     call.env.PIP_INDEX_URL,
                     microsoft
-                        ? 'https://pkgs.dev.azure.com/devdiv/DevDiv/_packaging/debugpy/pypi/simple/'
+                        ? 'https://pkgs.dev.azure.com/devdiv/DevDiv/_packaging/Pylance_PublicPackages/pypi/simple/'
                         : 'https://pypi.org/simple/',
                 );
                 assert.equal(call.env.NPM_CONFIG_REGISTRY, undefined);
@@ -182,20 +182,26 @@ test('Microsoft entry point selects the shared Microsoft setup implementation', 
     assert.equal(scripts['setup:msft'], 'node ./build/setup-msft.js');
 });
 
-test('PR and push installs use the npm helper without a redundant registry environment setting', () => {
+test('GitHub installs use authenticated feeds and the npm helper', () => {
     const root = path.join(__dirname, '..');
     const { microsoft } = require('./package-feeds.json');
     for (const file of ['pr-check.yml', 'push-check.yml']) {
         const workflow = readFileSync(path.join(root, '.github', 'workflows', file), 'utf8');
-        assert.doesNotMatch(workflow, /^\s*NPM_CONFIG_REGISTRY:/m);
-        assert.ok(workflow.split(/\r?\n/).includes(`  PIP_INDEX_URL: ${microsoft.pip}`));
+        assert.ok(workflow.split(/\r?\n/).includes(`  NPM_CONFIG_REGISTRY: ${microsoft.npm}`));
+        assert.doesNotMatch(workflow, /^\s*PIP_INDEX_URL:/m);
+        assert.match(workflow, /uses: \.\/testingDir\/\.github\/actions\/authenticate-feeds/);
         assert.doesNotMatch(workflow, /^\s*run: npm ci\b/m);
     }
     for (const action of ['lint', 'build-vsix']) {
         const workflow = readFileSync(path.join(root, '.github', 'actions', action, 'action.yml'), 'utf8');
         assert.match(workflow, /^\s*run: npm run ci:msft\s*$/m);
+        assert.match(
+            workflow,
+            /steps:\r?\n\s*- name: Authenticate package feeds\r?\n\s*uses: \.\/\.github\/actions\/authenticate-feeds/,
+        );
     }
     const codeql = readFileSync(path.join(root, '.github', 'workflows', 'codeql-analysis.yml'), 'utf8');
     assert.ok(codeql.split(/\r?\n/).includes(`  NPM_CONFIG_REGISTRY: ${microsoft.npm}`));
-    assert.ok(codeql.split(/\r?\n/).includes(`  PIP_INDEX_URL: ${microsoft.pip}`));
+    assert.doesNotMatch(codeql, /^\s*PIP_INDEX_URL:/m);
+    assert.match(codeql, /uses: \.\/\.github\/actions\/authenticate-feeds/);
 });
