@@ -182,26 +182,25 @@ test('Microsoft entry point selects the shared Microsoft setup implementation', 
     assert.equal(scripts['setup:msft'], 'node ./build/setup-msft.js');
 });
 
-test('GitHub installs use authenticated feeds and the npm helper', () => {
+test('CI uses public registries and releases use the authenticated feed', () => {
     const root = path.join(__dirname, '..');
-    const { microsoft } = require('./package-feeds.json');
-    for (const file of ['pr-check.yml', 'push-check.yml']) {
+    for (const file of ['pr-check.yml', 'push-check.yml', 'codeql-analysis.yml']) {
         const workflow = readFileSync(path.join(root, '.github', 'workflows', file), 'utf8');
-        assert.ok(workflow.split(/\r?\n/).includes(`  NPM_CONFIG_REGISTRY: ${microsoft.npm}`));
-        assert.doesNotMatch(workflow, /^\s*PIP_INDEX_URL:/m);
-        assert.match(workflow, /uses: \.\/testingDir\/\.github\/actions\/authenticate-feeds/);
-        assert.doesNotMatch(workflow, /^\s*run: npm ci\b/m);
+        assert.doesNotMatch(
+            workflow,
+            /packagefeedproxy\.microsoft\.io|authenticate-feeds|id-token: write|NPM_CONFIG_REGISTRY|PIP_INDEX_URL|npm run ci:msft/,
+        );
     }
     for (const action of ['lint', 'build-vsix']) {
         const workflow = readFileSync(path.join(root, '.github', 'actions', action, 'action.yml'), 'utf8');
-        assert.match(workflow, /^\s*run: npm run ci:msft\s*$/m);
-        assert.match(
-            workflow,
-            /steps:\r?\n\s*- name: Authenticate package feeds\r?\n\s*uses: \.\/\.github\/actions\/authenticate-feeds/,
-        );
+        assert.match(workflow, /^\s*run: npm ci\s*$/m);
+        assert.doesNotMatch(workflow, /authenticate-feeds|npm run ci:msft/);
     }
-    const codeql = readFileSync(path.join(root, '.github', 'workflows', 'codeql-analysis.yml'), 'utf8');
-    assert.ok(codeql.split(/\r?\n/).includes(`  NPM_CONFIG_REGISTRY: ${microsoft.npm}`));
-    assert.doesNotMatch(codeql, /^\s*PIP_INDEX_URL:/m);
-    assert.match(codeql, /uses: \.\/\.github\/actions\/authenticate-feeds/);
+    const localization = readFileSync(path.join(root, '.github', 'workflows', 'localization.yml'), 'utf8');
+    assert.match(localization, /^\s*npm-registry: https:\/\/registry\.npmjs\.org\/\s*$/m);
+    for (const release of ['stable', 'pre-release']) {
+        const pipeline = readFileSync(path.join(root, 'build', `azure-devdiv-pipeline.${release}.yml`), 'utf8');
+        assert.doesNotMatch(pipeline, /packagefeedproxy\.microsoft\.io|PIP_PROXY_INDEX_URL/);
+        assert.match(pipeline, /customNPMRegistry: \$\(AZURE_ARTIFACTS_FEED\)/);
+    }
 });

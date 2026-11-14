@@ -32,11 +32,8 @@ variables:
     value: '22.17.0'
   - name: PythonVersion
     value: '3.10'
-  - name: NPM_CONFIG_REGISTRY
+  - name: AZURE_ARTIFACTS_FEED
     value: 'https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/'
-  - name: PIP_PROXY_INDEX_URL
-    # PipAuthenticate supplies the internal index URL with credentials before buildSteps.
-    value: '$(PIP_INDEX_URL)'
 
 parameters:
   - name: publishExtension
@@ -49,28 +46,20 @@ parameters:
     default:
       - script: git submodule update --init --recursive
         displayName: Checkout submodules
-      - script: npm run ci:msft
+      - script: npm ci
         displayName: Install NPM dependencies
 
       - script: python -m pip install -U pip
         displayName: Upgrade pip
-        env:
-          PIP_INDEX_URL: $(PIP_PROXY_INDEX_URL)
 
       - script: python -m pip install wheel
         displayName: Install wheel
-        env:
-          PIP_INDEX_URL: $(PIP_PROXY_INDEX_URL)
 
       - script: python -m pip install nox
         displayName: Install nox
-        env:
-          PIP_INDEX_URL: $(PIP_PROXY_INDEX_URL)
 
       - script: python -m nox --session install_bundled_libs
         displayName: Install Python dependencies
-        env:
-          PIP_INDEX_URL: $(PIP_PROXY_INDEX_URL)
 
       - script: python ./build/update_ext_version.py --release --for-publishing
         displayName: Update build number
@@ -83,7 +72,7 @@ extends:
   parameters:
     buildSteps: ${{ parameters.buildSteps }}
     standardizedVersioning: true
-    customNPMRegistry: $(NPM_CONFIG_REGISTRY)
+    customNPMRegistry: $(AZURE_ARTIFACTS_FEED)
     publishExtension: ${{ parameters.publishExtension }}
     teamName: $(TeamName)
     ghCreateTag: true

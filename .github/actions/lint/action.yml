@@ -12,9 +12,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Authenticate package feeds
-      uses: ./.github/actions/authenticate-feeds
-
     - name: Install Node
       uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
       with:
@@ -26,7 +23,7 @@ runs:
       shell: bash
 
     - name: Install Node dependencies
-      run: npm run ci:msft
+      run: npm ci
       shell: bash
 
     - name: Lint TypeScript code

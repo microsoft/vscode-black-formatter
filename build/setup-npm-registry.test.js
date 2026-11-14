@@ -2,67 +2,13 @@
 // Licensed under the MIT License.
 
 const assert = require('node:assert/strict');
-const { spawnSync } = require('node:child_process');
 const { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
-const { URL } = require('node:url');
 const vm = require('node:vm');
 const { rewritePackageLock, rewritePackageLocks } = require('./setup-npm-registry');
 const { normalizePackageLock } = require('./normalize-package-lock');
-
-function configureGitHubFeeds(t, token) {
-    const root = mkdtempSync(path.join(__dirname, 'black-formatter feed auth-'));
-    t.after(() => rmSync(root, { recursive: true, force: true }));
-    const environmentFile = path.join(root, 'github-env');
-    writeFileSync(environmentFile, 'EXISTING=value\n');
-    const result = spawnSync(process.execPath, [path.join(__dirname, 'setup-github-feeds.js')], {
-        encoding: 'utf8',
-        env: { ...process.env, RUNNER_TEMP: root, GITHUB_ENV: environmentFile, NODE_AUTH_TOKEN: token },
-    });
-    return { root, environmentFile, result };
-}
-
-test('GitHub feed authentication configures both feeds without storing npm credentials in npmrc', (t) => {
-    const token = 'test-token.+/=';
-    const { root, environmentFile, result } = configureGitHubFeeds(t, token);
-    assert.equal(result.status, 0, result.stderr);
-    const npmrc = path.join(root, 'black-formatter-feeds.npmrc');
-    const config = readFileSync(npmrc, 'utf8');
-    assert.ok(config.includes(`registry=${microsoftRegistry}\n`));
-    assert.ok(config.includes('/npm/registry/:_authToken=${NODE_AUTH_TOKEN}\n'));
-    assert.ok(config.includes('/npm/:_authToken=${NODE_AUTH_TOKEN}\n'));
-    assert.ok(!config.includes(token));
-    const environment = readFileSync(environmentFile, 'utf8');
-    assert.ok(environment.startsWith('EXISTING=value\n'));
-    assert.ok(environment.includes(`NPM_CONFIG_USERCONFIG=${npmrc}\n`));
-    assert.ok(environment.includes(`NODE_AUTH_TOKEN=${token}\n`));
-    assert.ok(environment.includes('PIP_NO_INPUT=1\n'));
-    const index = new URL(
-        environment
-            .split('\n')
-            .find((line) => line.startsWith('PIP_INDEX_URL='))
-            .slice(14),
-    );
-    assert.equal(index.hostname, 'pkgs.dev.azure.com');
-    assert.equal(index.pathname, '/devdiv/DevDiv/_packaging/Pylance_PublicPackages/pypi/simple/');
-    assert.equal(index.username, 'build');
-    assert.equal(decodeURIComponent(index.password), token);
-    assert.ok(result.stdout.includes(`::add-mask::${token}\n`));
-    assert.ok(result.stdout.includes(`::add-mask::${index.href}\n`));
-});
-
-test('GitHub feed authentication rejects missing or multiline tokens without modifying configuration', (t) => {
-    for (const token of ['', 'null', 'token\nINJECTED=value']) {
-        const { root, environmentFile, result } = configureGitHubFeeds(t, token);
-        assert.equal(result.status, 1);
-        assert.match(result.stderr, /single-line Azure DevOps token is required/);
-        assert.equal(readFileSync(environmentFile, 'utf8'), 'EXISTING=value\n');
-        assert.throws(() => readFileSync(path.join(root, 'black-formatter-feeds.npmrc')), /ENOENT/);
-        assert.ok(!result.stderr.includes('INJECTED'));
-    }
-});
 
 const publicRegistry = 'https://registry.npmjs.org/';
 const microsoftRegistry = 'https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/';
