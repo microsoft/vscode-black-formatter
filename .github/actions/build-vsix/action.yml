@@ -45,8 +45,8 @@ runs:
       run: python -m pip install nox
       shell: bash
 
-    - name: Install Node dependencies through Microsoft feeds
-      run: npm run ci:msft
+    - name: Install Node dependencies
+      run: npm ci
       env:
         npm_config_prefer_offline: 'true'
       shell: bash
