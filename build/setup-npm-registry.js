@@ -6,7 +6,11 @@ const { readFileSync, writeFileSync } = require('node:fs');
 const path = require('node:path');
 const { microsoft } = require('./package-feeds.json');
 
-function rewritePackageLock(source) {
+function normalizeRegistry(registry) {
+    return registry.endsWith('/') ? registry : `${registry}/`;
+}
+
+function rewritePackageLock(source, registry = microsoft.npm) {
     const lockfile = JSON.parse(source);
     if (
         ![2, 3].includes(lockfile.lockfileVersion) ||
@@ -17,18 +21,19 @@ function rewritePackageLock(source) {
         throw new Error('Expected an npm lockfile with lockfileVersion 2 or 3 and a packages section.');
     }
 
+    const normalizedRegistry = normalizeRegistry(registry);
     return source.replace(/("resolved"\s*:\s*)("(?:\\.|[^"\\])*")/g, (match, prefix, encodedUrl) => {
         const url = JSON.parse(encodedUrl);
-        const rewritten = url.replace(/^https:\/\/registry\.(?:npmjs\.org|yarnpkg\.com)\//, microsoft.npm);
+        const rewritten = url.replace(/^https:\/\/registry\.(?:npmjs\.org|yarnpkg\.com)\//, normalizedRegistry);
         return rewritten === url ? match : prefix + JSON.stringify(rewritten);
     });
 }
 
-function rewritePackageLocks(root = path.resolve(__dirname, '..')) {
+function rewritePackageLocks(root = path.resolve(__dirname, '..'), registry = microsoft.npm) {
     const files = [path.join(root, 'package-lock.json')];
     const updates = files.map((file) => {
         const source = readFileSync(file, 'utf8');
-        return { file, source, rewritten: rewritePackageLock(source) };
+        return { file, source, rewritten: rewritePackageLock(source, registry) };
     });
     for (const { file, source, rewritten } of updates) {
         if (rewritten !== source) {
@@ -48,13 +53,15 @@ if (require.main === module) {
         if (install && !process.env.npm_execpath) {
             throw new Error('Run npm install using npm run ci:msft.');
         }
-        rewritePackageLocks();
+        const registry = normalizeRegistry(
+            process.env.npm_config_registry || process.env.NPM_CONFIG_REGISTRY || microsoft.npm,
+        );
+        rewritePackageLocks(undefined, registry);
         if (install) {
-            const result = spawnSync(
-                process.execPath,
-                [process.env.npm_execpath, 'ci', `--registry=${microsoft.npm}`],
-                { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' },
-            );
+            const result = spawnSync(process.execPath, [process.env.npm_execpath, 'ci', `--registry=${registry}`], {
+                cwd: path.resolve(__dirname, '..'),
+                stdio: 'inherit',
+            });
             if (result.error || result.signal || result.status !== 0) {
                 const reason = result.error?.message || result.signal || `exit code ${result.status}`;
                 const error = new Error(`npm ci failed: ${reason}`);

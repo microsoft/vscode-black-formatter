@@ -4,8 +4,6 @@
 #
 #    pip-compile --generate-hashes --no-index ./requirements.in
 #
---index-url https://packagefeedproxy.microsoft.io/pypi/simple/
-
 attrs==26.1.0 \
     --hash=sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309 \
     --hash=sha256:d03ceb89cb322a8fd706d4fb91940737b6642aa36998fe130a9bc96c985eff32
