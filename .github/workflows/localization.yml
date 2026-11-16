@@ -31,6 +31,7 @@ jobs:
         with:
           app-id: ${{ vars.PYTHON_LOCALIZATION_APP_ID }}
           private-key: ${{ secrets.PYTHON_LOCALIZATION_PRIVATE_KEY }}
+          npm-registry: https://registry.npmjs.org/
           submodules: recursive
           source-paths: '["src", "external/vscode-common-python-lsp/typescript/src"]'
           node-version: '24.17.0'

@@ -149,7 +149,7 @@ Then choose the appropriate local package-feed setup below.
 
 ### Local package feeds
 
-Use Node.js supported by this repository and Python 3.10 or later. Both setup commands create or reuse `.venv` and install the Python bundling tools. Choose the appropriate setup below before installing dependencies. Committed lockfiles use public npm URLs; Microsoft setup rewrites working copies for proxy installs.
+Use Node.js supported by this repository and Python 3.10 or later. Both setup commands create or reuse `.venv` and install the Python bundling tools. Choose the appropriate setup below before installing dependencies. Committed lockfiles use public npm URLs; Microsoft setup rewrites working copies for Microsoft feed installs.
 
 #### Public contributors (non-Microsoft employees)
 
@@ -167,13 +167,13 @@ For subsequent npm installs, use `npm ci`. Public contributors do not need the M
 
 > **Microsoft users only:** The commands in this section configure Microsoft package feeds. Public contributors should use the public setup above.
 
-Use the Microsoft setup, which selects `https://packagefeedproxy.microsoft.io/npm/` and `https://packagefeedproxy.microsoft.io/pypi/simple/` for its child processes:
+Use the Microsoft setup, which selects the `Pylance_PublicPackages` npm and PyPI feeds in `build/package-feeds.json`. Configure credentials for both feeds before running it; setup does not authenticate:
 
 ```bash
 npm run setup:msft
 ```
 
-Microsoft setup initializes the Python shared-library submodule, then rewrites public npm and Yarn `resolved` URLs in the root `package-lock.json` to the npm proxy before running `npm ci`. Versions, integrity hashes, formatting, and private-feed URLs are preserved. The public setup leaves lockfiles unchanged.
+Microsoft setup initializes the Python shared-library submodule, then rewrites public npm and Yarn `resolved` URLs in the root `package-lock.json` to the Microsoft npm feed before running `npm ci`. Versions, integrity hashes, formatting, and private-feed URLs are preserved. The public setup leaves lockfiles unchanged.
 
 After pulling a new lockfile from GitHub, rerun `npm run setup:msft`, or run the dependency-free rewrite step alone before your next install/build:
 
@@ -189,7 +189,7 @@ For subsequent root npm installs, use:
 npm run ci:msft
 ```
 
-This rewrites the root lockfile, then runs root `npm ci` with the proxy registry explicitly selected for package, audit, and metadata requests. Use `npm run setup:msft` for full setup, including Python dependencies.
+This rewrites the root lockfile, then runs root `npm ci` with the Microsoft registry explicitly selected for package, audit, and metadata requests. Use `npm run setup:msft` for full setup, including Python dependencies.
 
 Local setup, lockfile rewriting, and `ci:msft` share the feed URLs in `build/package-feeds.json`.
 
@@ -213,17 +213,13 @@ To normalize manually, run `npm run normalize-lockfile`, review the changes, and
 
 ### GitHub Actions package feeds
 
-The PR and push workflows set `PIP_INDEX_URL` to `https://packagefeedproxy.microsoft.io/pypi/simple/` for pip and nox installs. Their Node installation steps select `https://packagefeedproxy.microsoft.io/npm/` explicitly through `npm run ci:msft`, so these workflows do not set `NPM_CONFIG_REGISTRY`. CodeQL retains both environment variables because its autobuild step does not use the install helper. The npm endpoint follows the [TypeScript CI package-feed-proxy job](https://github.com/microsoft/TypeScript/blob/main/.github/workflows/ci.yml).
+GitHub Actions use public npm and PyPI without feed authentication, including for fork PRs. Localization explicitly selects public npm because the shared action defaults to a proxy.
 
-The shared lint and VSIX build actions and applicable PR/push test jobs use `npm run ci:msft`, rewriting working-copy lockfile URLs before installation and explicitly selecting the proxy for npm requests. Workflows do not commit these rewrites or change local registry configuration or Dependabot configuration. Existing dependency caches are retained; the VSIX build also retains its offline-cache preference. CodeQL retains workflow-level feed settings for its autobuild step.
+The VSIX build uploads its Python bundle for reuse by the test matrix.
 
 ### Azure release package feeds
 
-The DevDiv Azure stable/prerelease pipelines pass the npm proxy to their build/publish templates using `customNPMRegistry`. After initializing the Python shared-library submodule, their dependency install steps use `npm run ci:msft` to rewrite the root npm lockfile and install through the proxy.
-
-Each Python bootstrap and bundled-library install step explicitly sets `PIP_INDEX_URL` from `PIP_PROXY_INDEX_URL`, selecting the pip proxy even when a template's authentication setup changes the job-level index. Release triggers, approval gates, signing, and publishing behavior are unchanged.
-
-Dependabot continues to use public registries and its existing update settings. Legacy Azure stable, prerelease, and validation definitions are unchanged.
+The DevDiv stable and prerelease pipelines pass the `Pylance_PublicPackages` npm feed to the shared template, which authenticates npm and the `DevDiv/debugpy` Python feed before build steps. Release triggers, approval gates, signing, and publishing are unchanged.
 
 ### Localization
 
@@ -231,7 +227,7 @@ The **Localization** GitHub workflow submits English strings using the [shared c
 
 Both paths use `microsoft/vscode-python-extensions-loc`, branch **`dev`**, with canonical extension ID **`ms-python.black-formatter`**. English XLF is stored in `src/en/ms-python.black-formatter` and handbacks in `out/ms-python.black-formatter`. The action and Azure tooling checkout are pinned to the same reviewed revision.
 
-Configure the `PYTHON_LOCALIZATION_APP_ID` Actions variable and `PYTHON_LOCALIZATION_PRIVATE_KEY` secret here, or grant access to organization-level credentials. The app needs Contents write access only to the localization drop; the caller's repository token stays read-only. The shared action uses the Microsoft npm proxy and pinned localization CLI. Authorize the literal `Github-Pylance` service connection for the [pipeline templates](https://github.com/microsoft/pylance-eng), translation, and shared-tooling repository resources in both release pipelines.
+Configure the `PYTHON_LOCALIZATION_APP_ID` Actions variable and `PYTHON_LOCALIZATION_PRIVATE_KEY` secret here, or grant access to organization-level credentials. The app needs Contents write access only to the localization drop; the caller's repository token stays read-only. The shared action uses public npm and a pinned localization CLI. Authorize the literal `Github-Pylance` service connection for the [pipeline templates](https://github.com/microsoft/pylance-eng), translation, and shared-tooling repository resources in both release pipelines.
 
 Keep English `package.nls.json` tracked. Root `package.nls.<locale>.json` and `l10n/` runtime files are generated, git-ignored release outputs. VSCE must include generated locale files despite Git ignores. Local builds are English-only unless translations are imported explicitly.
 

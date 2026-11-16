@@ -90,11 +90,15 @@ for (const platform of ['win32', 'linux']) {
             for (const call of calls) {
                 assert.equal(
                     call.env.npm_config_registry,
-                    microsoft ? 'https://packagefeedproxy.microsoft.io/npm/' : 'https://registry.npmjs.org/',
+                    microsoft
+                        ? 'https://devdiv.pkgs.visualstudio.com/DevDiv/_packaging/Pylance_PublicPackages/npm/registry/'
+                        : 'https://registry.npmjs.org/',
                 );
                 assert.equal(
                     call.env.PIP_INDEX_URL,
-                    microsoft ? 'https://packagefeedproxy.microsoft.io/pypi/simple/' : 'https://pypi.org/simple/',
+                    microsoft
+                        ? 'https://pkgs.dev.azure.com/devdiv/DevDiv/_packaging/Pylance_PublicPackages/pypi/simple/'
+                        : 'https://pypi.org/simple/',
                 );
                 assert.equal(call.env.NPM_CONFIG_REGISTRY, undefined);
                 assert.equal(call.env.HTTPS_PROXY, context.originalEnv.HTTPS_PROXY);
@@ -178,18 +182,25 @@ test('Microsoft entry point selects the shared Microsoft setup implementation', 
     assert.equal(scripts['setup:msft'], 'node ./build/setup-msft.js');
 });
 
-test('PR and push installs use the npm helper without a redundant registry environment setting', () => {
+test('CI uses public registries and releases use the authenticated feed', () => {
     const root = path.join(__dirname, '..');
-    for (const file of ['pr-check.yml', 'push-check.yml']) {
+    for (const file of ['pr-check.yml', 'push-check.yml', 'codeql-analysis.yml']) {
         const workflow = readFileSync(path.join(root, '.github', 'workflows', file), 'utf8');
-        assert.doesNotMatch(workflow, /^\s*NPM_CONFIG_REGISTRY:/m);
-        assert.match(workflow, /^\s*PIP_INDEX_URL: https:\/\/packagefeedproxy\.microsoft\.io\/pypi\/simple\//m);
-        assert.doesNotMatch(workflow, /^\s*run: npm ci\b/m);
+        assert.doesNotMatch(
+            workflow,
+            /packagefeedproxy\.microsoft\.io|authenticate-feeds|id-token: write|NPM_CONFIG_REGISTRY|PIP_INDEX_URL|npm run ci:msft/,
+        );
     }
     for (const action of ['lint', 'build-vsix']) {
         const workflow = readFileSync(path.join(root, '.github', 'actions', action, 'action.yml'), 'utf8');
-        assert.match(workflow, /^\s*run: npm run ci:msft\s*$/m);
+        assert.match(workflow, /^\s*run: npm ci\s*$/m);
+        assert.doesNotMatch(workflow, /authenticate-feeds|npm run ci:msft/);
     }
-    const codeql = readFileSync(path.join(root, '.github', 'workflows', 'codeql-analysis.yml'), 'utf8');
-    assert.match(codeql, /^\s*NPM_CONFIG_REGISTRY: https:\/\/packagefeedproxy\.microsoft\.io\/npm\//m);
+    const localization = readFileSync(path.join(root, '.github', 'workflows', 'localization.yml'), 'utf8');
+    assert.match(localization, /^\s*npm-registry: https:\/\/registry\.npmjs\.org\/\s*$/m);
+    for (const release of ['stable', 'pre-release']) {
+        const pipeline = readFileSync(path.join(root, 'build', `azure-devdiv-pipeline.${release}.yml`), 'utf8');
+        assert.doesNotMatch(pipeline, /packagefeedproxy\.microsoft\.io|PIP_PROXY_INDEX_URL/);
+        assert.match(pipeline, /customNPMRegistry: \$\(AZURE_ARTIFACTS_FEED\)/);
+    }
 });

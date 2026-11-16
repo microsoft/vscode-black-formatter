@@ -23,7 +23,7 @@ runs:
       shell: bash
 
     - name: Install Node dependencies
-      run: npm run ci:msft
+      run: npm ci
       shell: bash
 
     - name: Lint TypeScript code
