@@ -6,7 +6,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as sinon from 'sinon';
 import { Uri, workspace, WorkspaceFolder } from 'vscode';
-import { getEnvFileVars } from '@vscode/common-python-lsp';
+import { getEnvFileVars } from '../../../../../external/vscode-common-python-lsp/typescript/dist';
 
 // Use real files instead of stubbing fs-extra (whose exports are non-configurable).
 suite('getEnvFileVars Tests', () => {

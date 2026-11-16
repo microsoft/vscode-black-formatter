@@ -3,53 +3,29 @@
 
 import * as vscode from 'vscode';
 import {
-    createToolContext,
-    deactivateServer,
+    activateToolExtension,
     loadServerDefaults,
-    PythonEnvironmentsProvider,
-    registerCommonSubscriptions,
-    registerLogger,
-    ToolExtensionContext,
-} from '@vscode/common-python-lsp';
+    ToolExtensionRuntime,
+} from '../external/vscode-common-python-lsp/typescript/dist';
 import { EXTENSION_ROOT_DIR, BLACK_TOOL_CONFIG } from './common/constants';
 import { logDefaultFormatter, logLegacySettings } from './common/settings';
 
-let toolContext: ToolExtensionContext | undefined;
+let runtime: ToolExtensionRuntime | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     const serverInfo = loadServerDefaults(EXTENSION_ROOT_DIR);
     const serverName = `${serverInfo.name} Formatter`;
 
-    const outputChannel = vscode.window.createOutputChannel(serverName, { log: true });
-    context.subscriptions.push(outputChannel, registerLogger(outputChannel));
-
-    const resolvedServerInfo = { ...serverInfo, name: serverName };
-
-    const pythonProvider = new PythonEnvironmentsProvider(BLACK_TOOL_CONFIG);
-    context.subscriptions.push(pythonProvider);
-
-    toolContext = createToolContext({
-        serverInfo: resolvedServerInfo,
-        outputChannel,
+    runtime = activateToolExtension(context, {
+        serverInfo: { ...serverInfo, name: serverName },
         toolConfig: BLACK_TOOL_CONFIG,
-        pythonProvider,
-    });
-    context.subscriptions.push({ dispose: () => toolContext?.dispose() });
-
-    registerCommonSubscriptions(context, {
-        serverInfo: resolvedServerInfo,
-        outputChannel,
-        toolConfig: BLACK_TOOL_CONFIG,
-        toolContext,
-        pythonProvider,
     });
 
     logDefaultFormatter();
     logLegacySettings();
-
-    setImmediate(() => toolContext!.initialize(context.subscriptions));
 }
 
 export async function deactivate(): Promise<void> {
-    await deactivateServer(toolContext);
+    await runtime?.deactivate();
+    runtime = undefined;
 }
