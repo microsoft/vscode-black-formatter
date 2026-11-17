@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 // Extension-specific settings: ISettings type, server transport, and legacy settings logging.
-// All shared settings resolution is handled by @vscode/common-python-lsp directly.
+// All shared settings resolution is handled by the pinned shared checkout directly.
 
 import { Uri } from 'vscode';
 import {
@@ -12,7 +12,7 @@ import {
     logLegacySettings as _logLegacySettings,
     traceInfo,
     traceWarn,
-} from '@vscode/common-python-lsp';
+} from '../../external/vscode-common-python-lsp/typescript/dist';
 import { EXTENSION_ID } from './constants';
 import { TransportKind } from 'vscode-languageclient/node';
 

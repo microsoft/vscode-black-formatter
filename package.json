@@ -62,11 +62,18 @@
         "setup-hooks": "node ./build/setup-hooks.js",
         "normalize-lockfile": "node ./build/normalize-package-lock.js",
         "test:setup": "node --test ./build/setup.test.js ./build/setup-npm-registry.test.js ./build/normalize-package-lock.test.js",
+        "test:runtime": "node --test ./build/extension.test.js",
+        "postinstall": "npm --prefix ./external/vscode-common-python-lsp/typescript ci --include=dev",
+        "build:shared": "npm --prefix ./external/vscode-common-python-lsp/typescript run build",
+        "typecheck": "npm run build:shared && tsc --noEmit",
+        "precompile": "npm run build:shared",
         "compile": "webpack",
+        "precompile-tests": "npm run build:shared",
         "compile-tests": "tsc -p . --outDir out",
-        "format-check": "prettier --check \"src/**/*.ts\" \"build/**/*.yml\" \".github/**/*.yml\" \"build/setup*.js\" \"build/normalize-package-lock*.js\" build/package-feeds.json",
-        "fix-format": "prettier --write \"src/**/*.ts\" \"build/**/*.yml\" \".github/**/*.yml\" \"build/setup*.js\" \"build/normalize-package-lock*.js\" build/package-feeds.json",
-        "lint": "eslint src --ext ts \"build/setup*.js\" \"build/normalize-package-lock*.js\"",
+        "format-check": "prettier --check \"src/**/*.ts\" \"build/**/*.yml\" \".github/**/*.yml\" \"build/setup*.js\" \"build/normalize-package-lock*.js\" build/extension.test.js build/package-feeds.json",
+        "fix-format": "prettier --write \"src/**/*.ts\" \"build/**/*.yml\" \".github/**/*.yml\" \"build/setup*.js\" \"build/normalize-package-lock*.js\" build/extension.test.js build/package-feeds.json",
+        "lint": "eslint src --ext ts \"build/setup*.js\" \"build/normalize-package-lock*.js\" build/extension.test.js",
+        "prepackage": "npm run build:shared",
         "package": "webpack --mode production --devtool hidden-source-map",
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
         "tests": "node ./out/test/ts_tests/runTest.js",
@@ -74,7 +81,9 @@
         "vsce-package": "vsce package -o black-formatter.vsix",
         "vsce-package-pre": "vsce package -o black-formatter.vsix --pre-release",
         "vscode:prepublish": "npm run package",
+        "prewatch": "npm run build:shared",
         "watch": "webpack --watch",
+        "prewatch-tests": "npm run build:shared",
         "watch-tests": "tsc -p . -w --outDir out"
     },
     "contributes": {
@@ -193,7 +202,6 @@
         ]
     },
     "dependencies": {
-        "@vscode/common-python-lsp": "^0.8.2",
         "vscode-languageclient": "^9.0.1"
     },
     "devDependencies": {

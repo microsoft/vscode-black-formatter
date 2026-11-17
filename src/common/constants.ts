@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import * as path from 'path';
-import type { ToolConfig } from '@vscode/common-python-lsp';
+import type { ToolConfig } from '../../external/vscode-common-python-lsp/typescript/dist';
 
 export const EXTENSION_ID = 'ms-python.black-formatter';
 const folderName = path.basename(__dirname);
