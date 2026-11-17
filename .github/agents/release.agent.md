@@ -35,6 +35,9 @@ without explicit authorization.
 - The release PR must change **only the top-level `version` in root
   `package.json`**. Do not include dependencies, lockfiles, changelogs, workflow
   fixes, agent instructions, or other files. Land those separately first.
+- Release PRs must originate from a branch in this upstream repository, not a
+  fork. The PR's head and base repositories must match. **Release PR / Release**
+  skips fork-originated PRs, even when opened by a maintainer.
 - The PR creator must have current repository **write, maintain, or admin**
   permission. The action checks the GitHub PR creator, not Git commit authorship
   or the person merging the PR; do not spoof identity or bypass this check.
@@ -79,8 +82,8 @@ after release authorization and the repository's required reviews.
 
 ## 3. Verify automated branch creation and Azure publishing
 
-After merge, `.github\workflows\release-pr-release.yml` runs on a merged
-`pull_request_target` closed event. The shared
+After merge, `.github\workflows\release-pr-release.yml` runs on a merged,
+same-repository `pull_request` closed event. The shared
 [release-pr action](https://github.com/microsoft/vscode-python-ci/tree/main/actions/release-pr)
 revalidates the candidate and author, creates the stable manifest from the exact
 merged source, and pushes the finished `release/<STABLE_VERSION>` branch.
