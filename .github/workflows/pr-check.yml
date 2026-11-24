@@ -161,3 +161,17 @@ jobs:
         with:
           run: npm run smoke-tests
           working-directory: ${{ env.special-working-directory }}
+
+  readme-tool-version:
+    name: README tool version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check README tool version
+        uses: microsoft/vscode-python-ci/actions/check-readme-tool-version@1c31e9c696565b6e0157c9968cf62f9effc3a74b
+        with:
+          package: black
